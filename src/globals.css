@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primaria: #b3261e;
+  --color-primaria-hover: #8f221b;
+  --color-fundo: #f5f0e6;
+  --color-secundaria: #d8d0c0;
+  --color-texto: #1d1b19;
+  --color-texto-suave: #5b564f;
+
+  --font-titulo: 'Cinzel', serif;
+  --font-corpo: 'Plus Jakarta Sans', sans-serif;
+}
+
+:root {
+  font-family: var(--font-corpo);
+  color: var(--color-texto);
+  background-color: var(--color-fundo);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+html {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+h1,h2,h3,h4,h5,h6 {
+  font-family: var(--font-titulo);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
