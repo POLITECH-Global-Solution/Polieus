@@ -1,13 +1,15 @@
-import { Outlet } from 'react-router-dom';
-import Cabecalho from './components/Cabecalho/Cabecalho.tsx';
+import { Outlet } from "react-router-dom";
+import Cabecalho from "./components/Cabecalho/Cabecalho";
+import Rodape from "./components/Rodape/Rodape";
 
 export default function App() {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex flex-col min-h-screen">
       <Cabecalho />
-      <main className="min-w-0 flex-1">
+      <div className="grow">
         <Outlet />
-      </main>
+      </div>
+      <Rodape />
     </div>
-  );
+  )
 }
