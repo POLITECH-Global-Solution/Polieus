@@ -1,7 +1,7 @@
 import fotoMurilo from '../../img/fotoMurilo.jpeg';
 import fotoIsa from '../../img/fotoIsa.png';
 import fotoMilena from '../../img/fotoMilena.png';
-import fotoMarina from '../../img/fotoMarina.png';
+import fotoMarina from '../../img/fotoMarina.jpg';
 import fotoHenrique from '../../img/fotoHenrique.jpeg';
 
 import githubIcon from '../../img/github.png';
