@@ -10,6 +10,7 @@ import Integrantes from './pages/Integrantes/index.tsx';
 import EscolhaAcesso from './pages/Acesso/index.tsx';
 import LoginUsuario from './pages/LoginUsuario/index.tsx';
 import LoginAdministrador from './pages/LoginAdministrador/index.tsx';
+import Sobre from './pages/Sobre/index.tsx';
 
 const router = createBrowserRouter([
   {
@@ -35,6 +36,10 @@ const router = createBrowserRouter([
         path: '*',
         element: <Error />,
       },
+      {
+        path: 'sobre',
+        element: <Sobre />,
+      }
     ],
   },
 ]);
