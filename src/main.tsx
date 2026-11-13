@@ -9,6 +9,7 @@ import Error from './pages/Error/index.tsx';
 import Integrantes from './pages/Integrantes/index.tsx';
 import EscolhaAcesso from './pages/Acesso/index.tsx';
 import LoginUsuario from './pages/LoginUsuario/index.tsx';
+import LoginAdministrador from './pages/LoginAdministrador/index.tsx';
 
 const router = createBrowserRouter([
   {
@@ -18,6 +19,10 @@ const router = createBrowserRouter([
   {
     path: '/login-usuario',
     element: <LoginUsuario />,
+  },
+  {
+    path: '/login-admin',
+    element: <LoginAdministrador />,
   },
   {
     element: <App />,

@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 
 import Botao from '../../components/Botao/Botao';
-import fundoLogin from '../../img/usuario_cadastro_login.png';
+import fundoLogin from '../../img/cadastro_login.png';
 
 type Aba = 'entrar' | 'cadastrar';
 
