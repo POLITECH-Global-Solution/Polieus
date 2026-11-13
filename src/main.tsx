@@ -8,29 +8,34 @@ import './globals.css';
 import Error from './pages/Error/index.tsx';
 import Integrantes from './pages/Integrantes/index.tsx';
 import EscolhaAcesso from './pages/Acesso/index.tsx';
+import LoginUsuario from './pages/LoginUsuario/index.tsx';
 
 const router = createBrowserRouter([
-    {
-        path: '/',
-        element: <EscolhaAcesso />,
-    },
-    {
-        element: <App />,
-        children: [
-            {
-                path: 'integrantes',
-                element: <Integrantes />,
-            },
-            {
-                path: '*',
-                element: <Error />,
-            },
-        ],
-    },
+  {
+    path: '/',
+    element: <EscolhaAcesso />,
+  },
+  {
+    path: '/login-usuario',
+    element: <LoginUsuario />,
+  },
+  {
+    element: <App />,
+    children: [
+      {
+        path: 'integrantes',
+        element: <Integrantes />,
+      },
+      {
+        path: '*',
+        element: <Error />,
+      },
+    ],
+  },
 ]);
 
 createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-        <RouterProvider router={router} />
-    </StrictMode>
+  <StrictMode>
+    <RouterProvider router={router} />
+  </StrictMode>
 );

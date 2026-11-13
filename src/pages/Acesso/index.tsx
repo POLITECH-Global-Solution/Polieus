@@ -47,7 +47,7 @@ export default function EscolhaAcesso() {
             </p>
 
             <Link
-              to="/inicio"
+              to="/login-usuario"
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primaria px-5 py-3 font-corpo text-sm font-semibold transition-colors hover:bg-primaria-hover sm:text-base"
               style={{ color: '#ffffff' }}
             >
