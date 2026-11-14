@@ -22,7 +22,7 @@ const equipe = [
   {
     nome: 'Isabelle Ferreira Neri Feitoza',
     rm: '573507',
-    cargo: 'Analista de Dados',
+    cargo: 'Engenheira de Dados',
     turma: '1TDSPH',
     foto: fotoIsa,
     github: 'https://github.com/isabelleferreiraa',
@@ -124,7 +124,7 @@ function ColunaGrega() {
 export default function Integrantes() {
   return (
     <main className="min-h-screen w-full bg-fundo font-corpo text-texto">
-      <header className="border-b border-[#d8b9a5] bg-[#fffaf4] px-5 py-5 sm:px-8 lg:px-10">
+      <header className="border-b border-[#d8b9a5] bg-[#fffaf4] py-5 pr-5 pl-20 sm:pr-8 sm:pl-20 lg:px-10">
         <h1 className="font-titulo text-3xl font-bold text-[#78221b] sm:text-4xl">
           Integrantes
         </h1>

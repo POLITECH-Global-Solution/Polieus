@@ -113,9 +113,12 @@ export default function Cabecalho({ tipoUsuario = 'cidadao', aoSair }: Cabecalho
                         className="fixed inset-0 z-30 bg-black/50 lg:hidden" />
             )}
 
+            {/* Menu lateral com acessibilidade ao teclado */}
             <header id="menu-polieus"
-                    className={`fixed inset-y-0 left-0 z-40 flex w-52 flex-col bg-linear-to-b from-[#86291f] to-[#651b16] text-white transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:translate-x-0 ${
-                        menuAberto ? 'translate-x-0' : '-translate-x-full'
+                    className={`fixed inset-y-0 left-0 z-40 flex w-52 flex-col bg-linear-to-b from-[#86291f] to-[#651b16] text-white transition-[transform,visibility] duration-300 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:translate-x-0 lg:visible ${
+                        menuAberto
+                            ? 'translate-x-0 visible'
+                            : '-translate-x-full invisible'
                     }`}>
 
                 <div className="flex flex-col items-center border-b border-white/25 px-2 pt-3 pb-4">

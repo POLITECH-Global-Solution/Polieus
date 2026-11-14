@@ -41,7 +41,7 @@ export default function Contato() {
   return (
     <main className="min-h-screen w-full bg-fundo font-corpo text-texto">
       {/* Cabeçalho */}
-      <header className="border-b border-[#dfc2ae] bg-[#fffaf5] px-5 py-5 sm:px-8 lg:px-10">
+      <header className="border-b border-[#dfc2ae] bg-[#fffaf5] py-5 pr-5 pl-20 sm:pr-8 sm:pl-20 lg:px-10">
         <h1 className="font-titulo text-3xl font-bold text-[#78221b] sm:text-4xl">
           Contato
         </h1>

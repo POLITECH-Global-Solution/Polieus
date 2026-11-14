@@ -193,19 +193,27 @@ export default function LoginUsuario() {
 
             <section className="w-full max-w-2xl rounded-3xl border border-[#dfb99b] bg-[#fffaf5]/90 p-4 shadow-sm backdrop-blur-sm sm:p-5">
 
+                          
               {/* ABAS ENTRAR E CADASTRAR */}
-              <div className="grid grid-cols-2 border-b-2 border-primaria">
-
+              <div
+                className="grid grid-cols-2 border-b-2 border-primaria"
+                role="group"
+                aria-label="Escolha entre entrar e cadastrar"
+              >
                 <button
                   type="button"
                   onClick={() => trocarAba('entrar')}
-                  className={`flex items-center justify-center gap-2 rounded-t-full px-3 py-2 font-corpo text-sm font-semibold transition-colors sm:text-base ${
+                  aria-pressed={aba === 'entrar'}
+                  className={`flex items-center justify-center gap-2 rounded-t-full px-3 py-2 font-corpo text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaria sm:text-base ${
                     aba === 'entrar'
                       ? 'bg-primaria text-white'
                       : 'text-primaria hover:bg-primaria/10'
                   }`}
                 >
-                  <span className="material-icons text-[22px]">
+                  <span
+                    className="material-icons text-[22px]"
+                    aria-hidden="true"
+                  >
                     person
                   </span>
                   Entrar
@@ -214,19 +222,23 @@ export default function LoginUsuario() {
                 <button
                   type="button"
                   onClick={() => trocarAba('cadastrar')}
-                  className={`flex items-center justify-center gap-2 rounded-t-full px-3 py-2 font-corpo text-sm font-semibold transition-colors sm:text-base ${
+                  aria-pressed={aba === 'cadastrar'}
+                  className={`flex items-center justify-center gap-2 rounded-t-full px-3 py-2 font-corpo text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaria sm:text-base ${
                     aba === 'cadastrar'
                       ? 'bg-primaria text-white'
                       : 'text-primaria hover:bg-primaria/10'
                   }`}
                 >
-                  <span className="material-icons text-[22px]">
+                  <span
+                    className="material-icons text-[22px]"
+                    aria-hidden="true"
+                  >
                     person_add
                   </span>
                   Cadastrar
                 </button>
-
               </div>
+
 
               {/* FORMULÁRIO DE LOGIN */}
               {aba === 'entrar' ? (

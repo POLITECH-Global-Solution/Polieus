@@ -1,9 +1,10 @@
 
 import { Link } from 'react-router-dom';
 
-export default function Rodape() {
-  const anoAtual = new Date().getFullYear();
+// Calcula o ano fora da renderização do componente
+const anoAtual = new Date().getFullYear();
 
+export default function Rodape() {
   const estiloLink = `
     w-fit text-sm transition-all duration-200
     hover:opacity-70 hover:underline
