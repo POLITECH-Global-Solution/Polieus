@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 
 interface CabecalhoProps {
@@ -10,6 +10,9 @@ interface CabecalhoProps {
 export default function Cabecalho({ tipoUsuario = 'cidadao', aoSair }: CabecalhoProps) {
     const [menuAberto, setMenuAberto] = useState(false);
     const [botaoVisivel, setBotaoVisivel] = useState(true);
+
+    // Referência ao botão do menu para controlar o foco
+    const botaoMenuRef = useRef<HTMLButtonElement>(null);
 
     // Controla a visibilidade do botão durante a rolagem no celular
     useEffect(() => {
@@ -54,6 +57,25 @@ export default function Cabecalho({ tipoUsuario = 'cidadao', aoSair }: Cabecalho
         };
     }, [menuAberto]);
 
+    // Permite fechar o menu com Esc e retorna o foco ao botão
+    useEffect(() => {
+        if (!menuAberto) return;
+
+        const fecharComEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setMenuAberto(false);
+                setBotaoVisivel(true);
+                botaoMenuRef.current?.focus();
+            }
+        };
+
+        document.addEventListener('keydown', fecharComEscape);
+
+        return () => {
+            document.removeEventListener('keydown', fecharComEscape);
+        };
+    }, [menuAberto]);
+
     const administrador = tipoUsuario === 'administrador';
 
     const fecharMenu = () => {
@@ -73,11 +95,12 @@ export default function Cabecalho({ tipoUsuario = 'cidadao', aoSair }: Cabecalho
     return (
         <>
             <button type="button" onClick={() => setMenuAberto(!menuAberto)}
+                    ref={botaoMenuRef}
                     aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
                     aria-expanded={menuAberto}
                     aria-controls="menu-polieus"
                     tabIndex={!botaoVisivel && !menuAberto ? -1 : undefined}
-                    className={`fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-primaria text-white lg:hidden transition-all duration-300 ease-in-out ${
+                    className={`fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-primaria text-white lg:hidden transition-all duration-300 ease-in-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#f1d5c0] ${
                         botaoVisivel || menuAberto
                             ? 'translate-y-0 opacity-100'
                             : '-translate-y-16 opacity-0 pointer-events-none'
