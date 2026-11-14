@@ -13,6 +13,9 @@ import LoginAdministrador from './pages/LoginAdministrador/index.tsx';
 import Sobre from './pages/Sobre/index.tsx';
 import FAQ from './pages/FAQ/index.tsx';
 import Contato from './pages/Contato/index.tsx';
+import RegistrarOcorrencia from './pages/RegistrarOcorrencia/index.tsx';
+import MinhasOcorrencias from './pages/MinhasOcorrencias/index.tsx';
+import Transparencia from './pages/Transparencia/index.tsx';
 
 const router = createBrowserRouter([
   {
@@ -49,6 +52,18 @@ const router = createBrowserRouter([
       {
         path: 'contato',
         element: <Contato />,
+      },
+      {
+        path: 'registrar-ocorrencia',
+        element: <RegistrarOcorrencia />,
+      },
+      {
+        path: 'minhas-ocorrencias',
+        element: <MinhasOcorrencias />,
+      },
+      {
+        path: 'transparencia',
+        element: <Transparencia />,
       }
     ],
   },
