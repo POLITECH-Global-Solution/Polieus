@@ -18,6 +18,7 @@ import MinhasOcorrencias from './pages/MinhasOcorrencias/index.tsx';
 import Transparencia from './pages/Transparencia/index.tsx';
 import MapaOcorrencias from './pages/MapaOcorrencias/index.tsx';
 import Inicio from './pages/Inicio/index.tsx';
+import Perfil from './pages/Perfil/index.tsx';
 
 const router = createBrowserRouter([
   {
@@ -74,6 +75,10 @@ const router = createBrowserRouter([
       {
         path: 'inicio',
         element: <Inicio />,
+      },
+      {
+        path: 'perfil',
+        element: <Perfil />,
       }
     ],
   },
