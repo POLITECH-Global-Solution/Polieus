@@ -128,12 +128,13 @@ const subtituloSecao =
 const textoSecao = 'leading-8 text-[#51453e]';
 
 const cardBase =
-  'rounded-2xl border border-[#dfc4b0] bg-[#fffaf4] p-7 shadow-sm';
+  'rounded-2xl border border-[#dfc4b0] bg-[#fffaf4] p-5 sm:p-7 shadow-sm';
 
 export default function Sobre() {
   return (
     <main className="min-h-screen w-full bg-fundo font-corpo text-texto">
-      <header className="border-b border-[#d8b9a5] bg-[#fffaf4] px-5 py-5 sm:px-8 lg:px-10">
+      <header className="border-b border-[#d8b9a5] bg-[#fffaf4] py-5 pr-5 pl-20 sm:pr-8 sm:pl-20 lg:px-10">
+
         <h1 className="font-titulo text-3xl font-bold text-[#78221b] sm:text-4xl">
           Sobre
         </h1>
@@ -342,7 +343,8 @@ export default function Sobre() {
         </div>
       </section>
 
-      <section className="bg-fundo px-5 py-16 sm:px-8 lg:px-10">
+      <section className="bg-fundo px-5 py-10 sm:px-8 sm:py-16 lg:px-10">
+
         <div className="mx-auto max-w-6xl">
           <div className="text-center">
             <p className={subtituloSecao}>

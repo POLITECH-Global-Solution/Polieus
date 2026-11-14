@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 
 interface CabecalhoProps {
@@ -8,6 +9,72 @@ interface CabecalhoProps {
 
 export default function Cabecalho({ tipoUsuario = 'cidadao', aoSair }: CabecalhoProps) {
     const [menuAberto, setMenuAberto] = useState(false);
+    const [botaoVisivel, setBotaoVisivel] = useState(true);
+
+    // Referência ao botão do menu para controlar o foco
+    const botaoMenuRef = useRef<HTMLButtonElement>(null);
+
+    // Controla a visibilidade do botão durante a rolagem no celular
+    useEffect(() => {
+        let ultimaPosicao = Math.max(0, window.scrollY);
+
+        const verificarRolagem = () => {
+            const posicaoAtual = Math.max(0, window.scrollY);
+
+            // Mantém o botão visível fora do celular,
+            // com o menu aberto ou próximo ao topo
+            if (
+                window.innerWidth >= 768 ||
+                menuAberto ||
+                posicaoAtual <= 80
+            ) {
+                setBotaoVisivel(true);
+                ultimaPosicao = posicaoAtual;
+                return;
+            }
+
+            const diferenca = posicaoAtual - ultimaPosicao;
+
+            // Evita esconder ou mostrar o botão
+            // por movimentos muito pequenos
+            if (Math.abs(diferenca) > 8) {
+                setBotaoVisivel(diferenca < 0);
+                ultimaPosicao = posicaoAtual;
+            }
+        };
+
+        window.addEventListener('scroll', verificarRolagem, {
+            passive: true,
+        });
+
+        window.addEventListener('resize', verificarRolagem);
+
+        verificarRolagem();
+
+        return () => {
+            window.removeEventListener('scroll', verificarRolagem);
+            window.removeEventListener('resize', verificarRolagem);
+        };
+    }, [menuAberto]);
+
+    // Permite fechar o menu com Esc e retorna o foco ao botão
+    useEffect(() => {
+        if (!menuAberto) return;
+
+        const fecharComEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setMenuAberto(false);
+                setBotaoVisivel(true);
+                botaoMenuRef.current?.focus();
+            }
+        };
+
+        document.addEventListener('keydown', fecharComEscape);
+
+        return () => {
+            document.removeEventListener('keydown', fecharComEscape);
+        };
+    }, [menuAberto]);
 
     const administrador = tipoUsuario === 'administrador';
 
@@ -28,10 +95,16 @@ export default function Cabecalho({ tipoUsuario = 'cidadao', aoSair }: Cabecalho
     return (
         <>
             <button type="button" onClick={() => setMenuAberto(!menuAberto)}
+                    ref={botaoMenuRef}
                     aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
                     aria-expanded={menuAberto}
                     aria-controls="menu-polieus"
-                    className="fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-primaria text-white lg:hidden">
+                    tabIndex={!botaoVisivel && !menuAberto ? -1 : undefined}
+                    className={`fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-primaria text-white lg:hidden transition-all duration-300 ease-in-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#f1d5c0] ${
+                        botaoVisivel || menuAberto
+                            ? 'translate-y-0 opacity-100'
+                            : '-translate-y-16 opacity-0 pointer-events-none'
+                    }`}>
                 <span className="material-icons">{menuAberto ? 'close' : 'menu'}</span>
             </button>
 
@@ -40,9 +113,12 @@ export default function Cabecalho({ tipoUsuario = 'cidadao', aoSair }: Cabecalho
                         className="fixed inset-0 z-30 bg-black/50 lg:hidden" />
             )}
 
+            {/* Menu lateral com acessibilidade ao teclado */}
             <header id="menu-polieus"
-                    className={`fixed inset-y-0 left-0 z-40 flex w-52 flex-col bg-linear-to-b from-[#86291f] to-[#651b16] text-white transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:translate-x-0 ${
-                        menuAberto ? 'translate-x-0' : '-translate-x-full'
+                    className={`fixed inset-y-0 left-0 z-40 flex w-52 flex-col bg-linear-to-b from-[#86291f] to-[#651b16] text-white transition-[transform,visibility] duration-300 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:translate-x-0 lg:visible ${
+                        menuAberto
+                            ? 'translate-x-0 visible'
+                            : '-translate-x-full invisible'
                     }`}>
 
                 <div className="flex flex-col items-center border-b border-white/25 px-2 pt-3 pb-4">

@@ -1,3 +1,4 @@
+
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import Botao from '../../components/Botao/Botao';
@@ -183,17 +184,26 @@ export default function LoginAdministrador() {
                 <div className="h-px flex-1 bg-[#d9bda7]" />
               </div>
 
-              <div className="grid grid-cols-2 border-b-2 border-primaria">
+              {/* Abas com melhorias de acessibilidade */}
+              <div
+                className="grid grid-cols-2 border-b-2 border-primaria"
+                role="group"
+                aria-label="Escolha entre entrar e cadastrar"
+              >
                 <button
                   type="button"
                   onClick={() => trocarAba('entrar')}
-                  className={`flex items-center justify-center gap-2 rounded-t-full px-3 py-2 font-corpo text-sm font-semibold transition-colors sm:text-base ${
+                  aria-pressed={aba === 'entrar'}
+                  className={`flex items-center justify-center gap-2 rounded-t-full px-3 py-2 font-corpo text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaria sm:text-base ${
                     aba === 'entrar'
                       ? 'bg-primaria text-white'
                       : 'text-primaria hover:bg-primaria/10'
                   }`}
                 >
-                  <span className="material-icons text-[21px]">
+                  <span
+                    className="material-icons text-[21px]"
+                    aria-hidden="true"
+                  >
                     admin_panel_settings
                   </span>
                   Entrar
@@ -202,13 +212,17 @@ export default function LoginAdministrador() {
                 <button
                   type="button"
                   onClick={() => trocarAba('cadastrar')}
-                  className={`flex items-center justify-center gap-2 rounded-t-full px-3 py-2 font-corpo text-sm font-semibold transition-colors sm:text-base ${
+                  aria-pressed={aba === 'cadastrar'}
+                  className={`flex items-center justify-center gap-2 rounded-t-full px-3 py-2 font-corpo text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaria sm:text-base ${
                     aba === 'cadastrar'
                       ? 'bg-primaria text-white'
                       : 'text-primaria hover:bg-primaria/10'
                   }`}
                 >
-                  <span className="material-icons text-[21px]">
+                  <span
+                    className="material-icons text-[21px]"
+                    aria-hidden="true"
+                  >
                     person_add
                   </span>
                   Cadastrar
