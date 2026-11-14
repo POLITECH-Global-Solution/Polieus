@@ -172,7 +172,7 @@ export default function Cabecalho({ tipoUsuario = 'cidadao', aoSair }: Cabecalho
                                 </li>
 
                                 <li>
-                                    <NavLink to="/mapa" onClick={fecharMenu} className={linkClasses}>
+                                    <NavLink to="/mapa-ocorrencias" onClick={fecharMenu} className={linkClasses}>
                                         <span className="material-icons text-[18px]">location_on</span>
                                         Mapa de Ocorrências
                                     </NavLink>
