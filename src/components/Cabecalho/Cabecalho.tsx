@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 
 interface CabecalhoProps {
@@ -8,6 +9,50 @@ interface CabecalhoProps {
 
 export default function Cabecalho({ tipoUsuario = 'cidadao', aoSair }: CabecalhoProps) {
     const [menuAberto, setMenuAberto] = useState(false);
+    const [botaoVisivel, setBotaoVisivel] = useState(true);
+
+    // Controla a visibilidade do botão durante a rolagem no celular
+    useEffect(() => {
+        let ultimaPosicao = Math.max(0, window.scrollY);
+
+        const verificarRolagem = () => {
+            const posicaoAtual = Math.max(0, window.scrollY);
+
+            // Mantém o botão visível fora do celular,
+            // com o menu aberto ou próximo ao topo
+            if (
+                window.innerWidth >= 768 ||
+                menuAberto ||
+                posicaoAtual <= 80
+            ) {
+                setBotaoVisivel(true);
+                ultimaPosicao = posicaoAtual;
+                return;
+            }
+
+            const diferenca = posicaoAtual - ultimaPosicao;
+
+            // Evita esconder ou mostrar o botão
+            // por movimentos muito pequenos
+            if (Math.abs(diferenca) > 8) {
+                setBotaoVisivel(diferenca < 0);
+                ultimaPosicao = posicaoAtual;
+            }
+        };
+
+        window.addEventListener('scroll', verificarRolagem, {
+            passive: true,
+        });
+
+        window.addEventListener('resize', verificarRolagem);
+
+        verificarRolagem();
+
+        return () => {
+            window.removeEventListener('scroll', verificarRolagem);
+            window.removeEventListener('resize', verificarRolagem);
+        };
+    }, [menuAberto]);
 
     const administrador = tipoUsuario === 'administrador';
 
@@ -31,7 +76,12 @@ export default function Cabecalho({ tipoUsuario = 'cidadao', aoSair }: Cabecalho
                     aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
                     aria-expanded={menuAberto}
                     aria-controls="menu-polieus"
-                    className="fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-primaria text-white lg:hidden">
+                    tabIndex={!botaoVisivel && !menuAberto ? -1 : undefined}
+                    className={`fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-primaria text-white lg:hidden transition-all duration-300 ease-in-out ${
+                        botaoVisivel || menuAberto
+                            ? 'translate-y-0 opacity-100'
+                            : '-translate-y-16 opacity-0 pointer-events-none'
+                    }`}>
                 <span className="material-icons">{menuAberto ? 'close' : 'menu'}</span>
             </button>
 
