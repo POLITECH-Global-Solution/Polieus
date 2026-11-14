@@ -17,6 +17,7 @@ import RegistrarOcorrencia from './pages/RegistrarOcorrencia/index.tsx';
 import MinhasOcorrencias from './pages/MinhasOcorrencias/index.tsx';
 import Transparencia from './pages/Transparencia/index.tsx';
 import MapaOcorrencias from './pages/MapaOcorrencias/index.tsx';
+import Inicio from './pages/Inicio/index.tsx';
 
 const router = createBrowserRouter([
   {
@@ -69,6 +70,10 @@ const router = createBrowserRouter([
       {
         path: 'mapa-ocorrencias',
         element: <MapaOcorrencias />,
+      },
+      {
+        path: 'inicio',
+        element: <Inicio />,
       }
     ],
   },
