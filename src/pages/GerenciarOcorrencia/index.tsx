@@ -14,19 +14,19 @@ interface Ocorrencia {
     protocolo: string;
     categoria: string;
     descricao: string;
-    cep: string;
-    endereco: string;
-    numero: string;
+    cep?: string;
+    endereco?: string;
+    numero?: string;
     complemento?: string;
-    bairro: string;
-    cidade: string;
-    estado: string;
-    departamento: string;
+    bairro?: string;
+    cidade?: string;
+    estado?: string;
+    departamento?: string;
     status: StatusOcorrencia;
     prioridade: PrioridadeOcorrencia | null;
     dataCriacao: string;
-    anexos: string[];
-    historico: HistoricoOcorrencia[];
+    anexos?: string[];
+    historico?: HistoricoOcorrencia[];
 }
 
 interface Filtros {
@@ -36,6 +36,10 @@ interface Filtros {
     prioridade: string;
     periodo: string;
 }
+
+const CHAVE_OCORRENCIAS = 'polieus_ocorrencias';
+const EVENTO_OCORRENCIAS = 'polieus:ocorrencias-atualizadas';
+const itensPorPagina = 5;
 
 const filtrosIniciais: Filtros = {
     busca: '',
@@ -66,8 +70,6 @@ const statusDisponiveis: StatusOcorrencia[] = [
 
 const prioridades: PrioridadeOcorrencia[] = ['Alta', 'Média', 'Baixa'];
 
-const itensPorPagina = 5;
-
 const campoClasse =
     'w-full min-w-0 rounded-lg border border-[#dec3b2] bg-[#fffaf6] px-3 py-2.5 text-sm text-texto outline-none transition-colors focus:border-primaria focus:ring-2 focus:ring-primaria/15';
 
@@ -75,7 +77,11 @@ const botaoClasse =
     'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#b67b6b] px-4 py-2.5 text-sm font-semibold text-primaria transition-colors hover:bg-[#f7e8de] disabled:cursor-not-allowed disabled:opacity-50';
 
 function Icone({ nome, classe = '' }: { nome: string; classe?: string }) {
-    return <span className={`material-icons ${classe}`} aria-hidden="true">{nome}</span>;
+    return (
+        <span className={`material-icons ${classe}`} aria-hidden="true">
+            {nome}
+        </span>
+    );
 }
 
 function iconeCategoria(categoria: string) {
@@ -96,6 +102,7 @@ function iconeCategoria(categoria: string) {
 
 function formatarData(data: string) {
     const valor = new Date(data);
+
     return Number.isNaN(valor.getTime())
         ? 'Data indisponível'
         : valor.toLocaleDateString('pt-BR');
@@ -103,6 +110,7 @@ function formatarData(data: string) {
 
 function formatarDataHora(data: string) {
     const valor = new Date(data);
+
     return Number.isNaN(valor.getTime())
         ? 'Data indisponível'
         : valor.toLocaleString('pt-BR', {
@@ -119,7 +127,7 @@ function corStatus(status: StatusOcorrencia) {
         Resolvida: 'bg-[#dce9d1] text-[#41642d]',
     };
 
-    return cores[status];
+    return cores[status] ?? 'bg-secundaria text-texto';
 }
 
 function corPrioridade(prioridade: PrioridadeOcorrencia | null) {
@@ -129,31 +137,79 @@ function corPrioridade(prioridade: PrioridadeOcorrencia | null) {
     return 'bg-gray-400';
 }
 
-function estaNoPeriodo(data: string, periodo: string) {
+function estaNoPeriodo(data: string, periodo: string, referencia: number) {
     if (!periodo) return true;
 
-    const criacao = new Date(data);
-    if (Number.isNaN(criacao.getTime())) return false;
+    const criacao = new Date(data).getTime();
+    if (Number.isNaN(criacao)) return false;
 
-    const hoje = new Date();
-    const inicio = new Date(hoje);
+    const inicio = new Date(referencia);
+    inicio.setDate(inicio.getDate() - Number(periodo));
 
-    if (periodo === '7') inicio.setDate(hoje.getDate() - 7);
-    if (periodo === '30') inicio.setDate(hoje.getDate() - 30);
-    if (periodo === '90') inicio.setDate(hoje.getDate() - 90);
-
-    return criacao >= inicio && criacao <= hoje;
+    return criacao >= inicio.getTime() && criacao <= referencia;
 }
 
-async function consultarOcorrencias(): Promise<Ocorrencia[]> {
-    return [];
+function consultarOcorrencias(): Ocorrencia[] {
+    const conteudo = localStorage.getItem(CHAVE_OCORRENCIAS);
+
+    if (!conteudo) return [];
+
+    const dados: unknown = JSON.parse(conteudo);
+
+    if (!Array.isArray(dados)) {
+        throw new Error('Os dados de ocorrências estão em formato inválido.');
+    }
+
+    return dados as Ocorrencia[];
 }
 
-async function atualizarOcorrencia(
-    _id: string,
-    _alteracoes: Partial<Pick<Ocorrencia, 'status' | 'prioridade' | 'departamento'>>
-): Promise<boolean> {
-    return false;
+function atualizarOcorrencia(
+    id: string,
+    alteracoes: Partial<Pick<Ocorrencia, 'status' | 'prioridade' | 'departamento'>>
+): boolean {
+    const registros = consultarOcorrencias();
+    const indice = registros.findIndex((item) => item.id === id);
+
+    if (indice === -1) return false;
+
+    const anterior = registros[indice];
+    const historico = Array.isArray(anterior.historico)
+        ? [...anterior.historico]
+        : [];
+
+    const mudancas: string[] = [];
+
+    if (alteracoes.status !== undefined && alteracoes.status !== anterior.status) {
+        mudancas.push(`Status alterado de "${anterior.status}" para "${alteracoes.status}".`);
+    }
+
+    if (alteracoes.prioridade !== undefined && alteracoes.prioridade !== anterior.prioridade) {
+        mudancas.push(
+            `Prioridade alterada de "${anterior.prioridade ?? 'Não definida'}" para "${alteracoes.prioridade ?? 'Não definida'}".`
+        );
+    }
+
+    if (alteracoes.departamento !== undefined && alteracoes.departamento !== anterior.departamento) {
+        mudancas.push(`Departamento atualizado para "${alteracoes.departamento}".`);
+    }
+
+    if (mudancas.length === 0) return true;
+
+    historico.push({
+        data: new Date().toISOString(),
+        descricao: mudancas.join(' '),
+    });
+
+    registros[indice] = {
+        ...anterior,
+        ...alteracoes,
+        historico,
+    };
+
+    localStorage.setItem(CHAVE_OCORRENCIAS, JSON.stringify(registros));
+    window.dispatchEvent(new Event(EVENTO_OCORRENCIAS));
+
+    return true;
 }
 
 function Indicador({
@@ -195,21 +251,37 @@ export default function GerenciarOcorrencias() {
     const [novoStatus, setNovoStatus] = useState<StatusOcorrencia>('Pendente');
     const [salvando, setSalvando] = useState(false);
     const [mensagem, setMensagem] = useState('');
+    const [tipoMensagem, setTipoMensagem] = useState<'sucesso' | 'erro'>('sucesso');
 
-    const carregarOcorrencias = useCallback(async () => {
+    // Referência temporal estável: evita react(purity) durante a renderização.
+    const [dataReferencia, setDataReferencia] = useState(() => Date.now());
+
+    const carregarOcorrencias = useCallback(() => {
         try {
-            const registros = await consultarOcorrencias();
+            const registros = consultarOcorrencias();
             setOcorrencias(registros);
             setErro('');
         } catch {
-            setErro('Não foi possível consultar as ocorrências.');
+            setErro('Não foi possível consultar as ocorrências armazenadas.');
         } finally {
             setCarregando(false);
         }
     }, []);
 
     useEffect(() => {
-        void carregarOcorrencias();
+        const carregar = () => {
+            carregarOcorrencias();
+        };
+
+        carregar();
+
+        window.addEventListener('storage', carregar);
+        window.addEventListener(EVENTO_OCORRENCIAS, carregar);
+
+        return () => {
+            window.removeEventListener('storage', carregar);
+            window.removeEventListener(EVENTO_OCORRENCIAS, carregar);
+        };
     }, [carregarOcorrencias]);
 
     const indicadores = useMemo(() => ({
@@ -230,14 +302,14 @@ export default function GerenciarOcorrencias() {
                 item.bairro,
                 item.cidade,
                 item.categoria,
-            ].join(' ').toLocaleLowerCase('pt-BR');
+            ].filter(Boolean).join(' ').toLocaleLowerCase('pt-BR');
 
             return (
                 (!busca || texto.includes(busca)) &&
                 (!filtrosAplicados.categoria || item.categoria === filtrosAplicados.categoria) &&
                 (!filtrosAplicados.status || item.status === filtrosAplicados.status) &&
                 (!filtrosAplicados.prioridade || item.prioridade === filtrosAplicados.prioridade) &&
-                estaNoPeriodo(item.dataCriacao, filtrosAplicados.periodo)
+                estaNoPeriodo(item.dataCriacao, filtrosAplicados.periodo, dataReferencia)
             );
         });
 
@@ -259,13 +331,18 @@ export default function GerenciarOcorrencias() {
 
             return new Date(b.dataCriacao).getTime() - new Date(a.dataCriacao).getTime();
         });
-    }, [ocorrencias, filtrosAplicados, ordenacao]);
+    }, [ocorrencias, filtrosAplicados, ordenacao, dataReferencia]);
 
-    const totalPaginas = Math.max(1, Math.ceil(ocorrenciasFiltradas.length / itensPorPagina));
+    const totalPaginas = Math.max(
+        1,
+        Math.ceil(ocorrenciasFiltradas.length / itensPorPagina)
+    );
+
+    const paginaAtual = Math.min(pagina, totalPaginas);
 
     const ocorrenciasPagina = ocorrenciasFiltradas.slice(
-        (pagina - 1) * itensPorPagina,
-        pagina * itensPorPagina
+        (paginaAtual - 1) * itensPorPagina,
+        paginaAtual * itensPorPagina
     );
 
     const selecionada = ocorrencias.find((item) => item.id === selecionadaId) ?? null;
@@ -276,15 +353,18 @@ export default function GerenciarOcorrencias() {
 
     const aplicarFiltros = () => {
         setFiltrosAplicados({ ...filtros });
+        setDataReferencia(Date.now());
         setPagina(1);
         setSelecionadaId(null);
+        setMensagem('');
     };
 
     const limparFiltros = () => {
-        setFiltros(filtrosIniciais);
-        setFiltrosAplicados(filtrosIniciais);
+        setFiltros({ ...filtrosIniciais });
+        setFiltrosAplicados({ ...filtrosIniciais });
         setPagina(1);
         setSelecionadaId(null);
+        setMensagem('');
     };
 
     const selecionarOcorrencia = (ocorrencia: Ocorrencia) => {
@@ -293,33 +373,50 @@ export default function GerenciarOcorrencias() {
         setMensagem('');
     };
 
-    const salvarStatus = async (status: StatusOcorrencia) => {
-        if (!selecionada) return;
+    const salvarStatus = (status: StatusOcorrencia) => {
+        if (!selecionada || salvando) return;
 
         setSalvando(true);
         setMensagem('');
 
         try {
-            const atualizado = await atualizarOcorrencia(selecionada.id, { status });
+            const atualizado = atualizarOcorrencia(selecionada.id, { status });
 
             if (!atualizado) {
+                setTipoMensagem('erro');
+                setMensagem('A ocorrência não foi encontrada. Atualize a lista e tente novamente.');
                 return;
             }
 
-            await carregarOcorrencias();
-            setMensagem('Status atualizado com sucesso.');
+            carregarOcorrencias();
+            setNovoStatus(status);
+            setTipoMensagem('sucesso');
+            setMensagem(
+                status === selecionada.status
+                    ? 'O status da ocorrência já está atualizado.'
+                    : 'Status atualizado com sucesso.'
+            );
         } catch {
-            setMensagem('Não foi possível atualizar a ocorrência.');
+            setTipoMensagem('erro');
+            setMensagem('Não foi possível salvar a alteração da ocorrência.');
         } finally {
             setSalvando(false);
         }
+    };
+
+    const atualizarLista = () => {
+        setCarregando(true);
+        setDataReferencia(Date.now());
+        carregarOcorrencias();
     };
 
     return (
         <main className="min-h-screen w-full bg-fundo font-corpo text-texto">
             <div
                 className="relative border-b border-[#e3c8b7] bg-cover bg-top bg-no-repeat"
-                style={{ backgroundImage: `linear-gradient(90deg, rgba(255,249,242,0.96) 0%, rgba(255,249,242,0.80) 45%, rgba(255,249,242,0.22) 100%), url(${fundoGerenciar})` }}
+                style={{
+                    backgroundImage: `linear-gradient(90deg, rgba(255,249,242,0.96) 0%, rgba(255,249,242,0.80) 45%, rgba(255,249,242,0.22) 100%), url(${fundoGerenciar})`,
+                }}
             >
                 <div className="mx-auto max-w-400 px-5 pt-7 pb-10 sm:px-8 lg:px-10">
                     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#b97867] pb-4">
@@ -340,16 +437,34 @@ export default function GerenciarOcorrencias() {
                         <h1 className="font-titulo text-3xl font-bold text-[#75211b] sm:text-4xl lg:text-5xl">
                             Gerenciar Ocorrências
                         </h1>
+
                         <p className="mt-2 max-w-3xl text-sm text-texto sm:text-base">
                             Consulte, analise, atualize e encaminhe as ocorrências registradas na plataforma.
                         </p>
                     </div>
 
                     <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <Indicador icone="description" titulo="Total de ocorrências" valor={indicadores.total} />
-                        <Indicador icone="check_circle" titulo="Resolvidas" valor={indicadores.resolvidas} cor="bg-[#507443]" />
-                        <Indicador icone="schedule" titulo="Em análise" valor={indicadores.analise} />
-                        <Indicador icone="warning" titulo="Pendentes" valor={indicadores.pendentes} />
+                        <Indicador
+                            icone="description"
+                            titulo="Total de ocorrências"
+                            valor={indicadores.total}
+                        />
+                        <Indicador
+                            icone="check_circle"
+                            titulo="Resolvidas"
+                            valor={indicadores.resolvidas}
+                            cor="bg-[#507443]"
+                        />
+                        <Indicador
+                            icone="schedule"
+                            titulo="Em análise"
+                            valor={indicadores.analise}
+                        />
+                        <Indicador
+                            icone="warning"
+                            titulo="Pendentes"
+                            valor={indicadores.pendentes}
+                        />
                     </div>
                 </div>
             </div>
@@ -397,7 +512,12 @@ export default function GerenciarOcorrencias() {
                             <label htmlFor="categoria-filtro" className="mb-2 block text-xs font-semibold text-[#75211b]">
                                 Categoria
                             </label>
-                            <select id="categoria-filtro" value={filtros.categoria} onChange={(evento) => atualizarFiltro('categoria', evento.target.value)} className={campoClasse}>
+                            <select
+                                id="categoria-filtro"
+                                value={filtros.categoria}
+                                onChange={(evento) => atualizarFiltro('categoria', evento.target.value)}
+                                className={campoClasse}
+                            >
                                 <option value="">Todas</option>
                                 {categorias.map((categoria) => (
                                     <option key={categoria} value={categoria}>{categoria}</option>
@@ -409,7 +529,12 @@ export default function GerenciarOcorrencias() {
                             <label htmlFor="status-filtro" className="mb-2 block text-xs font-semibold text-[#75211b]">
                                 Status
                             </label>
-                            <select id="status-filtro" value={filtros.status} onChange={(evento) => atualizarFiltro('status', evento.target.value)} className={campoClasse}>
+                            <select
+                                id="status-filtro"
+                                value={filtros.status}
+                                onChange={(evento) => atualizarFiltro('status', evento.target.value)}
+                                className={campoClasse}
+                            >
                                 <option value="">Todos</option>
                                 {statusDisponiveis.map((status) => (
                                     <option key={status} value={status}>{status}</option>
@@ -421,7 +546,12 @@ export default function GerenciarOcorrencias() {
                             <label htmlFor="prioridade-filtro" className="mb-2 block text-xs font-semibold text-[#75211b]">
                                 Prioridade
                             </label>
-                            <select id="prioridade-filtro" value={filtros.prioridade} onChange={(evento) => atualizarFiltro('prioridade', evento.target.value)} className={campoClasse}>
+                            <select
+                                id="prioridade-filtro"
+                                value={filtros.prioridade}
+                                onChange={(evento) => atualizarFiltro('prioridade', evento.target.value)}
+                                className={campoClasse}
+                            >
                                 <option value="">Todas</option>
                                 {prioridades.map((prioridade) => (
                                     <option key={prioridade} value={prioridade}>{prioridade}</option>
@@ -433,7 +563,12 @@ export default function GerenciarOcorrencias() {
                             <label htmlFor="periodo-filtro" className="mb-2 block text-xs font-semibold text-[#75211b]">
                                 Período
                             </label>
-                            <select id="periodo-filtro" value={filtros.periodo} onChange={(evento) => atualizarFiltro('periodo', evento.target.value)} className={campoClasse}>
+                            <select
+                                id="periodo-filtro"
+                                value={filtros.periodo}
+                                onChange={(evento) => atualizarFiltro('periodo', evento.target.value)}
+                                className={campoClasse}
+                            >
                                 <option value="">Todo o período</option>
                                 <option value="7">Últimos 7 dias</option>
                                 <option value="30">Últimos 30 dias</option>
@@ -443,7 +578,8 @@ export default function GerenciarOcorrencias() {
 
                         <button
                             type="submit"
-                            className="flex cursor-pointer items-center justify-center gap-2 self-end rounded-lg bg-primaria px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primaria-hover"
+                            className="flex cursor-pointer items-center justify-center gap-2 self-end rounded-lg bg-primaria px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-primaria-hover"
+                            style={{ color: '#ffffff' }}
                         >
                             <Icone nome="filter_alt" classe="text-xl" />
                             Filtrar
@@ -503,28 +639,47 @@ export default function GerenciarOcorrencias() {
                                     {ocorrenciasPagina.map((ocorrencia) => (
                                         <tr
                                             key={ocorrencia.id}
-                                            className={`border-b border-[#ead8ca] ${selecionadaId === ocorrencia.id ? 'bg-[#f1d6cb]' : 'hover:bg-[#fbf1e9]'}`}
+                                            className={`border-b border-[#ead8ca] ${
+                                                selecionadaId === ocorrencia.id
+                                                    ? 'bg-[#f1d6cb]'
+                                                    : 'hover:bg-[#fbf1e9]'
+                                            }`}
                                         >
                                             <td className="px-3 py-3 font-bold">{ocorrencia.protocolo}</td>
+
                                             <td className="px-3 py-3">
                                                 <div className="flex items-center gap-2">
-                                                    <Icone nome={iconeCategoria(ocorrencia.categoria)} classe="text-xl text-primaria" />
+                                                    <Icone
+                                                        nome={iconeCategoria(ocorrencia.categoria)}
+                                                        classe="text-xl text-primaria"
+                                                    />
                                                     {ocorrencia.categoria}
                                                 </div>
                                             </td>
-                                            <td className="px-3 py-3">{ocorrencia.bairro}</td>
+
+                                            <td className="px-3 py-3">
+                                                {ocorrencia.bairro || ocorrencia.cidade || 'Não informada'}
+                                            </td>
+
                                             <td className="px-3 py-3">
                                                 <div className="flex items-center gap-2">
-                                                    <span className={`h-2.5 w-2.5 rounded-full ${corPrioridade(ocorrencia.prioridade)}`} />
+                                                    <span
+                                                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${corPrioridade(ocorrencia.prioridade)}`}
+                                                    />
                                                     {ocorrencia.prioridade ?? 'Não definida'}
                                                 </div>
                                             </td>
+
                                             <td className="px-3 py-3">
                                                 <span className={`inline-block whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${corStatus(ocorrencia.status)}`}>
                                                     {ocorrencia.status}
                                                 </span>
                                             </td>
-                                            <td className="px-3 py-3 whitespace-nowrap">{formatarData(ocorrencia.dataCriacao)}</td>
+
+                                            <td className="whitespace-nowrap px-3 py-3">
+                                                {formatarData(ocorrencia.dataCriacao)}
+                                            </td>
+
                                             <td className="px-3 py-3 text-center">
                                                 <button
                                                     type="button"
@@ -561,24 +716,40 @@ export default function GerenciarOcorrencias() {
 
                         {ocorrenciasFiltradas.length > itensPorPagina && (
                             <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-                                <button type="button" disabled={pagina === 1} onClick={() => setPagina((atual) => atual - 1)} className={botaoClasse} aria-label="Página anterior">
+                                <button
+                                    type="button"
+                                    disabled={paginaAtual === 1}
+                                    onClick={() => setPagina(paginaAtual - 1)}
+                                    className={botaoClasse}
+                                    aria-label="Página anterior"
+                                >
                                     <Icone nome="chevron_left" />
                                 </button>
 
-                                {Array.from({ length: totalPaginas }, (_, indice) => indice + 1).map((numero) => (
+                                {Array.from({ length: totalPaginas }, (_, indice) => indice + 1).map((numeroPagina) => (
                                     <button
-                                        key={numero}
+                                        key={numeroPagina}
                                         type="button"
-                                        onClick={() => setPagina(numero)}
-                                        aria-label={`Página ${numero}`}
-                                        aria-current={pagina === numero ? 'page' : undefined}
-                                        className={`h-10 min-w-10 cursor-pointer rounded-lg border px-2 text-sm font-semibold ${pagina === numero ? 'border-primaria bg-primaria text-white' : 'border-[#dec3b2] text-[#78221b] hover:bg-[#f5e9e0]'}`}
+                                        onClick={() => setPagina(numeroPagina)}
+                                        aria-label={`Página ${numeroPagina}`}
+                                        aria-current={paginaAtual === numeroPagina ? 'page' : undefined}
+                                        className={`h-10 min-w-10 cursor-pointer rounded-lg border px-2 text-sm font-semibold ${
+                                            paginaAtual === numeroPagina
+                                                ? 'border-primaria bg-primaria text-white'
+                                                : 'border-[#dec3b2] text-[#78221b] hover:bg-[#f5e9e0]'
+                                        }`}
                                     >
-                                        {numero}
+                                        {numeroPagina}
                                     </button>
                                 ))}
 
-                                <button type="button" disabled={pagina === totalPaginas} onClick={() => setPagina((atual) => atual + 1)} className={botaoClasse} aria-label="Próxima página">
+                                <button
+                                    type="button"
+                                    disabled={paginaAtual === totalPaginas}
+                                    onClick={() => setPagina(paginaAtual + 1)}
+                                    className={botaoClasse}
+                                    aria-label="Próxima página"
+                                >
                                     <Icone nome="chevron_right" />
                                 </button>
                             </div>
@@ -589,9 +760,11 @@ export default function GerenciarOcorrencias() {
                         {!selecionada ? (
                             <div className="flex min-h-85 flex-col items-center justify-center text-center">
                                 <Icone nome="assignment" classe="text-5xl text-[#b88e7a]" />
+
                                 <h2 className="mt-4 font-titulo text-xl font-bold text-[#78221b]">
                                     Detalhes da Ocorrência
                                 </h2>
+
                                 <p className="mt-3 max-w-sm text-sm leading-relaxed text-texto-suave">
                                     Selecione uma ocorrência na tabela para visualizar suas informações e acompanhar o andamento.
                                 </p>
@@ -604,7 +777,15 @@ export default function GerenciarOcorrencias() {
                                         Ocorrência {selecionada.protocolo}
                                     </h2>
 
-                                    <button type="button" onClick={() => setSelecionadaId(null)} aria-label="Fechar detalhes" className="cursor-pointer text-primaria hover:opacity-70">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSelecionadaId(null);
+                                            setMensagem('');
+                                        }}
+                                        aria-label="Fechar detalhes"
+                                        className="cursor-pointer text-primaria hover:opacity-70"
+                                    >
                                         <Icone nome="close" />
                                     </button>
                                 </div>
@@ -614,10 +795,12 @@ export default function GerenciarOcorrencias() {
                                         <p className="text-xs font-bold text-[#78221b]">Categoria</p>
                                         <p className="mt-1 text-sm">{selecionada.categoria}</p>
                                     </div>
+
                                     <div>
                                         <p className="text-xs font-bold text-[#78221b]">Localização</p>
-                                        <p className="mt-1 text-sm">{selecionada.bairro}</p>
+                                        <p className="mt-1 text-sm">{selecionada.bairro || 'Não informada'}</p>
                                     </div>
+
                                     <div>
                                         <p className="text-xs font-bold text-[#78221b]">Prioridade</p>
                                         <p className="mt-1 text-sm">{selecionada.prioridade ?? 'Não definida'}</p>
@@ -629,8 +812,9 @@ export default function GerenciarOcorrencias() {
                                         <Icone nome="description" classe="text-xl" />
                                         Descrição
                                     </h3>
+
                                     <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-texto">
-                                        {selecionada.descricao}
+                                        {selecionada.descricao || 'Descrição não informada.'}
                                     </p>
                                 </section>
 
@@ -639,31 +823,58 @@ export default function GerenciarOcorrencias() {
                                         <Icone nome="location_on" classe="text-xl" />
                                         Endereço
                                     </h3>
+
                                     <p className="mt-2 text-sm leading-relaxed">
-                                        {selecionada.endereco}, {selecionada.numero}
-                                        {selecionada.complemento ? ` — ${selecionada.complemento}` : ''}
-                                        <br />
-                                        {selecionada.bairro} — {selecionada.cidade}/{selecionada.estado}
-                                        <br />
-                                        CEP: {selecionada.cep}
+                                        {[
+                                            selecionada.endereco,
+                                            selecionada.numero,
+                                        ].filter(Boolean).join(', ') || 'Endereço não informado'}
+
+                                        {selecionada.complemento
+                                            ? ` — ${selecionada.complemento}`
+                                            : ''}
+
+                                        <span className="block">
+                                            {[
+                                                selecionada.bairro,
+                                                selecionada.cidade,
+                                                selecionada.estado,
+                                            ].filter(Boolean).join(' — ')}
+                                        </span>
+
+                                        {selecionada.cep && (
+                                            <span className="block">
+                                                CEP: {selecionada.cep}
+                                            </span>
+                                        )}
                                     </p>
                                 </section>
 
                                 <section className="mt-4">
                                     <h3 className="flex items-center gap-2 text-sm font-bold text-[#78221b]">
                                         <Icone nome="attach_file" classe="text-xl" />
-                                        Anexos ({selecionada.anexos.length})
+                                        Anexos ({selecionada.anexos?.length ?? 0})
                                     </h3>
 
-                                    {selecionada.anexos.length === 0 ? (
+                                    {!selecionada.anexos?.length ? (
                                         <p className="mt-2 text-xs text-texto-suave">
                                             Nenhum anexo disponível.
                                         </p>
                                     ) : (
                                         <div className="mt-3 grid grid-cols-2 gap-3">
                                             {selecionada.anexos.map((anexo, indice) => (
-                                                <a key={`${anexo}-${indice}`} href={anexo} target="_blank" rel="noreferrer" className="overflow-hidden rounded-lg border border-[#ead5c7]">
-                                                    <img src={anexo} alt={`Anexo ${indice + 1} da ocorrência`} className="h-28 w-full object-cover" />
+                                                <a
+                                                    key={`${anexo}-${indice}`}
+                                                    href={anexo}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="overflow-hidden rounded-lg border border-[#ead5c7]"
+                                                >
+                                                    <img
+                                                        src={anexo}
+                                                        alt={`Anexo ${indice + 1} da ocorrência`}
+                                                        className="h-28 w-full object-cover"
+                                                    />
                                                 </a>
                                             ))}
                                         </div>
@@ -676,14 +887,17 @@ export default function GerenciarOcorrencias() {
                                         Histórico de Atualizações
                                     </h3>
 
-                                    {selecionada.historico.length === 0 ? (
+                                    {!selecionada.historico?.length ? (
                                         <p className="mt-2 text-xs text-texto-suave">
                                             Nenhuma atualização registrada.
                                         </p>
                                     ) : (
                                         <ol className="mt-3 space-y-3 border-l-2 border-[#d7b4a3] pl-4">
-                                            {selecionada.historico.map((registro, indice) => (
-                                                <li key={`${registro.data}-${indice}`} className="relative text-xs leading-relaxed">
+                                            {[...selecionada.historico].reverse().map((registro, indice) => (
+                                                <li
+                                                    key={`${registro.data}-${indice}`}
+                                                    className="relative text-xs leading-relaxed"
+                                                >
                                                     <span className="absolute -left-5.75 top-1 h-3 w-3 rounded-full bg-primaria" />
                                                     <strong>{formatarDataHora(registro.data)}</strong>
                                                     <span> — {registro.descricao}</span>
@@ -702,6 +916,7 @@ export default function GerenciarOcorrencias() {
                                         id="novo-status"
                                         value={novoStatus}
                                         onChange={(evento) => setNovoStatus(evento.target.value as StatusOcorrencia)}
+                                        disabled={salvando}
                                         className={campoClasse}
                                     >
                                         {statusDisponiveis.map((status) => (
@@ -713,18 +928,19 @@ export default function GerenciarOcorrencias() {
                                         <button
                                             type="button"
                                             disabled={salvando}
-                                            onClick={() => void salvarStatus(novoStatus)}
+                                            onClick={() => salvarStatus(novoStatus)}
                                             className={botaoClasse}
                                         >
                                             <Icone nome="edit" classe="text-lg" />
-                                            Atualizar Status
+                                            {salvando ? 'Salvando...' : 'Atualizar Status'}
                                         </button>
 
                                         <button
                                             type="button"
-                                            disabled={salvando}
-                                            onClick={() => void salvarStatus('Resolvida')}
-                                            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-primaria px-4 py-2.5 text-sm font-semibold text-white hover:bg-primaria-hover disabled:opacity-50"
+                                            disabled={salvando || selecionada.status === 'Resolvida'}
+                                            onClick={() => salvarStatus('Resolvida')}
+                                            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-primaria px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-primaria-hover disabled:cursor-not-allowed disabled:opacity-50"
+                                            style={{ color: '#ffffff' }}
                                         >
                                             <Icone nome="check" classe="text-lg" />
                                             Resolver Ocorrência
@@ -732,11 +948,18 @@ export default function GerenciarOcorrencias() {
                                     </div>
 
                                     <p className="mt-3 text-xs text-texto-suave">
-                                        Departamento: {selecionada.departamento}
+                                        Departamento: {selecionada.departamento || 'Não definido'}
                                     </p>
 
                                     {mensagem && (
-                                        <p role="status" className="mt-3 text-xs font-semibold text-[#78221b]">
+                                        <p
+                                            role="status"
+                                            className={`mt-3 text-xs font-semibold ${
+                                                tipoMensagem === 'erro'
+                                                    ? 'text-red-700'
+                                                    : 'text-green-700'
+                                            }`}
+                                        >
                                             {mensagem}
                                         </p>
                                     )}
@@ -748,18 +971,18 @@ export default function GerenciarOcorrencias() {
 
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-3 text-xs text-texto-suave">
                     <p>
-                        Exibindo {ocorrenciasFiltradas.length === 0 ? 0 : (pagina - 1) * itensPorPagina + 1}
-                        {' '}a {Math.min(pagina * itensPorPagina, ocorrenciasFiltradas.length)}
+                        Exibindo {ocorrenciasFiltradas.length === 0
+                            ? 0
+                            : (paginaAtual - 1) * itensPorPagina + 1}
+                        {' '}a {Math.min(paginaAtual * itensPorPagina, ocorrenciasFiltradas.length)}
                         {' '}de {ocorrenciasFiltradas.length} ocorrências
                     </p>
 
                     <button
                         type="button"
-                        onClick={() => {
-                            setCarregando(true);
-                            void carregarOcorrencias();
-                        }}
-                        className="flex cursor-pointer items-center gap-2 font-semibold text-primaria hover:underline"
+                        onClick={atualizarLista}
+                        disabled={carregando}
+                        className="flex cursor-pointer items-center gap-2 font-semibold text-primaria hover:underline disabled:opacity-50"
                     >
                         <Icone nome="refresh" classe="text-lg" />
                         Atualizar lista

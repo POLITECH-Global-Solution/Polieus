@@ -6,44 +6,24 @@ import App from './App.tsx';
 import './globals.css';
 
 import Error from './pages/Error/index.tsx';
-import Integrantes from './pages/Integrantes/index.tsx';
 import EscolhaAcesso from './pages/Acesso/index.tsx';
 import LoginUsuario from './pages/LoginUsuario/index.tsx';
 import LoginAdministrador from './pages/LoginAdministrador/index.tsx';
-import Sobre from './pages/Sobre/index.tsx';
-import FAQ from './pages/FAQ/index.tsx';
-import Contato from './pages/Contato/index.tsx';
+import Inicio from './pages/Inicio/index.tsx';
 import RegistrarOcorrencia from './pages/RegistrarOcorrencia/index.tsx';
 import MinhasOcorrencias from './pages/MinhasOcorrencias/index.tsx';
-import Transparencia from './pages/Transparencia/index.tsx';
 import MapaOcorrencias from './pages/MapaOcorrencias/index.tsx';
-import Inicio from './pages/Inicio/index.tsx';
+import Transparencia from './pages/Transparencia/index.tsx';
 import Perfil from './pages/Perfil/index.tsx';
+import Sobre from './pages/Sobre/index.tsx';
+import Integrantes from './pages/Integrantes/index.tsx';
+import FAQ from './pages/FAQ/index.tsx';
+import Contato from './pages/Contato/index.tsx';
+import AdminDashboard from './pages/AdminDashboard/index.tsx';
 import GerenciarOcorrencias from './pages/GerenciarOcorrencia/index.tsx';
 import AdminMapaOcorrencias from './pages/AdminMapaOcorrencias/index.tsx';
 import AdminRelatorios from './pages/AdminRelatorios/index.tsx';
-import AdminDashboard from './pages/AdminDashboard/index.tsx';
 import AdminPerfil from './pages/AdminPerfil/index.tsx';
-
-function PaginaAdministrativa({ titulo }: { titulo: string }) {
-    return (
-        <main className="min-h-screen bg-fundo px-6 py-10 font-corpo lg:px-10">
-            <div className="mx-auto max-w-7xl">
-                <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-primaria">
-                    Área Administrativa
-                </p>
-
-                <h1 className="font-titulo text-3xl font-bold text-primaria">
-                    {titulo}
-                </h1>
-
-                <p className="mt-4 text-texto-suave">
-                    Esta página administrativa será desenvolvida em breve.
-                </p>
-            </div>
-        </main>
-    );
-}
 
 const router = createBrowserRouter([
     {
@@ -58,10 +38,10 @@ const router = createBrowserRouter([
         path: '/login-admin',
         element: <LoginAdministrador />,
     },
+
     {
         element: <App />,
         children: [
-            // PÁGINAS DO CIDADÃO
             {
                 path: 'inicio',
                 element: <Inicio />,
@@ -87,7 +67,6 @@ const router = createBrowserRouter([
                 element: <Perfil />,
             },
 
-            // PÁGINAS INSTITUCIONAIS
             {
                 path: 'sobre',
                 element: <Sobre />,
@@ -105,7 +84,6 @@ const router = createBrowserRouter([
                 element: <Contato />,
             },
 
-            // PÁGINAS DO ADMINISTRADOR
             {
                 path: 'admin',
                 children: [
@@ -134,7 +112,6 @@ const router = createBrowserRouter([
                         element: <AdminPerfil />,
                     },
 
-                    // PÁGINAS COMPARTILHADAS
                     {
                         path: 'sobre',
                         element: <Sobre />,
@@ -154,7 +131,6 @@ const router = createBrowserRouter([
                 ],
             },
 
-            // PÁGINA DE ERRO
             {
                 path: '*',
                 element: <Error />,

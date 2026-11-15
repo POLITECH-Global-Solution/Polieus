@@ -165,6 +165,9 @@ export default function AdminDashboard() {
     const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
     const [periodo, setPeriodo] = useState('30');
 
+    // Data estável para evitar o aviso react(purity).
+    const [dataReferencia] = useState(() => Date.now());
+
     useEffect(() => {
         const carregar = () => {
             setOcorrencias(lerLista<Ocorrencia>(CHAVE_OCORRENCIAS));
@@ -207,17 +210,18 @@ export default function AdminDashboard() {
             .slice(0, 4);
     }, [ocorrencias]);
 
+    // CORREÇÃO 1: usa a data de referência em vez de new Date() sem argumentos.
     const ocorrenciasPeriodo = useMemo(() => {
         if (periodo === 'todos') return ocorrencias;
 
-        const limite = new Date();
+        const limite = new Date(dataReferencia);
         limite.setDate(limite.getDate() - Number(periodo));
 
         return ocorrencias.filter((ocorrencia) => {
             const data = new Date(ocorrencia.dataCriacao);
             return !Number.isNaN(data.getTime()) && data >= limite;
         });
-    }, [ocorrencias, periodo]);
+    }, [ocorrencias, periodo, dataReferencia]);
 
     const categorias = useMemo(() => {
         const contagem = new Map<string, number>();
@@ -251,8 +255,9 @@ export default function AdminDashboard() {
         );
     }, [ocorrencias]);
 
+    // CORREÇÃO 2: o gráfico utiliza uma referência temporal estável.
     const ultimosSeteDias = useMemo(() => {
-        const hoje = new Date();
+        const hoje = new Date(dataReferencia);
         hoje.setHours(0, 0, 0, 0);
 
         return Array.from({ length: 7 }, (_, indice) => {
@@ -275,7 +280,7 @@ export default function AdminDashboard() {
                 quantidade,
             };
         });
-    }, [ocorrencias]);
+    }, [ocorrencias, dataReferencia]);
 
     const maiorDia = Math.max(
         1,
@@ -326,6 +331,7 @@ export default function AdminDashboard() {
                     </p>
                 </header>
 
+                {/* INDICADORES PRINCIPAIS */}
                 <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <CartaoIndicador
                         icone="campaign"
@@ -353,6 +359,7 @@ export default function AdminDashboard() {
                     />
                 </section>
 
+                {/* MAPA E CATEGORIAS */}
                 <div className="mt-5 grid gap-4 xl:grid-cols-2">
 
                     <section className="min-w-0 overflow-hidden rounded-2xl border border-[#dfbba9] bg-[#fff9f4]/80 p-4 shadow-sm">
@@ -493,6 +500,7 @@ export default function AdminDashboard() {
                     </section>
                 </div>
 
+                {/* OCORRÊNCIAS RECENTES E AÇÕES RÁPIDAS */}
                 <div className="mt-5 grid gap-4 xl:grid-cols-2">
 
                     <section className="min-w-0 rounded-2xl border border-[#dfbba9] bg-[#fff9f4]/80 p-4 shadow-sm">
@@ -589,12 +597,10 @@ export default function AdminDashboard() {
                                 className="flex items-start gap-3 rounded-xl border border-[#dfbba9] p-4 transition-colors hover:bg-[#f5e5d9]"
                             >
                                 <Icone nome="description" classe="text-4xl text-primaria" />
-
                                 <div>
                                     <h3 className="font-titulo text-base font-bold text-primaria">
                                         Gerenciar Ocorrências
                                     </h3>
-
                                     <p className="mt-1 text-xs leading-relaxed text-texto">
                                         Consultar, atualizar status e encaminhar solicitações.
                                     </p>
@@ -606,12 +612,10 @@ export default function AdminDashboard() {
                                 className="flex items-start gap-3 rounded-xl border border-[#dfbba9] p-4 transition-colors hover:bg-[#f5e5d9]"
                             >
                                 <Icone nome="bar_chart" classe="text-4xl text-primaria" />
-
                                 <div>
                                     <h3 className="font-titulo text-base font-bold text-primaria">
                                         Gerar Relatório
                                     </h3>
-
                                     <p className="mt-1 text-xs leading-relaxed text-texto">
                                         Emitir relatórios e analisar indicadores da cidade.
                                     </p>
@@ -623,12 +627,10 @@ export default function AdminDashboard() {
                                 className="flex items-start gap-3 rounded-xl border border-[#dfbba9] p-4 transition-colors hover:bg-[#f5e5d9] sm:col-span-2"
                             >
                                 <Icone nome="location_on" classe="text-4xl text-primaria" />
-
                                 <div>
                                     <h3 className="font-titulo text-base font-bold text-primaria">
                                         Visualizar no Mapa
                                     </h3>
-
                                     <p className="mt-1 text-xs leading-relaxed text-texto">
                                         Acompanhar a distribuição das ocorrências no estado de São Paulo.
                                     </p>
@@ -638,6 +640,7 @@ export default function AdminDashboard() {
                     </section>
                 </div>
 
+                {/* ÚLTIMOS SETE DIAS E STATUS */}
                 <div className="mt-5 grid gap-4 xl:grid-cols-2">
 
                     <section className="rounded-2xl border border-[#dfbba9] bg-[#fff9f4]/80 p-5 shadow-sm">
@@ -702,7 +705,6 @@ export default function AdminDashboard() {
                                     <div key={status.nome}>
                                         <div className="mb-2 flex items-center justify-between text-sm">
                                             <span>{status.nome}</span>
-
                                             <strong>
                                                 {numero(quantidade)} ({percentual.toFixed(1)}%)
                                             </strong>
@@ -724,6 +726,7 @@ export default function AdminDashboard() {
                     </section>
                 </div>
 
+                {/* TAXA DE RESOLUÇÃO, ATENÇÃO E ORÇAMENTOS */}
                 <div className="mt-5 grid gap-4 xl:grid-cols-3">
 
                     <section className="rounded-2xl border border-[#dfbba9] bg-[#fff9f4]/80 p-5 shadow-sm">
@@ -743,7 +746,6 @@ export default function AdminDashboard() {
                                     <strong className="font-titulo text-3xl text-primaria">
                                         {taxaResolucao.toFixed(1)}%
                                     </strong>
-
                                     <span className="text-xs text-texto-suave">
                                         Resolvidas
                                     </span>
@@ -767,7 +769,6 @@ export default function AdminDashboard() {
                                 <span className="text-sm">
                                     Alta prioridade não resolvida
                                 </span>
-
                                 <strong className="text-xl text-primaria">
                                     {indicadores.altaPrioridade}
                                 </strong>
@@ -775,7 +776,6 @@ export default function AdminDashboard() {
 
                             <div className="flex items-center justify-between rounded-lg bg-[#f5e5d9] p-3">
                                 <span className="text-sm">Pendentes</span>
-
                                 <strong className="text-xl text-primaria">
                                     {indicadores.pendentes}
                                 </strong>
@@ -783,7 +783,6 @@ export default function AdminDashboard() {
 
                             <div className="flex items-center justify-between rounded-lg bg-[#f5e5d9] p-3">
                                 <span className="text-sm">Em análise</span>
-
                                 <strong className="text-xl text-primaria">
                                     {indicadores.analise}
                                 </strong>
@@ -791,7 +790,6 @@ export default function AdminDashboard() {
 
                             <div className="flex items-center justify-between rounded-lg bg-[#f5e5d9] p-3">
                                 <span className="text-sm">Em andamento</span>
-
                                 <strong className="text-xl text-primaria">
                                     {indicadores.andamento}
                                 </strong>
@@ -809,7 +807,6 @@ export default function AdminDashboard() {
                             <p className="text-sm text-texto-suave">
                                 Orçamentos confirmados
                             </p>
-
                             <strong className="mt-2 block font-titulo text-3xl text-primaria">
                                 {numero(orcamentosConfirmados.length)}
                             </strong>
@@ -819,7 +816,6 @@ export default function AdminDashboard() {
                             <p className="text-sm text-texto-suave">
                                 Valor total estimado
                             </p>
-
                             <strong className="mt-2 block font-titulo text-2xl text-primaria">
                                 {moeda(valorTotalOrcamentos)}
                             </strong>
@@ -835,6 +831,7 @@ export default function AdminDashboard() {
                     </section>
                 </div>
 
+                {/* PANORAMA DA GESTÃO */}
                 <section className="mt-5 rounded-2xl border border-[#dfbba9] bg-[#fff9f4]/80 p-5 shadow-sm">
                     <h2 className="flex items-center gap-2 font-titulo text-xl font-bold text-[#79221b]">
                         <Icone nome="tips_and_updates" classe="text-3xl" />

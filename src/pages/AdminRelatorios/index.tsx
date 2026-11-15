@@ -37,7 +37,11 @@ interface Orcamento {
 const CHAVE_OCORRENCIAS = 'polieus_ocorrencias';
 const CHAVE_ORCAMENTOS = 'polieus_orcamentos';
 
+const EVENTO_OCORRENCIAS = 'polieus:ocorrencias-atualizadas';
+const EVENTO_ORCAMENTOS = 'polieus:orcamentos-atualizados';
+
 const prioridades: Prioridade[] = ['Alta', 'Média', 'Baixa'];
+const tiposCusto: TipoCusto[] = ['Material', 'Mão de obra', 'Serviço', 'Outros'];
 
 const coresPrioridade: Record<Prioridade, string> = {
     Alta: '#b3261e',
@@ -46,13 +50,13 @@ const coresPrioridade: Record<Prioridade, string> = {
 };
 
 const campoClasse =
-    'w-full rounded-lg border border-[#dcc4b5] bg-white/70 px-3 py-2.5 text-sm text-texto outline-none focus:border-primaria focus:ring-2 focus:ring-primaria/10';
+    'w-full min-w-0 rounded-lg border border-[#dcc4b5] bg-white/70 px-3 py-2.5 text-sm text-texto outline-none focus:border-primaria focus:ring-2 focus:ring-primaria/10 disabled:cursor-not-allowed disabled:opacity-60';
 
 const botaoPrimario =
-    'inline-flex items-center justify-center gap-2 rounded-lg bg-primaria px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primaria-hover disabled:cursor-not-allowed disabled:opacity-50';
+    'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-primaria px-5 py-2.5 text-sm font-semibold transition-colors hover:bg-primaria-hover disabled:cursor-not-allowed disabled:opacity-50';
 
 const botaoSecundario =
-    'inline-flex items-center justify-center gap-2 rounded-lg border border-primaria px-4 py-2.5 text-sm font-semibold text-primaria transition-colors hover:bg-primaria/5';
+    'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-primaria px-4 py-2.5 text-sm font-semibold text-primaria transition-colors hover:bg-primaria/5 disabled:cursor-not-allowed disabled:opacity-50';
 
 function Icone({ nome, classe = '' }: { nome: string; classe?: string }) {
     return (
@@ -73,10 +77,32 @@ function numero(valor: number) {
     return valor.toLocaleString('pt-BR');
 }
 
+function porcentagem(parte: number, total: number) {
+    if (total === 0) return '0,0';
+
+    return (parte / total * 100).toLocaleString('pt-BR', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+    });
+}
+
+function formatarData(data: string) {
+    const valor = new Date(data);
+
+    if (Number.isNaN(valor.getTime())) return 'Data indisponível';
+
+    return valor.toLocaleString('pt-BR', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+    });
+}
+
 function lerLista<T>(chave: string): T[] {
     try {
         const conteudo = localStorage.getItem(chave);
-        const dados: unknown = conteudo ? JSON.parse(conteudo) : [];
+        if (!conteudo) return [];
+
+        const dados: unknown = JSON.parse(conteudo);
         return Array.isArray(dados) ? dados as T[] : [];
     } catch {
         return [];
@@ -105,7 +131,7 @@ function CartaoIndicador({
     cor?: string;
 }) {
     return (
-        <div className="flex items-center gap-4 rounded-xl border border-[#e0c5b5] bg-white/55 p-4">
+        <article className="flex items-center gap-4 rounded-xl border border-[#e0c5b5] bg-white/55 p-4 shadow-sm">
             <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${cor}`}>
                 <Icone nome={icone} classe="text-2xl text-white" />
             </div>
@@ -116,20 +142,27 @@ function CartaoIndicador({
                 </strong>
                 <p className="text-xs text-texto-suave">{legenda}</p>
             </div>
-        </div>
+        </article>
     );
 }
 
 export default function RelatoriosAdmin() {
     const [aba, setAba] = useState<Aba>('geral');
     const [periodo, setPeriodo] = useState('30');
+
     const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
     const [orcamentos, setOrcamentos] = useState<Orcamento[]>([]);
+
     const [ocorrenciaId, setOcorrenciaId] = useState('');
     const [itens, setItens] = useState<ItemOrcamento[]>([]);
     const [observacoes, setObservacoes] = useState('');
+
     const [mensagem, setMensagem] = useState('');
     const [erro, setErro] = useState('');
+    const [salvando, setSalvando] = useState(false);
+
+    // A data é definida na inicialização do estado, não durante o useMemo.
+    const [dataReferencia, setDataReferencia] = useState(() => Date.now());
 
     useEffect(() => {
         const carregar = () => {
@@ -140,32 +173,52 @@ export default function RelatoriosAdmin() {
         carregar();
 
         window.addEventListener('storage', carregar);
-        window.addEventListener('polieus:ocorrencias-atualizadas', carregar);
+        window.addEventListener(EVENTO_OCORRENCIAS, carregar);
+        window.addEventListener(EVENTO_ORCAMENTOS, carregar);
 
         return () => {
             window.removeEventListener('storage', carregar);
-            window.removeEventListener('polieus:ocorrencias-atualizadas', carregar);
+            window.removeEventListener(EVENTO_OCORRENCIAS, carregar);
+            window.removeEventListener(EVENTO_ORCAMENTOS, carregar);
         };
     }, []);
 
     const ocorrenciasPeriodo = useMemo(() => {
         if (periodo === 'todos') return ocorrencias;
 
-        const limite = new Date();
+        const limite = new Date(dataReferencia);
         limite.setDate(limite.getDate() - Number(periodo));
 
         return ocorrencias.filter((ocorrencia) => {
-            const data = new Date(ocorrencia.dataCriacao);
-            return !Number.isNaN(data.getTime()) && data >= limite;
+            const data = new Date(ocorrencia.dataCriacao).getTime();
+
+            return (
+                !Number.isNaN(data) &&
+                data >= limite.getTime() &&
+                data <= dataReferencia
+            );
         });
-    }, [ocorrencias, periodo]);
+    }, [ocorrencias, periodo, dataReferencia]);
 
     const indicadores = useMemo(() => ({
         total: ocorrenciasPeriodo.length,
-        resolvidas: ocorrenciasPeriodo.filter((o) => o.status === 'Resolvida').length,
-        analise: ocorrenciasPeriodo.filter((o) => o.status === 'Em análise').length,
-        pendentes: ocorrenciasPeriodo.filter((o) => o.status === 'Pendente').length,
+        resolvidas: ocorrenciasPeriodo.filter(
+            (ocorrencia) => ocorrencia.status === 'Resolvida'
+        ).length,
+        analise: ocorrenciasPeriodo.filter(
+            (ocorrencia) => ocorrencia.status === 'Em análise'
+        ).length,
+        andamento: ocorrenciasPeriodo.filter(
+            (ocorrencia) => ocorrencia.status === 'Em andamento'
+        ).length,
+        pendentes: ocorrenciasPeriodo.filter(
+            (ocorrencia) => ocorrencia.status === 'Pendente'
+        ).length,
     }), [ocorrenciasPeriodo]);
+
+    const taxaResolucao = indicadores.total > 0
+        ? indicadores.resolvidas / indicadores.total * 100
+        : 0;
 
     const dadosCategorias = useMemo(() => {
         const contagem = new Map<string, number>();
@@ -191,7 +244,7 @@ export default function RelatoriosAdmin() {
     }, [ocorrenciasPeriodo]);
 
     const semPrioridade = ocorrenciasPeriodo.filter(
-        (ocorrencia) => !ocorrencia.prioridade
+        (ocorrencia) => !prioridades.includes(ocorrencia.prioridade as Prioridade)
     ).length;
 
     const maiorCategoria = Math.max(
@@ -215,9 +268,7 @@ export default function RelatoriosAdmin() {
     }, [itens]);
 
     const totaisPorTipo = useMemo(() => {
-        const tipos: TipoCusto[] = ['Material', 'Mão de obra', 'Serviço', 'Outros'];
-
-        return tipos.map((tipo) => ({
+        return tiposCusto.map((tipo) => ({
             tipo,
             valor: itens
                 .filter((item) => item.tipo === tipo)
@@ -228,13 +279,50 @@ export default function RelatoriosAdmin() {
         }));
     }, [itens]);
 
-    function atualizarItem(id: string, campo: keyof ItemOrcamento, valor: string | number) {
+    const totalOrcamentosConfirmados = orcamentos.reduce(
+        (total, orcamento) => total + orcamento.total,
+        0
+    );
+
+    const quantidadeOrcamentosConfirmados = orcamentos.length;
+
+    const dadosGrafico = [
+        ...dadosPrioridades,
+        {
+            nome: 'Não definida',
+            quantidade: semPrioridade,
+            cor: '#a49b91',
+        },
+    ];
+
+    let acumulado = 0;
+
+    const partesGrafico = dadosGrafico.map((item) => {
+        const inicio = acumulado;
+        acumulado += indicadores.total > 0
+            ? item.quantidade / indicadores.total * 100
+            : 0;
+
+        return `${item.cor} ${inicio}% ${acumulado}%`;
+    });
+
+    const fundoGrafico = indicadores.total > 0
+        ? `conic-gradient(${partesGrafico.join(', ')})`
+        : '#eadbd0';
+
+    function atualizarItem(
+        id: string,
+        campo: keyof ItemOrcamento,
+        valor: string | number
+    ) {
         setItens((anteriores) =>
             anteriores.map((item) =>
                 item.id === id ? { ...item, [campo]: valor } : item
             )
         );
+
         setMensagem('');
+        setErro('');
     }
 
     function selecionarOcorrencia(id: string) {
@@ -242,18 +330,42 @@ export default function RelatoriosAdmin() {
         setMensagem('');
         setErro('');
 
-        const existente = orcamentos.find((orcamento) => orcamento.ocorrenciaId === id);
+        const existente = orcamentos.find(
+            (orcamento) => orcamento.ocorrenciaId === id
+        );
 
         if (existente) {
             setItens(existente.itens.map((item) => ({ ...item })));
             setObservacoes(existente.observacoes);
         } else {
-            setItens([novaLinha()]);
+            setItens(id ? [novaLinha()] : []);
             setObservacoes('');
         }
     }
 
+    function adicionarItem() {
+        if (!ocorrenciaSelecionada || orcamentoExistente) return;
+
+        setItens((anteriores) => [...anteriores, novaLinha()]);
+        setErro('');
+        setMensagem('');
+    }
+
+    function removerItem(id: string) {
+        if (orcamentoExistente) return;
+
+        setItens((anteriores) => {
+            if (anteriores.length <= 1) return anteriores;
+            return anteriores.filter((item) => item.id !== id);
+        });
+
+        setErro('');
+        setMensagem('');
+    }
+
     function confirmarOrcamento() {
+        if (salvando) return;
+
         setErro('');
         setMensagem('');
 
@@ -276,37 +388,75 @@ export default function RelatoriosAdmin() {
                 item.valorUnitario >= 0
         );
 
-        if (!itensValidos || totalOrcamento <= 0) {
-            setErro('Preencha os itens com descrição, quantidade válida e valores corretos.');
+        if (!itensValidos) {
+            setErro('Preencha a descrição, a quantidade e o valor unitário de todos os itens.');
             return;
         }
 
-        const novoOrcamento: Orcamento = {
-            id: crypto.randomUUID(),
-            ocorrenciaId: ocorrenciaSelecionada.id,
-            protocolo: ocorrenciaSelecionada.protocolo,
-            itens: itens.map((item) => ({
-                ...item,
-                descricao: item.descricao.trim(),
-            })),
-            observacoes: observacoes.trim(),
-            total: Math.round(totalOrcamento * 100) / 100,
-            dataConfirmacao: new Date().toISOString(),
-            situacao: 'Confirmado',
-        };
+        if (!Number.isFinite(totalOrcamento) || totalOrcamento <= 0) {
+            setErro('O orçamento deve possuir um valor total maior que zero.');
+            return;
+        }
 
-        const atualizados = [...orcamentos, novoOrcamento];
+        setSalvando(true);
 
         try {
-            localStorage.setItem(CHAVE_ORCAMENTOS, JSON.stringify(atualizados));
+            const registrosAtuais = lerLista<Ocorrencia>(CHAVE_OCORRENCIAS);
+            const ocorrenciaAtual = registrosAtuais.find(
+                (ocorrencia) => ocorrencia.id === ocorrenciaSelecionada.id
+            );
+
+            if (!ocorrenciaAtual) {
+                setErro('Esta ocorrência não está mais disponível. Atualize os registros.');
+                return;
+            }
+
+            const orcamentosAtuais = lerLista<Orcamento>(CHAVE_ORCAMENTOS);
+
+            if (orcamentosAtuais.some(
+                (orcamento) => orcamento.ocorrenciaId === ocorrenciaAtual.id
+            )) {
+                setOrcamentos(orcamentosAtuais);
+                setErro('Esta ocorrência já possui um orçamento confirmado.');
+                return;
+            }
+
+            const novoOrcamento: Orcamento = {
+                id: crypto.randomUUID(),
+                ocorrenciaId: ocorrenciaAtual.id,
+                protocolo: ocorrenciaAtual.protocolo,
+                itens: itens.map((item) => ({
+                    ...item,
+                    descricao: item.descricao.trim(),
+                    quantidade: item.quantidade,
+                    valorUnitario: Math.round(item.valorUnitario * 100) / 100,
+                })),
+                observacoes: observacoes.trim(),
+                total: Math.round(totalOrcamento * 100) / 100,
+                dataConfirmacao: new Date().toISOString(),
+                situacao: 'Confirmado',
+            };
+
+            const atualizados = [...orcamentosAtuais, novoOrcamento];
+
+            localStorage.setItem(
+                CHAVE_ORCAMENTOS,
+                JSON.stringify(atualizados)
+            );
+
             setOrcamentos(atualizados);
-            window.dispatchEvent(new Event('polieus:orcamentos-atualizados'));
+            setItens(novoOrcamento.itens);
+            setObservacoes(novoOrcamento.observacoes);
+
+            window.dispatchEvent(new Event(EVENTO_ORCAMENTOS));
 
             setMensagem(
-                'Orçamento confirmado e salvo neste navegador. O envio ao cidadão será habilitado com a integração compartilhada.'
+                'Orçamento confirmado e salvo com sucesso neste navegador.'
             );
         } catch {
             setErro('Não foi possível salvar o orçamento neste navegador.');
+        } finally {
+            setSalvando(false);
         }
     }
 
@@ -327,8 +477,13 @@ export default function RelatoriosAdmin() {
             ocorrencia.dataCriacao,
         ]);
 
-        const escapar = (valor: string) =>
-            `"${valor.replace(/"/g, '""')}"`;
+        const escapar = (valor: string) => {
+            const seguro = /^[\s]*[=+\-@\t\r]/.test(valor)
+                ? `'${valor}`
+                : valor;
+
+            return `"${seguro.replace(/"/g, '""')}"`;
+        };
 
         const conteudo = [cabecalho, ...linhas]
             .map((linha) => linha.map(escapar).join(';'))
@@ -343,15 +498,23 @@ export default function RelatoriosAdmin() {
 
         link.href = url;
         link.download = 'polieus_relatorio_ocorrencias.csv';
+
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
 
         URL.revokeObjectURL(url);
+    }
+
+    function atualizarRelatorios() {
+        setOcorrencias(lerLista<Ocorrencia>(CHAVE_OCORRENCIAS));
+        setOrcamentos(lerLista<Orcamento>(CHAVE_ORCAMENTOS));
+        setDataReferencia(Date.now());
     }
 
     return (
         <main className="min-h-screen w-full bg-fundo font-corpo text-texto">
             <div className="mx-auto max-w-7xl px-5 py-7 sm:px-8 lg:px-10">
-
                 <header className="border-b border-[#d7b4a3] pb-5">
                     <div className="flex items-center gap-2 text-primaria">
                         <Icone nome="account_balance" classe="text-2xl" />
@@ -382,30 +545,47 @@ export default function RelatoriosAdmin() {
                                 key={valor}
                                 type="button"
                                 onClick={() => setAba(valor)}
-                                className={`rounded-lg px-4 py-2.5 text-xs font-semibold transition-colors sm:text-sm ${
+                                aria-pressed={aba === valor}
+                                className={`cursor-pointer rounded-lg px-4 py-2.5 text-xs font-semibold transition-colors sm:text-sm ${
                                     aba === valor
-                                        ? 'bg-primaria text-white'
+                                        ? 'bg-primaria'
                                         : 'border border-[#dec4b4] bg-white/50 text-primaria hover:bg-primaria/5'
                                 }`}
+                                style={aba === valor ? { color: '#ffffff' } : undefined}
                             >
                                 {titulo}
                             </button>
                         ))}
                     </div>
 
-                    {aba !== 'orcamento' && (
-                        <select
-                            aria-label="Filtrar por período"
-                            value={periodo}
-                            onChange={(evento) => setPeriodo(evento.target.value)}
-                            className={`${campoClasse} w-full lg:w-44`}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {aba !== 'orcamento' && (
+                            <select
+                                aria-label="Filtrar por período"
+                                value={periodo}
+                                onChange={(evento) => {
+                                    setPeriodo(evento.target.value);
+                                    setDataReferencia(Date.now());
+                                }}
+                                className={`${campoClasse} w-full sm:w-44`}
+                            >
+                                <option value="7">Últimos 7 dias</option>
+                                <option value="30">Últimos 30 dias</option>
+                                <option value="90">Últimos 90 dias</option>
+                                <option value="todos">Todo o período</option>
+                            </select>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={atualizarRelatorios}
+                            className={botaoSecundario}
+                            title="Atualizar os dados"
                         >
-                            <option value="7">Últimos 7 dias</option>
-                            <option value="30">Últimos 30 dias</option>
-                            <option value="90">Últimos 90 dias</option>
-                            <option value="todos">Todo o período</option>
-                        </select>
-                    )}
+                            <Icone nome="refresh" classe="text-lg" />
+                            Atualizar
+                        </button>
+                    </div>
                 </div>
 
                 {aba !== 'orcamento' ? (
@@ -417,7 +597,7 @@ export default function RelatoriosAdmin() {
                                 legenda="Total de ocorrências"
                             />
                             <CartaoIndicador
-                                icone="check"
+                                icone="check_circle"
                                 valor={indicadores.resolvidas}
                                 legenda="Resolvidas"
                                 cor="bg-green-700"
@@ -433,6 +613,55 @@ export default function RelatoriosAdmin() {
                                 legenda="Pendentes"
                             />
                         </section>
+
+                        {aba === 'geral' && (
+                            <section className="mt-5 grid gap-4 md:grid-cols-3">
+                                <div className="rounded-xl border border-[#dfc4b4] bg-white/55 p-5">
+                                    <p className="text-sm font-semibold text-primaria">
+                                        Taxa de resolução
+                                    </p>
+
+                                    <strong className="mt-3 block font-titulo text-3xl text-[#76221c]">
+                                        {porcentagem(indicadores.resolvidas, indicadores.total)}%
+                                    </strong>
+
+                                    <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#eadbd0]">
+                                        <div
+                                            className="h-full rounded-full bg-green-700"
+                                            style={{ width: `${taxaResolucao}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="rounded-xl border border-[#dfc4b4] bg-white/55 p-5">
+                                    <p className="text-sm font-semibold text-primaria">
+                                        Em andamento
+                                    </p>
+
+                                    <strong className="mt-3 block font-titulo text-3xl text-[#76221c]">
+                                        {numero(indicadores.andamento)}
+                                    </strong>
+
+                                    <p className="mt-3 text-xs text-texto-suave">
+                                        Ocorrências com atendimento em andamento.
+                                    </p>
+                                </div>
+
+                                <div className="rounded-xl border border-[#dfc4b4] bg-white/55 p-5">
+                                    <p className="text-sm font-semibold text-primaria">
+                                        Categorias registradas
+                                    </p>
+
+                                    <strong className="mt-3 block font-titulo text-3xl text-[#76221c]">
+                                        {numero(dadosCategorias.length)}
+                                    </strong>
+
+                                    <p className="mt-3 text-xs text-texto-suave">
+                                        Categorias com ocorrências no período selecionado.
+                                    </p>
+                                </div>
+                            </section>
+                        )}
 
                         {(aba === 'geral' || aba === 'categoria') && (
                             <section className="mt-5 rounded-xl border border-[#dfc4b4] bg-white/55 p-5">
@@ -453,6 +682,7 @@ export default function RelatoriosAdmin() {
                                                     <span>{categoria.nome}</span>
                                                     <strong>{numero(categoria.quantidade)}</strong>
                                                 </div>
+
                                                 <div className="h-5 overflow-hidden rounded-md bg-[#eadbd0]">
                                                     <div
                                                         className="h-full rounded-md bg-primaria"
@@ -461,6 +691,10 @@ export default function RelatoriosAdmin() {
                                                         }}
                                                     />
                                                 </div>
+
+                                                <p className="mt-1 text-right text-xs text-texto-suave">
+                                                    {porcentagem(categoria.quantidade, indicadores.total)}% do total
+                                                </p>
                                             </div>
                                         ))}
                                     </div>
@@ -478,16 +712,9 @@ export default function RelatoriosAdmin() {
                                 <div className="mt-6 grid gap-6 md:grid-cols-[200px_1fr] md:items-center">
                                     <div
                                         className="mx-auto flex h-44 w-44 items-center justify-center rounded-full"
-                                        style={{
-                                            background: indicadores.total > 0
-                                                ? `conic-gradient(
-                                                    #b3261e 0% ${dadosPrioridades[0].quantidade / indicadores.total * 100}%,
-                                                    #e99a3e ${dadosPrioridades[0].quantidade / indicadores.total * 100}% ${(dadosPrioridades[0].quantidade + dadosPrioridades[1].quantidade) / indicadores.total * 100}%,
-                                                    #d7b4a3 ${(dadosPrioridades[0].quantidade + dadosPrioridades[1].quantidade) / indicadores.total * 100}% ${(indicadores.total - semPrioridade) / indicadores.total * 100}%,
-                                                    #a49b91 ${(indicadores.total - semPrioridade) / indicadores.total * 100}% 100%
-                                                )`
-                                                : '#eadbd0',
-                                        }}
+                                        style={{ background: fundoGrafico }}
+                                        role="img"
+                                        aria-label={`Gráfico de prioridades com ${indicadores.total} ocorrências`}
                                     >
                                         <div className="flex h-29 w-29 flex-col items-center justify-center rounded-full bg-fundo">
                                             <strong className="font-titulo text-2xl text-primaria">
@@ -498,45 +725,51 @@ export default function RelatoriosAdmin() {
                                     </div>
 
                                     <div className="space-y-4">
-                                        {dadosPrioridades.map((prioridade) => (
-                                            <div key={prioridade.nome} className="flex items-center justify-between gap-3">
+                                        {dadosGrafico.map((prioridade) => (
+                                            <div
+                                                key={prioridade.nome}
+                                                className="flex items-center justify-between gap-3"
+                                            >
                                                 <div className="flex items-center gap-3">
                                                     <span
-                                                        className="h-3 w-3 rounded-full"
+                                                        className="h-3 w-3 shrink-0 rounded-full"
                                                         style={{ backgroundColor: prioridade.cor }}
                                                     />
+
                                                     <span className="text-sm">
-                                                        {prioridade.nome} prioridade
+                                                        {prioridade.nome === 'Não definida'
+                                                            ? 'Sem prioridade definida'
+                                                            : `${prioridade.nome} prioridade`}
                                                     </span>
                                                 </div>
+
                                                 <strong className="text-sm">
                                                     {numero(prioridade.quantidade)}
-                                                    {' '}
-                                                    ({indicadores.total
-                                                        ? (prioridade.quantidade / indicadores.total * 100).toFixed(1)
-                                                        : '0,0'}%)
+                                                    {' '}({porcentagem(prioridade.quantidade, indicadores.total)}%)
                                                 </strong>
                                             </div>
                                         ))}
-
-                                        {semPrioridade > 0 && (
-                                            <div className="flex justify-between text-sm">
-                                                <span>Sem prioridade definida</span>
-                                                <strong>{numero(semPrioridade)}</strong>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </section>
                         )}
 
                         <div className="mt-5 flex flex-wrap justify-end gap-3">
-                            <button type="button" onClick={() => window.print()} className={botaoSecundario}>
+                            <button
+                                type="button"
+                                onClick={() => window.print()}
+                                className={botaoSecundario}
+                            >
                                 <Icone nome="picture_as_pdf" classe="text-lg" />
                                 Imprimir / Salvar PDF
                             </button>
 
-                            <button type="button" onClick={exportarCSV} className={botaoSecundario}>
+                            <button
+                                type="button"
+                                onClick={exportarCSV}
+                                disabled={ocorrenciasPeriodo.length === 0}
+                                className={botaoSecundario}
+                            >
                                 <Icone nome="download" classe="text-lg" />
                                 Exportar Dados (CSV)
                             </button>
@@ -551,12 +784,15 @@ export default function RelatoriosAdmin() {
                             </h2>
 
                             <p className="mt-2 text-sm text-texto-suave">
-                                Selecione uma ocorrência real e defina os custos estimados
+                                Selecione uma ocorrência registrada e defina os custos estimados
                                 pela instituição antes da confirmação.
                             </p>
 
                             <div className="mt-5">
-                                <label htmlFor="orcamento-ocorrencia" className="mb-2 block text-sm font-semibold text-primaria">
+                                <label
+                                    htmlFor="orcamento-ocorrencia"
+                                    className="mb-2 block text-sm font-semibold text-primaria"
+                                >
                                     Ocorrência
                                 </label>
 
@@ -567,6 +803,7 @@ export default function RelatoriosAdmin() {
                                     className={campoClasse}
                                 >
                                     <option value="">Selecione uma ocorrência</option>
+
                                     {ocorrencias.map((ocorrencia) => (
                                         <option key={ocorrencia.id} value={ocorrencia.id}>
                                             {ocorrencia.protocolo} — {ocorrencia.categoria}
@@ -577,7 +814,7 @@ export default function RelatoriosAdmin() {
                                 {ocorrencias.length === 0 && (
                                     <p className="mt-3 text-sm text-texto-suave">
                                         Nenhuma ocorrência disponível. Os registros precisam
-                                        estar conectados à mesma fonte de dados desta página.
+                                        estar salvos na mesma fonte de dados desta página.
                                     </p>
                                 )}
 
@@ -585,12 +822,18 @@ export default function RelatoriosAdmin() {
                                     <div className="mt-4 grid gap-3 rounded-lg bg-fundo p-4 text-sm sm:grid-cols-3">
                                         <div>
                                             <span className="text-texto-suave">Protocolo</span>
-                                            <p className="font-semibold">{ocorrenciaSelecionada.protocolo}</p>
+                                            <p className="font-semibold">
+                                                {ocorrenciaSelecionada.protocolo}
+                                            </p>
                                         </div>
+
                                         <div>
                                             <span className="text-texto-suave">Status</span>
-                                            <p className="font-semibold">{ocorrenciaSelecionada.status}</p>
+                                            <p className="font-semibold">
+                                                {ocorrenciaSelecionada.status}
+                                            </p>
                                         </div>
+
                                         <div>
                                             <span className="text-texto-suave">Prioridade</span>
                                             <p className="font-semibold">
@@ -601,11 +844,56 @@ export default function RelatoriosAdmin() {
                                 )}
 
                                 {orcamentoExistente && (
-                                    <p className="mt-4 rounded-lg border border-green-700/30 bg-green-50 p-3 text-sm text-green-800">
-                                        Esta ocorrência já possui orçamento confirmado em{' '}
-                                        {new Date(orcamentoExistente.dataConfirmacao).toLocaleString('pt-BR')}.
-                                    </p>
+                                    <div className="mt-4 rounded-lg border border-green-700/30 bg-green-50 p-4 text-sm text-green-800">
+                                        <div className="flex items-start gap-2">
+                                            <Icone nome="verified" classe="text-xl" />
+                                            <div>
+                                                <p className="font-semibold">
+                                                    Orçamento confirmado
+                                                </p>
+                                                <p className="mt-1">
+                                                    Confirmado em {formatarData(orcamentoExistente.dataConfirmacao)}.
+                                                </p>
+                                                <p className="mt-1">
+                                                    Valor: {moeda(orcamentoExistente.total)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
+                            </div>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            <div className="rounded-xl border border-[#dfc4b4] bg-white/55 p-5">
+                                <p className="text-sm text-texto-suave">
+                                    Orçamentos confirmados
+                                </p>
+                                <strong className="mt-2 block font-titulo text-2xl text-primaria">
+                                    {numero(quantidadeOrcamentosConfirmados)}
+                                </strong>
+                            </div>
+
+                            <div className="rounded-xl border border-[#dfc4b4] bg-white/55 p-5">
+                                <p className="text-sm text-texto-suave">
+                                    Valor total dos orçamentos
+                                </p>
+                                <strong className="mt-2 block font-titulo text-2xl text-primaria">
+                                    {moeda(totalOrcamentosConfirmados)}
+                                </strong>
+                            </div>
+
+                            <div className="rounded-xl border border-[#dfc4b4] bg-white/55 p-5 sm:col-span-2 xl:col-span-1">
+                                <p className="text-sm text-texto-suave">
+                                    Ocorrências sem orçamento
+                                </p>
+                                <strong className="mt-2 block font-titulo text-2xl text-primaria">
+                                    {numero(ocorrencias.filter(
+                                        (ocorrencia) => !orcamentos.some(
+                                            (orcamento) => orcamento.ocorrenciaId === ocorrencia.id
+                                        )
+                                    ).length)}
+                                </strong>
                             </div>
                         </div>
 
@@ -618,8 +906,8 @@ export default function RelatoriosAdmin() {
 
                                 <button
                                     type="button"
-                                    onClick={() => setItens((anteriores) => [...anteriores, novaLinha()])}
-                                    disabled={!ocorrenciaId || Boolean(orcamentoExistente)}
+                                    onClick={adicionarItem}
+                                    disabled={!ocorrenciaSelecionada || Boolean(orcamentoExistente)}
                                     className={botaoSecundario}
                                 >
                                     <Icone nome="add" classe="text-lg" />
@@ -627,9 +915,21 @@ export default function RelatoriosAdmin() {
                                 </button>
                             </div>
 
+                            {itens.length === 0 && (
+                                <div className="mt-5 rounded-lg border border-dashed border-[#d7b4a3] p-8 text-center">
+                                    <Icone nome="receipt_long" classe="text-4xl text-[#b88e7a]" />
+                                    <p className="mt-2 text-sm text-texto-suave">
+                                        Selecione uma ocorrência para elaborar seu orçamento.
+                                    </p>
+                                </div>
+                            )}
+
                             <div className="mt-5 space-y-4">
                                 {itens.map((item, indice) => (
-                                    <div key={item.id} className="rounded-lg border border-[#e3cabb] bg-fundo/70 p-4">
+                                    <div
+                                        key={item.id}
+                                        className="rounded-lg border border-[#e3cabb] bg-fundo/70 p-4"
+                                    >
                                         <div className="mb-3 flex items-center justify-between">
                                             <h3 className="text-sm font-semibold text-primaria">
                                                 Item {indice + 1}
@@ -639,8 +939,8 @@ export default function RelatoriosAdmin() {
                                                 type="button"
                                                 aria-label={`Remover item ${indice + 1}`}
                                                 disabled={itens.length === 1 || Boolean(orcamentoExistente)}
-                                                onClick={() => setItens((anteriores) => anteriores.filter((atual) => atual.id !== item.id))}
-                                                className="text-primaria disabled:opacity-30"
+                                                onClick={() => removerItem(item.id)}
+                                                className="cursor-pointer text-primaria disabled:cursor-not-allowed disabled:opacity-30"
                                             >
                                                 <Icone nome="delete_outline" />
                                             </button>
@@ -648,10 +948,19 @@ export default function RelatoriosAdmin() {
 
                                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.7fr_1fr_0.7fr_1fr]">
                                             <div>
-                                                <label className="mb-1 block text-xs font-semibold">Descrição</label>
+                                                <label
+                                                    htmlFor={`descricao-${item.id}`}
+                                                    className="mb-1 block text-xs font-semibold"
+                                                >
+                                                    Descrição
+                                                </label>
+
                                                 <input
+                                                    id={`descricao-${item.id}`}
                                                     value={item.descricao}
-                                                    onChange={(evento) => atualizarItem(item.id, 'descricao', evento.target.value)}
+                                                    onChange={(evento) =>
+                                                        atualizarItem(item.id, 'descricao', evento.target.value)
+                                                    }
                                                     disabled={Boolean(orcamentoExistente)}
                                                     placeholder="Ex.: Substituição de luminária"
                                                     className={campoClasse}
@@ -659,41 +968,81 @@ export default function RelatoriosAdmin() {
                                             </div>
 
                                             <div>
-                                                <label className="mb-1 block text-xs font-semibold">Tipo de custo</label>
+                                                <label
+                                                    htmlFor={`tipo-${item.id}`}
+                                                    className="mb-1 block text-xs font-semibold"
+                                                >
+                                                    Tipo de custo
+                                                </label>
+
                                                 <select
+                                                    id={`tipo-${item.id}`}
                                                     value={item.tipo}
-                                                    onChange={(evento) => atualizarItem(item.id, 'tipo', evento.target.value)}
+                                                    onChange={(evento) =>
+                                                        atualizarItem(item.id, 'tipo', evento.target.value)
+                                                    }
                                                     disabled={Boolean(orcamentoExistente)}
                                                     className={campoClasse}
                                                 >
-                                                    <option>Material</option>
-                                                    <option>Mão de obra</option>
-                                                    <option>Serviço</option>
-                                                    <option>Outros</option>
+                                                    {tiposCusto.map((tipo) => (
+                                                        <option key={tipo} value={tipo}>
+                                                            {tipo}
+                                                        </option>
+                                                    ))}
                                                 </select>
                                             </div>
 
                                             <div>
-                                                <label className="mb-1 block text-xs font-semibold">Quantidade</label>
+                                                <label
+                                                    htmlFor={`quantidade-${item.id}`}
+                                                    className="mb-1 block text-xs font-semibold"
+                                                >
+                                                    Quantidade
+                                                </label>
+
                                                 <input
+                                                    id={`quantidade-${item.id}`}
                                                     type="number"
                                                     min="0.01"
                                                     step="any"
                                                     value={item.quantidade}
-                                                    onChange={(evento) => atualizarItem(item.id, 'quantidade', Number(evento.target.value))}
+                                                    onChange={(evento) =>
+                                                        atualizarItem(
+                                                            item.id,
+                                                            'quantidade',
+                                                            evento.target.value === ''
+                                                                ? Number.NaN
+                                                                : Number(evento.target.value)
+                                                        )
+                                                    }
                                                     disabled={Boolean(orcamentoExistente)}
                                                     className={campoClasse}
                                                 />
                                             </div>
 
                                             <div>
-                                                <label className="mb-1 block text-xs font-semibold">Valor unitário (R$)</label>
+                                                <label
+                                                    htmlFor={`valor-${item.id}`}
+                                                    className="mb-1 block text-xs font-semibold"
+                                                >
+                                                    Valor unitário (R$)
+                                                </label>
+
                                                 <input
+                                                    id={`valor-${item.id}`}
                                                     type="number"
                                                     min="0"
                                                     step="0.01"
                                                     value={item.valorUnitario}
-                                                    onChange={(evento) => atualizarItem(item.id, 'valorUnitario', Number(evento.target.value))}
+                                                    onChange={(evento) =>
+                                                        atualizarItem(
+                                                            item.id,
+                                                            'valorUnitario',
+                                                            evento.target.value === ''
+                                                                ? Number.NaN
+                                                                : Number(evento.target.value)
+                                                        )
+                                                    }
                                                     disabled={Boolean(orcamentoExistente)}
                                                     className={campoClasse}
                                                 />
@@ -703,7 +1052,11 @@ export default function RelatoriosAdmin() {
                                         <p className="mt-3 text-right text-sm">
                                             Subtotal:{' '}
                                             <strong className="text-primaria">
-                                                {moeda(item.quantidade * item.valorUnitario)}
+                                                {moeda(
+                                                    Number.isFinite(item.quantidade * item.valorUnitario)
+                                                        ? item.quantidade * item.valorUnitario
+                                                        : 0
+                                                )}
                                             </strong>
                                         </p>
                                     </div>
@@ -720,8 +1073,11 @@ export default function RelatoriosAdmin() {
                                 <textarea
                                     rows={7}
                                     value={observacoes}
-                                    onChange={(evento) => setObservacoes(evento.target.value)}
-                                    disabled={Boolean(orcamentoExistente)}
+                                    onChange={(evento) => {
+                                        setObservacoes(evento.target.value);
+                                        setMensagem('');
+                                    }}
+                                    disabled={!ocorrenciaSelecionada || Boolean(orcamentoExistente)}
                                     placeholder="Descreva a justificativa do orçamento, os serviços previstos e outras informações relevantes..."
                                     className={`${campoClasse} mt-4 resize-y`}
                                 />
@@ -735,9 +1091,14 @@ export default function RelatoriosAdmin() {
 
                                 <div className="mt-5 space-y-3">
                                     {totaisPorTipo.map(({ tipo, valor }) => (
-                                        <div key={tipo} className="flex justify-between gap-3 border-b border-[#ead7ca] pb-3 text-sm">
+                                        <div
+                                            key={tipo}
+                                            className="flex justify-between gap-3 border-b border-[#ead7ca] pb-3 text-sm"
+                                        >
                                             <span>{tipo}</span>
-                                            <strong>{moeda(valor)}</strong>
+                                            <strong>
+                                                {moeda(Number.isFinite(valor) ? valor : 0)}
+                                            </strong>
                                         </div>
                                     ))}
                                 </div>
@@ -746,19 +1107,26 @@ export default function RelatoriosAdmin() {
                                     <p className="text-sm font-semibold text-primaria">
                                         Valor total estimado
                                     </p>
+
                                     <p className="mt-2 font-titulo text-3xl font-bold text-primaria">
-                                        {moeda(totalOrcamento)}
+                                        {moeda(Number.isFinite(totalOrcamento) ? totalOrcamento : 0)}
                                     </p>
                                 </div>
 
                                 {erro && (
-                                    <p role="alert" className="mt-4 text-sm text-red-700">
+                                    <p
+                                        role="alert"
+                                        className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700"
+                                    >
                                         {erro}
                                     </p>
                                 )}
 
                                 {mensagem && (
-                                    <p role="status" className="mt-4 text-sm text-green-800">
+                                    <p
+                                        role="status"
+                                        className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-800"
+                                    >
                                         {mensagem}
                                     </p>
                                 )}
@@ -766,22 +1134,34 @@ export default function RelatoriosAdmin() {
                                 <button
                                     type="button"
                                     onClick={confirmarOrcamento}
-                                    disabled={!ocorrenciaSelecionada || Boolean(orcamentoExistente)}
+                                    disabled={
+                                        !ocorrenciaSelecionada ||
+                                        Boolean(orcamentoExistente) ||
+                                        salvando
+                                    }
                                     className={`${botaoPrimario} mt-5 w-full`}
+                                    style={{ color: '#ffffff' }}
                                 >
                                     <Icone nome="check_circle" classe="text-xl" />
-                                    Confirmar Orçamento
+                                    {salvando
+                                        ? 'Confirmando...'
+                                        : orcamentoExistente
+                                            ? 'Orçamento Confirmado'
+                                            : 'Confirmar Orçamento'}
                                 </button>
 
                                 <p className="mt-3 text-xs leading-relaxed text-texto-suave">
-                                    A confirmação salva o orçamento localmente. A publicação
-                                    para o cidadão dependerá da integração com a API Java.
+                                    A confirmação salva o orçamento localmente. A disponibilização
+                                    ao cidadão em outros dispositivos dependerá da integração com a API Java.
                                 </p>
                             </div>
                         </div>
 
                         <div className="flex justify-end">
-                            <Link to="/admin/gerenciar-ocorrencias" className={botaoSecundario}>
+                            <Link
+                                to="/admin/gerenciar-ocorrencias"
+                                className={botaoSecundario}
+                            >
                                 <Icone nome="list" classe="text-lg" />
                                 Gerenciar Ocorrências
                             </Link>
