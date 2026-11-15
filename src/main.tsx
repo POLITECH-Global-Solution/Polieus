@@ -22,6 +22,7 @@ import Perfil from './pages/Perfil/index.tsx';
 import GerenciarOcorrencias from './pages/GerenciarOcorrencia/index.tsx';
 import AdminMapaOcorrencias from './pages/AdminMapaOcorrencias/index.tsx';
 import AdminRelatorios from './pages/AdminRelatorios/index.tsx';
+import AdminDashboard from './pages/AdminDashboard/index.tsx';
 
 function PaginaAdministrativa({ titulo }: { titulo: string }) {
     return (
@@ -109,11 +110,11 @@ const router = createBrowserRouter([
                 children: [
                     {
                         index: true,
-                        element: <PaginaAdministrativa titulo="Dashboard Administrativo" />,
+                        element: <AdminDashboard />,
                     },
                     {
                         path: 'dashboard',
-                        element: <PaginaAdministrativa titulo="Dashboard Administrativo" />,
+                        element: <AdminDashboard />,
                     },
                     {
                         path: 'gerenciar-ocorrencias',
