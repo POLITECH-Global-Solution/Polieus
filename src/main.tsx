@@ -20,6 +20,8 @@ import MapaOcorrencias from './pages/MapaOcorrencias/index.tsx';
 import Inicio from './pages/Inicio/index.tsx';
 import Perfil from './pages/Perfil/index.tsx';
 import GerenciarOcorrencias from './pages/GerenciarOcorrencia/index.tsx';
+import AdminMapaOcorrencias from './pages/AdminMapaOcorrencias/index.tsx';
+import AdminRelatorios from './pages/AdminRelatorios/index.tsx';
 
 function PaginaAdministrativa({ titulo }: { titulo: string }) {
     return (
@@ -119,11 +121,11 @@ const router = createBrowserRouter([
                     },
                     {
                         path: 'mapa-ocorrencias',
-                        element: <PaginaAdministrativa titulo="Mapa de Ocorrências" />,
+                        element: <AdminMapaOcorrencias />,
                     },
                     {
                         path: 'relatorios',
-                        element: <PaginaAdministrativa titulo="Relatórios e Indicadores" />,
+                        element: <AdminRelatorios />,
                     },
                     {
                         path: 'perfil',
