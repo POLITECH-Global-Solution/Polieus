@@ -19,73 +19,148 @@ import Transparencia from './pages/Transparencia/index.tsx';
 import MapaOcorrencias from './pages/MapaOcorrencias/index.tsx';
 import Inicio from './pages/Inicio/index.tsx';
 import Perfil from './pages/Perfil/index.tsx';
+import GerenciarOcorrencias from './pages/GerenciarOcorrencia/index.tsx';
+
+function PaginaAdministrativa({ titulo }: { titulo: string }) {
+    return (
+        <main className="min-h-screen bg-fundo px-6 py-10 font-corpo lg:px-10">
+            <div className="mx-auto max-w-7xl">
+                <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-primaria">
+                    Área Administrativa
+                </p>
+
+                <h1 className="font-titulo text-3xl font-bold text-primaria">
+                    {titulo}
+                </h1>
+
+                <p className="mt-4 text-texto-suave">
+                    Esta página administrativa será desenvolvida em breve.
+                </p>
+            </div>
+        </main>
+    );
+}
 
 const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <EscolhaAcesso />,
-  },
-  {
-    path: '/login-usuario',
-    element: <LoginUsuario />,
-  },
-  {
-    path: '/login-admin',
-    element: <LoginAdministrador />,
-  },
-  {
-    element: <App />,
-    children: [
-      {
-        path: 'integrantes',
-        element: <Integrantes />,
-      },
-      {
-        path: '*',
-        element: <Error />,
-      },
-      {
-        path: 'sobre',
-        element: <Sobre />,
-      },
-      {
-        path: 'faq',
-        element: <FAQ />,
-      },
-      {
-        path: 'contato',
-        element: <Contato />,
-      },
-      {
-        path: 'registrar-ocorrencia',
-        element: <RegistrarOcorrencia />,
-      },
-      {
-        path: 'minhas-ocorrencias',
-        element: <MinhasOcorrencias />,
-      },
-      {
-        path: 'transparencia',
-        element: <Transparencia />,
-      },
-      {
-        path: 'mapa-ocorrencias',
-        element: <MapaOcorrencias />,
-      },
-      {
-        path: 'inicio',
-        element: <Inicio />,
-      },
-      {
-        path: 'perfil',
-        element: <Perfil />,
-      }
-    ],
-  },
+    {
+        path: '/',
+        element: <EscolhaAcesso />,
+    },
+    {
+        path: '/login-usuario',
+        element: <LoginUsuario />,
+    },
+    {
+        path: '/login-admin',
+        element: <LoginAdministrador />,
+    },
+    {
+        element: <App />,
+        children: [
+            // PÁGINAS DO CIDADÃO
+            {
+                path: 'inicio',
+                element: <Inicio />,
+            },
+            {
+                path: 'registrar-ocorrencia',
+                element: <RegistrarOcorrencia />,
+            },
+            {
+                path: 'minhas-ocorrencias',
+                element: <MinhasOcorrencias />,
+            },
+            {
+                path: 'mapa-ocorrencias',
+                element: <MapaOcorrencias />,
+            },
+            {
+                path: 'transparencia',
+                element: <Transparencia />,
+            },
+            {
+                path: 'perfil',
+                element: <Perfil />,
+            },
+
+            // PÁGINAS INSTITUCIONAIS
+            {
+                path: 'sobre',
+                element: <Sobre />,
+            },
+            {
+                path: 'integrantes',
+                element: <Integrantes />,
+            },
+            {
+                path: 'faq',
+                element: <FAQ />,
+            },
+            {
+                path: 'contato',
+                element: <Contato />,
+            },
+
+            // PÁGINAS DO ADMINISTRADOR
+            {
+                path: 'admin',
+                children: [
+                    {
+                        index: true,
+                        element: <PaginaAdministrativa titulo="Dashboard Administrativo" />,
+                    },
+                    {
+                        path: 'dashboard',
+                        element: <PaginaAdministrativa titulo="Dashboard Administrativo" />,
+                    },
+                    {
+                        path: 'gerenciar-ocorrencias',
+                        element: <GerenciarOcorrencias />,
+                    },
+                    {
+                        path: 'mapa-ocorrencias',
+                        element: <PaginaAdministrativa titulo="Mapa de Ocorrências" />,
+                    },
+                    {
+                        path: 'relatorios',
+                        element: <PaginaAdministrativa titulo="Relatórios e Indicadores" />,
+                    },
+                    {
+                        path: 'perfil',
+                        element: <PaginaAdministrativa titulo="Perfil do Administrador" />,
+                    },
+
+                    // PÁGINAS COMPARTILHADAS
+                    {
+                        path: 'sobre',
+                        element: <Sobre />,
+                    },
+                    {
+                        path: 'integrantes',
+                        element: <Integrantes />,
+                    },
+                    {
+                        path: 'faq',
+                        element: <FAQ />,
+                    },
+                    {
+                        path: 'contato',
+                        element: <Contato />,
+                    },
+                ],
+            },
+
+            // PÁGINA DE ERRO
+            {
+                path: '*',
+                element: <Error />,
+            },
+        ],
+    },
 ]);
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <RouterProvider router={router} />
-  </StrictMode>
+    <StrictMode>
+        <RouterProvider router={router} />
+    </StrictMode>
 );
