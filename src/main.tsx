@@ -23,6 +23,7 @@ import GerenciarOcorrencias from './pages/GerenciarOcorrencia/index.tsx';
 import AdminMapaOcorrencias from './pages/AdminMapaOcorrencias/index.tsx';
 import AdminRelatorios from './pages/AdminRelatorios/index.tsx';
 import AdminDashboard from './pages/AdminDashboard/index.tsx';
+import AdminPerfil from './pages/AdminPerfil/index.tsx';
 
 function PaginaAdministrativa({ titulo }: { titulo: string }) {
     return (
@@ -130,7 +131,7 @@ const router = createBrowserRouter([
                     },
                     {
                         path: 'perfil',
-                        element: <PaginaAdministrativa titulo="Perfil do Administrador" />,
+                        element: <AdminPerfil />,
                     },
 
                     // PÁGINAS COMPARTILHADAS
