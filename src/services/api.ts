@@ -1,12 +1,38 @@
 
-/**
- * Configuração da API do Polieus.
- *
- * Prioriza a variável de ambiente VITE_API_URL.
- * Caso não esteja definida, utiliza a URL pública do Render.
- */
-
 export const API_URL = (
   import.meta.env.VITE_API_URL?.trim() ||
   'https://polieus.onrender.com'
 ).replace(/\/+$/, '');
+
+export async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const headers = new Headers(options.headers);
+
+  if (
+    options.body &&
+    !(options.body instanceof FormData) &&
+    !headers.has('Content-Type')
+  ) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const response = await fetch(
+    `${API_URL}/${endpoint.replace(/^\/+/, '')}`,
+    {
+      ...options,
+      headers,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Erro na API: ${response.status}`);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return (await response.json()) as T;
+}
