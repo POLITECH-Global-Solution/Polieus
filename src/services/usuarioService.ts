@@ -6,7 +6,6 @@ export interface Usuario {
 }
 
 export type DadosUsuario = Record<string, unknown>;
-
 const ENDPOINT = '/polieus/usuario';
 
 // GET - Listar todos os usuários
