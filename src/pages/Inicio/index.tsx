@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import type { ReactNode } from 'react';
-
-import logoPolieus from '../../../public/favicons/logo_polieus3.png';
 import fundoInicio from '../../img/fundo_inicio.png';
+
+const logoPolieus = '/favicons/logo_polieus3.png';
 
 type Regiao = {
     nome: string;
