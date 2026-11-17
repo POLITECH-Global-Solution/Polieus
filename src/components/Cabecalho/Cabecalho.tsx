@@ -80,13 +80,18 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
         setMenuAberto(false);
     };
 
+    // Encerrar a sessão do cidadão
     const fazerLogout = () => {
         fecharMenu();
+
+        if (!administrador) {
+            sessionStorage.removeItem('usuario');
+        }
 
         if (aoSair) {
             aoSair();
         } else {
-            navigate('/');
+            navigate('/', { replace: true });
         }
     };
 
@@ -99,61 +104,45 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
 
     return (
         <>
-            <button
-                type="button"
-                onClick={() => setMenuAberto(!menuAberto)}
-                ref={botaoMenuRef}
-                aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
-                aria-expanded={menuAberto}
-                aria-controls="menu-polieus"
-                tabIndex={!botaoVisivel && !menuAberto ? -1 : undefined}
-                className={`fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-primaria text-white lg:hidden transition-all duration-300 ease-in-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#f1d5c0] ${
-                    botaoVisivel || menuAberto
-                        ? 'translate-y-0 opacity-100'
-                        : '-translate-y-16 opacity-0 pointer-events-none'
-                }`}
-            >
+            <button type="button" onClick={() => setMenuAberto(!menuAberto)} ref={botaoMenuRef} aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuAberto} aria-controls="menu-polieus" tabIndex={!botaoVisivel && !menuAberto ? -1 : undefined} className={`fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-primaria text-white lg:hidden transition-all duration-300 ease-in-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#f1d5c0] ${
+                botaoVisivel || menuAberto
+                    ? 'translate-y-0 opacity-100'
+                    : '-translate-y-16 opacity-0 pointer-events-none'
+            }`}>
                 <span className="material-icons">
                     {menuAberto ? 'close' : 'menu'}
                 </span>
             </button>
 
             {menuAberto && (
-                <button
-                    type="button"
-                    onClick={fecharMenu}
-                    aria-label="Fechar menu"
-                    className="fixed inset-0 z-30 bg-black/50 lg:hidden"
-                />
+                <button type="button" onClick={fecharMenu} aria-label="Fechar menu" className="fixed inset-0 z-30 bg-black/50 lg:hidden" />
             )}
 
-            <header
-                id="menu-polieus"
-                className={`fixed inset-y-0 left-0 z-40 flex w-52 flex-col bg-linear-to-b from-[#86291f] to-[#651b16] text-white transition-[transform,visibility] duration-300 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:translate-x-0 lg:visible ${
-                    menuAberto
-                        ? 'translate-x-0 visible'
-                        : '-translate-x-full invisible'
-                }`}
-            >
+            <header id="menu-polieus" className={`fixed inset-y-0 left-0 z-40 flex w-52 flex-col bg-linear-to-b from-[#86291f] to-[#651b16] text-white transition-[transform,visibility] duration-300 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:translate-x-0 lg:visible ${
+                menuAberto
+                    ? 'translate-x-0 visible'
+                    : '-translate-x-full invisible'
+            }`}>
+
+                {/* LOGO */}
                 <div className="flex flex-col items-center border-b border-white/25 px-2 pt-3 pb-4">
-                    <img
-                        src="/favicons/logo_polieus2.png"
-                        alt="Logo do Polieus"
-                        className="w-44 h-auto object-contain"
-                    />
+
+                    <img src="/favicons/logo_polieus2.png" alt="Logo do Polieus" className="w-44 h-auto object-contain" />
 
                     <p className="mt-1 text-center text-[8px] uppercase leading-3 text-white">
                         Tecnologia a serviço da cidadania
                     </p>
+
                 </div>
 
-                <nav
-                    aria-label={administrador ? 'Menu administrativo' : 'Menu principal'}
-                    className="flex flex-1 flex-col overflow-y-auto px-3 pt-4 pb-3"
-                >
+                <nav aria-label={administrador ? 'Menu administrativo' : 'Menu principal'} className="flex flex-1 flex-col overflow-y-auto px-3 pt-4 pb-3">
+
                     <ul className="flex flex-col gap-1">
+
                         {administrador ? (
                             <>
+                                {/* MENU DO ADMINISTRADOR */}
+
                                 <li>
                                     <NavLink to="/admin/dashboard" onClick={fecharMenu} className={linkClasses}>
                                         <span className="material-icons text-[18px]">dashboard</span>
@@ -184,6 +173,8 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
                             </>
                         ) : (
                             <>
+                                {/* MENU DO CIDADÃO */}
+
                                 <li>
                                     <NavLink to="/inicio" onClick={fecharMenu} className={linkClasses}>
                                         <span className="material-icons text-[18px]">home</span>
@@ -220,83 +211,67 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
                                 </li>
                             </>
                         )}
+
                     </ul>
 
                     <div className="my-3 border-t border-white/25" />
 
                     {/* PÁGINAS COMPARTILHADAS */}
                     <ul className="flex flex-col gap-1">
+
                         <li>
-                            <NavLink
-                                to={administrador ? '/admin/sobre' : '/sobre'}
-                                onClick={fecharMenu}
-                                className={linkClasses}
-                            >
+                            <NavLink to={administrador ? '/admin/sobre' : '/sobre'} onClick={fecharMenu} className={linkClasses}>
                                 <span className="material-icons text-[18px]">info</span>
                                 Sobre
                             </NavLink>
                         </li>
 
                         <li>
-                            <NavLink
-                                to={administrador ? '/admin/integrantes' : '/integrantes'}
-                                onClick={fecharMenu}
-                                className={linkClasses}
-                            >
+                            <NavLink to={administrador ? '/admin/integrantes' : '/integrantes'} onClick={fecharMenu} className={linkClasses}>
                                 <span className="material-icons text-[18px]">groups</span>
                                 Integrantes
                             </NavLink>
                         </li>
 
                         <li>
-                            <NavLink
-                                to={administrador ? '/admin/faq' : '/faq'}
-                                onClick={fecharMenu}
-                                className={linkClasses}
-                            >
+                            <NavLink to={administrador ? '/admin/faq' : '/faq'} onClick={fecharMenu} className={linkClasses}>
                                 <span className="material-icons text-[18px]">help</span>
                                 FAQ
                             </NavLink>
                         </li>
 
                         <li>
-                            <NavLink
-                                to={administrador ? '/admin/contato' : '/contato'}
-                                onClick={fecharMenu}
-                                className={linkClasses}
-                            >
+                            <NavLink to={administrador ? '/admin/contato' : '/contato'} onClick={fecharMenu} className={linkClasses}>
                                 <span className="material-icons text-[18px]">mail</span>
                                 Contato
                             </NavLink>
                         </li>
+
                     </ul>
 
                     <div className="my-3 border-t border-white/25" />
 
+                    {/* PERFIL E LOGOUT */}
                     <ul className="flex flex-col gap-1">
+
                         <li>
-                            <NavLink
-                                to={administrador ? '/admin/perfil' : '/perfil'}
-                                onClick={fecharMenu}
-                                className={linkClasses}
-                            >
+                            <NavLink to={administrador ? '/admin/perfil' : '/perfil'} onClick={fecharMenu} className={linkClasses}>
                                 <span className="material-icons text-[18px]">person</span>
                                 Meu Perfil
                             </NavLink>
                         </li>
 
                         <li>
-                            <button
-                                type="button"
-                                onClick={fazerLogout}
-                                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-[12px] text-white transition-colors hover:bg-white/15"
-                            >
+                            <button type="button" onClick={fazerLogout} className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-[12px] text-white transition-colors hover:bg-white/15">
                                 <span className="material-icons text-[18px]">logout</span>
                                 Sair
                             </button>
                         </li>
+
                     </ul>
+
                 </nav>
+
             </header>
         </>
     );

@@ -5,6 +5,8 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App.tsx';
 import './globals.css';
 
+import RotaProtegida from './components/RotaProtegida/RotaProtegida.tsx';
+
 import Error from './pages/Error/index.tsx';
 import EscolhaAcesso from './pages/Acesso/index.tsx';
 import LoginUsuario from './pages/LoginUsuario/index.tsx';
@@ -26,6 +28,8 @@ import AdminRelatorios from './pages/AdminRelatorios/index.tsx';
 import AdminPerfil from './pages/AdminPerfil/index.tsx';
 
 const router = createBrowserRouter([
+
+    // ROTAS PÚBLICAS DE ACESSO
     {
         path: '/',
         element: <EscolhaAcesso />,
@@ -39,34 +43,43 @@ const router = createBrowserRouter([
         element: <LoginAdministrador />,
     },
 
+    // LAYOUT PRINCIPAL
     {
         element: <App />,
         children: [
+
+            // ROTAS PROTEGIDAS DO CIDADÃO
             {
-                path: 'inicio',
-                element: <Inicio />,
-            },
-            {
-                path: 'registrar-ocorrencia',
-                element: <RegistrarOcorrencia />,
-            },
-            {
-                path: 'minhas-ocorrencias',
-                element: <MinhasOcorrencias />,
-            },
-            {
-                path: 'mapa-ocorrencias',
-                element: <MapaOcorrencias />,
-            },
-            {
-                path: 'transparencia',
-                element: <Transparencia />,
-            },
-            {
-                path: 'perfil',
-                element: <Perfil />,
+                element: <RotaProtegida />,
+                children: [
+                    {
+                        path: 'inicio',
+                        element: <Inicio />,
+                    },
+                    {
+                        path: 'registrar-ocorrencia',
+                        element: <RegistrarOcorrencia />,
+                    },
+                    {
+                        path: 'minhas-ocorrencias',
+                        element: <MinhasOcorrencias />,
+                    },
+                    {
+                        path: 'mapa-ocorrencias',
+                        element: <MapaOcorrencias />,
+                    },
+                    {
+                        path: 'transparencia',
+                        element: <Transparencia />,
+                    },
+                    {
+                        path: 'perfil',
+                        element: <Perfil />,
+                    },
+                ],
             },
 
+            // ROTAS INSTITUCIONAIS
             {
                 path: 'sobre',
                 element: <Sobre />,
@@ -84,6 +97,7 @@ const router = createBrowserRouter([
                 element: <Contato />,
             },
 
+            // ROTAS DO ADMINISTRADOR
             {
                 path: 'admin',
                 children: [
@@ -112,6 +126,7 @@ const router = createBrowserRouter([
                         element: <AdminPerfil />,
                     },
 
+                    // ROTAS INSTITUCIONAIS DO ADMINISTRADOR
                     {
                         path: 'sobre',
                         element: <Sobre />,
@@ -131,6 +146,7 @@ const router = createBrowserRouter([
                 ],
             },
 
+            // PÁGINA DE ERRO 404
             {
                 path: '*',
                 element: <Error />,
