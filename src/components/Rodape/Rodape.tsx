@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const anoAtual = new Date().getFullYear();
 
@@ -9,6 +9,14 @@ const linksPlataforma = [
     { nome: 'Minhas Ocorrências', caminho: '/minhas-ocorrencias' },
     { nome: 'Transparência', caminho: '/transparencia' },
     { nome: 'Meu Perfil', caminho: '/perfil' },
+];
+
+const linksAdministracao = [
+    { nome: 'Dashboard', caminho: '/admin/dashboard' },
+    { nome: 'Gerenciar Ocorrências', caminho: '/admin/gerenciar-ocorrencias' },
+    { nome: 'Mapa de Ocorrências', caminho: '/admin/mapa-ocorrencias' },
+    { nome: 'Relatórios e Indicadores', caminho: '/admin/relatorios' },
+    { nome: 'Meu Perfil', caminho: '/admin/perfil' },
 ];
 
 const linksInstitucionais = [
@@ -27,9 +35,18 @@ type GrupoLinksProps = {
         nome: string;
         caminho: string;
     }[];
+    areaAdministrativa?: boolean;
 };
 
-function GrupoLinks({ titulo, links }: GrupoLinksProps) {
+type RodapeProps = {
+    tipo?: 'cidadao' | 'admin';
+};
+
+function GrupoLinks({
+    titulo,
+    links,
+    areaAdministrativa = false,
+}: GrupoLinksProps) {
     return (
         <nav aria-label={titulo}>
             <h3 className="font-titulo text-lg font-bold text-primaria">
@@ -37,25 +54,45 @@ function GrupoLinks({ titulo, links }: GrupoLinksProps) {
             </h3>
 
             <div className="mt-5 flex flex-col items-start gap-3">
-                {links.map((link) => (
-                    <Link
-                        key={link.caminho}
-                        to={link.caminho}
-                        className="group inline-flex items-center gap-2 text-sm leading-6 text-texto-suave transition-colors duration-200 hover:text-primaria focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primaria"
-                    >
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primaria opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+                {links.map((link) => {
+                    const caminho = areaAdministrativa
+                        ? `/admin${link.caminho}`
+                        : link.caminho;
 
-                        <span className="-ml-3 transition-transform duration-200 group-hover:translate-x-3">
-                            {link.nome}
-                        </span>
-                    </Link>
-                ))}
+                    return (
+                        <Link
+                            key={caminho}
+                            to={caminho}
+                            className="group inline-flex items-center gap-2 text-sm leading-6 text-texto-suave transition-colors duration-200 hover:text-primaria focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primaria"
+                        >
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primaria opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+
+                            <span className="-ml-3 transition-transform duration-200 group-hover:translate-x-3">
+                                {link.nome}
+                            </span>
+                        </Link>
+                    );
+                })}
             </div>
         </nav>
     );
 }
 
-export default function Rodape() {
+export default function Rodape({ tipo }: RodapeProps) {
+    const { pathname } = useLocation();
+
+    const areaAdministrativa = tipo
+        ? tipo === 'admin'
+        : pathname === '/admin' || pathname.startsWith('/admin/');
+
+    const tituloLinks = areaAdministrativa
+        ? 'Administração'
+        : 'Plataforma';
+
+    const linksPrincipais = areaAdministrativa
+        ? linksAdministracao
+        : linksPlataforma;
+
     const irParaTopo = () => {
         window.scrollTo({
             top: 0,
@@ -87,16 +124,15 @@ export default function Rodape() {
                         </button>
 
                         <p className="mt-5 max-w-sm text-sm leading-7 text-texto-suave">
-                            Tecnologia a serviço da cidadania.
-                            Uma plataforma que conecta cidadãos,
-                            incentiva a participação social e
-                            facilita o registro e acompanhamento
-                            de problemas urbanos.
+                            {areaAdministrativa
+                                ? 'Tecnologia a serviço da cidadania. Uma plataforma que auxilia a administração pública no gerenciamento, acompanhamento e análise de ocorrências urbanas.'
+                                : 'Tecnologia a serviço da cidadania. Uma plataforma que conecta cidadãos, incentiva a participação social e facilita o registro e acompanhamento de problemas urbanos.'}
                         </p>
 
                         <p className="mt-4 max-w-sm text-sm leading-7 text-texto-suave">
-                            Juntos, construímos cidades mais
-                            justas, transparentes e participativas.
+                            {areaAdministrativa
+                                ? 'Gestão eficiente, decisões responsáveis e transparência para construir cidades melhores.'
+                                : 'Juntos, construímos cidades mais justas, transparentes e participativas.'}
                         </p>
 
                         <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-[#bfa99a] px-4 py-2">
@@ -114,18 +150,20 @@ export default function Rodape() {
                     </div>
 
                     <GrupoLinks
-                        titulo="Plataforma"
-                        links={linksPlataforma}
+                        titulo={tituloLinks}
+                        links={linksPrincipais}
                     />
 
                     <GrupoLinks
                         titulo="Institucional"
                         links={linksInstitucionais}
+                        areaAdministrativa={areaAdministrativa}
                     />
 
                     <GrupoLinks
                         titulo="Suporte"
                         links={linksSuporte}
+                        areaAdministrativa={areaAdministrativa}
                     />
                 </div>
 
