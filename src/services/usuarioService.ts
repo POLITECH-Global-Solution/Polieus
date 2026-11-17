@@ -1,8 +1,11 @@
 import { apiRequest } from './api';
-
 export interface Usuario {
-  idUsuario?: number | null;
-  [campo: string]: unknown;
+    idUsuario: number | null;
+    nomeUsuario: string;
+    cpf: string;
+    telefone: string;
+    email: string;
+    senha: string;
 }
 
 export type DadosUsuario = Record<string, unknown>;
