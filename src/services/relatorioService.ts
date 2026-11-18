@@ -1,53 +1,67 @@
 import { apiRequest } from './api';
 
 export interface Relatorio {
-  idRelatorio: number | null;
-  categoria: string;
-  prioridade: string;
+    idRelatorio: number | null;
+    categoria: string;
+    prioridade: string;
 }
 
-// Dados enviados para cadastrar ou atualizar
 export type DadosRelatorio = Omit<Relatorio, 'idRelatorio'>;
+
 const ENDPOINT = '/polieus/relatorio';
 
-// GET - Listar todos os relatórios
-export function listarRelatorios(): Promise<Relatorio[]> {
-  return apiRequest<Relatorio[]>(ENDPOINT);
+function validarId(id: number): void {
+    if (!Number.isInteger(id) || id <= 0) {
+        throw new Error('Identificação do relatório inválida.');
+    }
+}
+
+// GET - Listar relatórios
+
+export async function listarRelatorios(): Promise<Relatorio[]> {
+    const relatorios = await apiRequest<Relatorio[]>(ENDPOINT);
+
+    if (!Array.isArray(relatorios)) {
+        throw new Error('Resposta inválida ao consultar relatórios.');
+    }
+
+    return relatorios;
 }
 
 // GET - Buscar relatório pelo ID
-export function buscarRelatorioPorId(
-  id: number
-): Promise<Relatorio> {
-  return apiRequest<Relatorio>(`${ENDPOINT}/${id}`);
+
+export function buscarRelatorioPorId(id: number): Promise<Relatorio> {
+    validarId(id);
+
+    return apiRequest<Relatorio>(`${ENDPOINT}/${id}`);
 }
 
-// POST - Cadastrar novo relatório
-export function cadastrarRelatorio(
-  dados: DadosRelatorio
-): Promise<Relatorio> {
-  return apiRequest<Relatorio>(ENDPOINT, {
-    method: 'POST',
-    body: JSON.stringify(dados),
-  });
+// POST - Cadastrar relatório
+
+export function cadastrarRelatorio(dados: DadosRelatorio): Promise<Relatorio> {
+    return apiRequest<Relatorio>(ENDPOINT, {
+        method: 'POST',
+        body: JSON.stringify(dados),
+    });
 }
 
-// PUT - Atualizar relatório existente
-export function atualizarRelatorio(
-  id: number,
-  dados: DadosRelatorio
-): Promise<Relatorio> {
-  return apiRequest<Relatorio>(`${ENDPOINT}/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(dados),
-  });
+// PUT - Atualizar relatório
+
+export function atualizarRelatorio(id: number, dados: DadosRelatorio): Promise<Relatorio> {
+    validarId(id);
+
+    return apiRequest<Relatorio>(`${ENDPOINT}/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(dados),
+    });
 }
 
-// DELETE - Excluir relatório pelo ID
-export function excluirRelatorio(
-  id: number
-): Promise<void> {
-  return apiRequest<void>(`${ENDPOINT}/${id}`, {
-    method: 'DELETE',
-  });
+// DELETE - Excluir relatório
+
+export function excluirRelatorio(id: number): Promise<void> {
+    validarId(id);
+
+    return apiRequest<void>(`${ENDPOINT}/${id}`, {
+        method: 'DELETE',
+    });
 }

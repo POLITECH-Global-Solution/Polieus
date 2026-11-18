@@ -1,13 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { buscarUsuarioPorId } from '../../services/usuarioService';
+import { contarMinhasOcorrencias } from '../../services/ocorrenciaService';
 
 type Usuario = {
-    nome: string;
+    nomeUsuario: string;
     cpf: string;
     email: string;
     telefone: string;
-    quantidadeOcorrencias: number | null;
-    notificacoesEmail: boolean;
+};
+
+type UsuarioSessao = {
+    idUsuario: number;
+    nomeUsuario: string;
+    email: string;
 };
 
 type IconeProps = {
@@ -15,62 +21,59 @@ type IconeProps = {
     tamanho?: string;
 };
 
-function Icone({
-    nome,
-    tamanho = 'text-2xl',
-}: IconeProps) {
+function Icone({ nome, tamanho = 'text-2xl' }: IconeProps) {
     return (
-        <span
-            className={`material-icons inline-flex shrink-0 items-center justify-center leading-none ${tamanho}`}
-            aria-hidden="true"
-        >
+        <span className={`material-icons inline-flex shrink-0 items-center justify-center leading-none ${tamanho}`} aria-hidden="true">
             {nome}
         </span>
     );
 }
 
+function obterUsuarioSessao(): UsuarioSessao | null {
+    try {
+        const dados = sessionStorage.getItem('usuario');
+
+        if (!dados) return null;
+
+        const usuario = JSON.parse(dados) as UsuarioSessao;
+
+        if (!usuario || !Number.isInteger(usuario.idUsuario) || usuario.idUsuario <= 0) {
+            return null;
+        }
+
+        return usuario;
+
+    } catch {
+        return null;
+    }
+}
+
 function formatarCPF(cpf: string): string {
     const numeros = cpf.replace(/\D/g, '');
 
-    if (numeros.length !== 11) {
-        return cpf;
-    }
+    if (numeros.length !== 11) return cpf;
 
-    return numeros.replace(
-        /(\d{3})(\d{3})(\d{3})(\d{2})/,
-        '$1.$2.$3-$4'
-    );
+    return numeros.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
 }
 
 function formatarTelefone(telefone: string): string {
     const numeros = telefone.replace(/\D/g, '');
 
     if (numeros.length === 11) {
-        return numeros.replace(
-            /(\d{2})(\d{5})(\d{4})/,
-            '($1) $2-$3'
-        );
+        return numeros.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
     }
 
     if (numeros.length === 10) {
-        return numeros.replace(
-            /(\d{2})(\d{4})(\d{4})/,
-            '($1) $2-$3'
-        );
+        return numeros.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
     }
 
     return telefone;
 }
 
-function CampoInformacao({
-    titulo,
-    valor,
-}: {
-    titulo: string;
-    valor?: string;
-}) {
+function CampoInformacao({ titulo, valor }: { titulo: string; valor?: string }) {
     return (
         <div className="grid gap-1 border-b border-[#ead8c9] py-4 last:border-b-0 sm:grid-cols-[150px_minmax(0,1fr)] sm:items-center">
+
             <span className="text-sm font-semibold text-texto">
                 {titulo}
             </span>
@@ -78,99 +81,366 @@ function CampoInformacao({
             <span className="min-w-0 wrap-break-word text-sm text-texto-suave">
                 {valor || 'Não informado'}
             </span>
+
         </div>
     );
 }
 
 export default function Perfil() {
     const navigate = useNavigate();
+    const inputFoto = useRef<HTMLInputElement>(null);
 
-    /*
-     * Os dados serão preenchidos futuramente
-     * pela API Java do Polieus.
-     */
-    const [usuario] = useState<Usuario | null>(null);
+    const [sessao] = useState(obterUsuarioSessao);
+    const [usuario, setUsuario] = useState<Usuario | null>(null);
+    const [carregando, setCarregando] = useState(true);
+    const [erro, setErro] = useState('');
 
-    const [notificacoesEmail, setNotificacoesEmail] =
-        useState<boolean | null>(null);
+    const [fotoPerfil, setFotoPerfil] = useState('');
+    const [mensagemFoto, setMensagemFoto] = useState('');
+    const [erroFoto, setErroFoto] = useState(false);
+    const [processandoFoto, setProcessandoFoto] = useState(false);
+    const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
 
-    const [mostrarConfirmacao, setMostrarConfirmacao] =
-        useState(false);
+    // HISTÓRICO DE PARTICIPAÇÃO
+    const [totalOcorrencias, setTotalOcorrencias] = useState<number | null>(null);
+    const [carregandoHistorico, setCarregandoHistorico] = useState(true);
+    const [erroHistorico, setErroHistorico] = useState('');
+    const [tentativaHistorico, setTentativaHistorico] = useState(0);
 
-    const nomeExibicao = usuario?.nome || 'Meu Perfil';
-
-    const iniciais = usuario?.nome
-        ? usuario.nome
-              .trim()
-              .split(/\s+/)
-              .slice(0, 2)
-              .map((parte) => parte.charAt(0).toUpperCase())
-              .join('')
+    const chaveFoto = sessao
+        ? `polieus_foto_perfil_${sessao.idUsuario}`
         : '';
 
-    function sairDaConta() {
-        setMostrarConfirmacao(false);
+    // ==================================================
+    // CARREGAR DADOS DO USUÁRIO
+    // ==================================================
 
-        /*
-         * Integrar posteriormente com a
-         * autenticação do projeto.
-         */
-        navigate('/');
+    useEffect(() => {
+        if (!sessao) {
+            navigate('/login-usuario', { replace: true });
+            return;
+        }
+
+        let ativo = true;
+
+        async function carregarUsuario(id: number) {
+            try {
+                const dados = await buscarUsuarioPorId(id);
+
+                if (!dados || dados.idUsuario !== id) {
+                    throw new Error('Usuário não encontrado.');
+                }
+
+                if (ativo) {
+                    setUsuario({
+                        nomeUsuario: dados.nomeUsuario,
+                        cpf: dados.cpf,
+                        email: dados.email,
+                        telefone: dados.telefone,
+                    });
+                }
+
+            } catch {
+                if (ativo) {
+                    setErro('Não foi possível carregar suas informações. Tente novamente.');
+                }
+
+            } finally {
+                if (ativo) setCarregando(false);
+            }
+        }
+
+        void carregarUsuario(sessao.idUsuario);
+
+        return () => {
+            ativo = false;
+        };
+
+    }, [sessao, navigate]);
+
+    // ==================================================
+    // CONTABILIZAR OCORRÊNCIAS DO CIDADÃO
+    // ==================================================
+
+    useEffect(() => {
+        if (!sessao) return;
+
+        let ativo = true;
+
+        async function carregarHistorico(idUsuario: number) {
+            setCarregandoHistorico(true);
+            setErroHistorico('');
+            setTotalOcorrencias(null);
+
+            try {
+                const quantidade = await contarMinhasOcorrencias(idUsuario);
+
+                if (!Number.isInteger(quantidade) || quantidade < 0) {
+                    throw new Error('Quantidade de ocorrências inválida.');
+                }
+
+                if (ativo) {
+                    setTotalOcorrencias(quantidade);
+                }
+
+            } catch (erro) {
+                console.error('Erro ao consultar participação do cidadão:', erro);
+
+                if (ativo) {
+                    setErroHistorico('Não foi possível consultar suas ocorrências.');
+                }
+
+            } finally {
+                if (ativo) {
+                    setCarregandoHistorico(false);
+                }
+            }
+        }
+
+        void carregarHistorico(sessao.idUsuario);
+
+        return () => {
+            ativo = false;
+        };
+
+    }, [sessao, tentativaHistorico]);
+
+    // CARREGAR FOTO DE PERFIL
+    useEffect(() => {
+        if (!chaveFoto) return;
+
+        try {
+            setFotoPerfil(localStorage.getItem(chaveFoto) || '');
+
+        } catch {
+            setFotoPerfil('');
+        }
+
+    }, [chaveFoto]);
+
+    const nomeExibicao = usuario?.nomeUsuario || sessao?.nomeUsuario || 'Meu Perfil';
+    const emailExibicao = usuario?.email || sessao?.email || '';
+
+    const iniciais = nomeExibicao
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map(parte => parte.charAt(0).toUpperCase())
+        .join('');
+
+    // ABRIR SELETOR DE IMAGEM
+    function selecionarFoto() {
+        inputFoto.current?.click();
     }
+
+    // ALTERAR FOTO DE PERFIL
+    async function alterarFoto(evento: ChangeEvent<HTMLInputElement>) {
+        const arquivo = evento.target.files?.[0];
+
+        evento.target.value = '';
+
+        if (!arquivo || !chaveFoto || processandoFoto) return;
+
+        setMensagemFoto('');
+        setErroFoto(false);
+
+        const formatosPermitidos = [
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+        ];
+
+        if (!formatosPermitidos.includes(arquivo.type)) {
+            setErroFoto(true);
+            setMensagemFoto('Selecione uma imagem JPG, PNG ou WEBP.');
+            return;
+        }
+
+        if (arquivo.size > 5 * 1024 * 1024) {
+            setErroFoto(true);
+            setMensagemFoto('A imagem deve ter no máximo 5 MB.');
+            return;
+        }
+
+        setProcessandoFoto(true);
+
+        try {
+            const imagem = await createImageBitmap(arquivo);
+
+            const canvas = document.createElement('canvas');
+            const tamanho = 400;
+
+            canvas.width = tamanho;
+            canvas.height = tamanho;
+
+            const contexto = canvas.getContext('2d');
+
+            if (!contexto) {
+                imagem.close();
+                throw new Error('Não foi possível processar a imagem.');
+            }
+
+            const recorte = Math.min(imagem.width, imagem.height);
+            const x = (imagem.width - recorte) / 2;
+            const y = (imagem.height - recorte) / 2;
+
+            contexto.fillStyle = '#ffffff';
+            contexto.fillRect(0, 0, tamanho, tamanho);
+
+            contexto.drawImage(
+                imagem,
+                x,
+                y,
+                recorte,
+                recorte,
+                0,
+                0,
+                tamanho,
+                tamanho
+            );
+
+            imagem.close();
+
+            const foto = canvas.toDataURL('image/jpeg', 0.85);
+
+            localStorage.setItem(chaveFoto, foto);
+            setFotoPerfil(foto);
+            setMensagemFoto('Foto de perfil atualizada!');
+
+        } catch {
+            setErroFoto(true);
+            setMensagemFoto('Não foi possível salvar a foto de perfil.');
+
+        } finally {
+            setProcessandoFoto(false);
+        }
+    }
+
+    // REMOVER FOTO DE PERFIL
+    function removerFoto() {
+        if (!chaveFoto || processandoFoto) return;
+
+        try {
+            localStorage.removeItem(chaveFoto);
+            setFotoPerfil('');
+            setErroFoto(false);
+            setMensagemFoto('Foto de perfil removida.');
+
+        } catch {
+            setErroFoto(true);
+            setMensagemFoto('Não foi possível remover a foto.');
+        }
+    }
+
+    // ATUALIZAR HISTÓRICO
+    function atualizarHistorico() {
+        setTentativaHistorico(atual => atual + 1);
+    }
+
+    // ENCERRAR SESSÃO LOCAL
+    function sairDaConta() {
+        sessionStorage.removeItem('usuario');
+
+        setMostrarConfirmacao(false);
+        setUsuario(null);
+        setFotoPerfil('');
+        setTotalOcorrencias(null);
+
+        navigate('/', { replace: true });
+    }
+
+    if (!sessao) return null;
 
     return (
         <main className="min-h-screen w-full min-w-0 bg-fundo px-4 py-8 font-corpo text-texto sm:px-7 lg:px-10">
+
             <div className="mx-auto max-w-7xl">
+
                 {/* CABEÇALHO */}
                 <header className="mb-8">
+
                     <div className="mb-4 flex items-center gap-2 text-sm text-texto-suave">
-                        <Link
-                            to="/inicio"
-                            className="transition-colors hover:text-primaria"
-                        >
+
+                        <Link to="/inicio" className="transition-colors hover:text-primaria">
                             Início
                         </Link>
 
-                        <Icone
-                            nome="chevron_right"
-                            tamanho="text-base"
-                        />
+                        <Icone nome="chevron_right" tamanho="text-base" />
 
                         <span className="font-semibold text-primaria">
                             Meu Perfil
                         </span>
+
                     </div>
 
                     <div className="flex items-center gap-3">
+
                         <span className="h-10 w-1.5 rounded-full bg-primaria" />
 
                         <div>
+
                             <h1 className="font-titulo text-3xl font-bold text-primaria sm:text-4xl">
                                 Meu Perfil
                             </h1>
 
                             <p className="mt-2 text-sm text-texto-suave sm:text-base">
-                                Gerencie suas informações e preferências.
+                                Gerencie suas informações pessoais e acompanhe sua participação.
                             </p>
+
                         </div>
+
                     </div>
+
                 </header>
+
+                {/* MENSAGENS DA API */}
+                {erro && (
+                    <div role="alert" className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+
+                        <Icone nome="error_outline" tamanho="text-xl" />
+
+                        {erro}
+
+                    </div>
+                )}
 
                 {/* CONTEÚDO PRINCIPAL */}
                 <div className="grid items-stretch gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+
                     {/* CARTÃO DO USUÁRIO */}
                     <section className="flex flex-col items-center justify-center rounded-2xl border border-[#e3c5af] bg-[#fffaf5] px-6 py-10 text-center shadow-sm">
-                        <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-[#e9cdbb] bg-[#76241e] text-white shadow-md">
-                            {iniciais ? (
-                                <span className="font-titulo text-4xl font-bold">
-                                    {iniciais}
-                                </span>
-                            ) : (
-                                <Icone
-                                    nome="person"
-                                    tamanho="text-7xl"
-                                />
-                            )}
+
+                        {/* FOTO DE PERFIL */}
+                        <div className="relative">
+
+                            <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-[#e9cdbb] bg-[#76241e] text-white shadow-md">
+
+                                {fotoPerfil ? (
+
+                                    <img src={fotoPerfil} alt="Foto de perfil do usuário" className="h-full w-full object-cover" />
+
+                                ) : iniciais ? (
+
+                                    <span className="font-titulo text-4xl font-bold">
+                                        {iniciais}
+                                    </span>
+
+                                ) : (
+
+                                    <Icone nome="person" tamanho="text-7xl" />
+
+                                )}
+
+                            </div>
+
+                            <button type="button" onClick={selecionarFoto} disabled={processandoFoto} aria-label="Alterar foto de perfil" title="Alterar foto de perfil" className="absolute right-0 bottom-0 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-4 border-[#fffaf5] bg-primaria text-white shadow-md transition-colors hover:bg-primaria-hover disabled:opacity-60">
+
+                                <Icone nome="photo_camera" tamanho="text-xl" />
+
+                            </button>
+
+                            <input ref={inputFoto} type="file" accept="image/jpeg,image/png,image/webp" onChange={alterarFoto} className="hidden" aria-label="Selecionar foto de perfil" />
+
                         </div>
 
                         <h2 className="mt-6 max-w-full wrap-break-word font-titulo text-xl font-bold text-primaria">
@@ -178,35 +448,71 @@ export default function Perfil() {
                         </h2>
 
                         <p className="mt-2 max-w-full wrap-break-word text-sm text-texto-suave">
-                            {usuario?.email || 'E-mail não disponível'}
+                            {emailExibicao || 'E-mail não disponível'}
                         </p>
+
+                        {/* OPÇÕES DA FOTO */}
+                        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+
+                            <button type="button" onClick={selecionarFoto} disabled={processandoFoto} className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-primaria hover:underline disabled:opacity-60">
+
+                                <Icone nome="edit" tamanho="text-base" />
+
+                                {processandoFoto ? 'Salvando...' : 'Alterar foto'}
+
+                            </button>
+
+                            {fotoPerfil && (
+
+                                <button type="button" onClick={removerFoto} disabled={processandoFoto} className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-red-700 hover:underline disabled:opacity-60">
+
+                                    <Icone nome="delete_outline" tamanho="text-base" />
+
+                                    Remover
+
+                                </button>
+
+                            )}
+
+                        </div>
+
+                        {mensagemFoto && (
+
+                            <p role={erroFoto ? 'alert' : 'status'} className={`mt-3 text-xs font-medium ${erroFoto ? 'text-red-700' : 'text-green-700'}`}>
+                                {mensagemFoto}
+                            </p>
+
+                        )}
 
                         <div className="my-6 h-px w-full bg-[#ead8c9]" />
 
                         <div className="flex items-center gap-2 rounded-full bg-[#f0dfd0] px-4 py-2 text-sm font-semibold text-primaria">
-                            <Icone
-                                nome="verified_user"
-                                tamanho="text-lg"
-                            />
+
+                            <Icone nome="verified_user" tamanho="text-lg" />
 
                             Perfil do Cidadão
+
                         </div>
 
                         <p className="mt-6 text-sm leading-7 text-texto-suave">
-                            Suas informações pessoais serão exibidas
-                            aqui a partir dos dados cadastrados
-                            na plataforma Polieus.
+                            Gerencie suas informações pessoais e acompanhe suas contribuições para a cidade através da plataforma Polieus.
                         </p>
+
                     </section>
 
                     {/* INFORMAÇÕES PESSOAIS */}
                     <section className="min-w-0 rounded-2xl border border-[#e3c5af] bg-[#fffaf5] p-6 shadow-sm sm:p-8">
+
                         <div className="mb-5 flex items-center gap-3 border-b border-[#ead8c9] pb-5">
+
                             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#f0dfd0] text-primaria">
+
                                 <Icone nome="badge" />
+
                             </div>
 
                             <div>
+
                                 <h2 className="font-titulo text-xl font-bold text-primaria">
                                     Informações Pessoais
                                 </h2>
@@ -214,318 +520,257 @@ export default function Perfil() {
                                 <p className="mt-1 text-xs text-texto-suave">
                                     Dados associados à sua conta.
                                 </p>
+
                             </div>
+
                         </div>
 
-                        <div>
-                            <CampoInformacao
-                                titulo="Nome completo"
-                                valor={usuario?.nome}
-                            />
+                        {carregando ? (
 
-                            <CampoInformacao
-                                titulo="CPF"
-                                valor={
-                                    usuario?.cpf
-                                        ? formatarCPF(usuario.cpf)
-                                        : undefined
-                                }
-                            />
+                            <div role="status" className="flex min-h-56 flex-col items-center justify-center gap-3">
 
-                            <CampoInformacao
-                                titulo="E-mail"
-                                valor={usuario?.email}
-                            />
+                                <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#ead8c9] border-t-primaria" />
 
-                            <CampoInformacao
-                                titulo="Telefone"
-                                valor={
-                                    usuario?.telefone
-                                        ? formatarTelefone(
-                                              usuario.telefone
-                                          )
-                                        : undefined
-                                }
-                            />
-                        </div>
+                                <p className="text-sm text-texto-suave">
+                                    Carregando suas informações...
+                                </p>
+
+                            </div>
+
+                        ) : (
+
+                            <div>
+
+                                <CampoInformacao titulo="Nome completo" valor={usuario?.nomeUsuario || sessao.nomeUsuario} />
+
+                                <CampoInformacao titulo="CPF" valor={usuario?.cpf ? formatarCPF(usuario.cpf) : undefined} />
+
+                                <CampoInformacao titulo="E-mail" valor={emailExibicao} />
+
+                                <CampoInformacao titulo="Telefone" valor={usuario?.telefone ? formatarTelefone(usuario.telefone) : undefined} />
+
+                            </div>
+
+                        )}
 
                         <div className="mt-6 flex items-start gap-3 rounded-xl bg-[#f4e8dd] p-4">
+
                             <span className="mt-0.5 text-primaria">
-                                <Icone
-                                    nome="info"
-                                    tamanho="text-xl"
-                                />
+
+                                <Icone nome="info" tamanho="text-xl" />
+
                             </span>
 
                             <p className="text-xs leading-6 text-texto-suave">
-                                As informações pessoais serão
-                                carregadas automaticamente da API
-                                Java quando a integração estiver
-                                disponível.
+                                As informações pessoais são carregadas a partir dos dados cadastrados na sua conta Polieus.
                             </p>
+
                         </div>
+
                     </section>
+
                 </div>
 
-                {/* HISTÓRICO E PREFERÊNCIAS */}
-                <div className="mt-6 grid items-stretch gap-6 lg:grid-cols-2">
-                    {/* HISTÓRICO DE PARTICIPAÇÃO */}
-                    <section className="rounded-2xl border border-[#e3c5af] bg-[#fffaf5] p-6 shadow-sm sm:p-8">
-                        <div className="mb-5 flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#f0dfd0] text-primaria">
-                                <Icone nome="assignment" />
-                            </div>
+                {/* HISTÓRICO DE PARTICIPAÇÃO */}
+                <section className="mt-6 rounded-2xl border border-[#e3c5af] bg-[#fffaf5] p-6 shadow-sm sm:p-8" aria-busy={carregandoHistorico}>
 
-                            <div>
-                                <h2 className="font-titulo text-lg font-bold text-primaria">
-                                    Histórico de Participação
-                                </h2>
-
-                                <p className="mt-1 text-xs text-texto-suave">
-                                    Sua atividade na plataforma.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="rounded-xl bg-[#f4e8dd] px-5 py-6">
-                            <p className="font-titulo text-4xl font-bold text-primaria">
-                                {usuario?.quantidadeOcorrencias ?? '—'}
-                            </p>
-
-                            <p className="mt-2 text-sm text-texto-suave">
-                                Ocorrências registradas
-                            </p>
-                        </div>
-
-                        <p className="mt-5 text-sm leading-7 text-texto-suave">
-                            Acompanhe as solicitações realizadas
-                            e consulte o histórico das suas
-                            contribuições para a cidade.
-                        </p>
-
-                        <Link
-                            to="/minhas-ocorrencias"
-                            className="mt-6 inline-flex items-center gap-2 text-sm font-bold text-primaria transition-colors hover:text-primaria-hover"
-                        >
-                            Ver minhas ocorrências
-
-                            <Icone
-                                nome="arrow_forward"
-                                tamanho="text-lg"
-                            />
-                        </Link>
-                    </section>
-
-                    {/* NOTIFICAÇÕES */}
-                    <section className="rounded-2xl border border-[#e3c5af] bg-[#fffaf5] p-6 shadow-sm sm:p-8">
-                        <div className="mb-5 flex items-center gap-3">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#f0dfd0] text-primaria">
-                                <Icone nome="notifications" />
-                            </div>
-
-                            <div>
-                                <h2 className="font-titulo text-lg font-bold text-primaria">
-                                    Preferências de Notificação
-                                </h2>
-
-                                <p className="mt-1 text-xs text-texto-suave">
-                                    Gerencie suas atualizações.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-4 rounded-xl bg-[#f4e8dd] p-5">
-                            <div className="min-w-0">
-                                <h3 className="text-sm font-semibold text-texto">
-                                    Atualizações por e-mail
-                                </h3>
-
-                                <p className="mt-2 text-xs leading-6 text-texto-suave">
-                                    Receba informações sobre o
-                                    andamento das suas ocorrências.
-                                </p>
-                            </div>
-
-                            <button
-                                type="button"
-                                role="switch"
-                                aria-checked={
-                                    notificacoesEmail ??
-                                    usuario?.notificacoesEmail ??
-                                    false
-                                }
-                                aria-label="Receber atualizações por e-mail"
-                                disabled
-                                onClick={() =>
-                                    setNotificacoesEmail(
-                                        !(
-                                            notificacoesEmail ??
-                                            usuario?.notificacoesEmail ??
-                                            false
-                                        )
-                                    )
-                                }
-                                className={`relative h-7 w-13 shrink-0 rounded-full transition-colors ${
-                                    (
-                                        notificacoesEmail ??
-                                        usuario?.notificacoesEmail ??
-                                        false
-                                    )
-                                        ? 'bg-primaria'
-                                        : 'bg-[#c9b6a7]'
-                                } cursor-not-allowed opacity-60`}
-                                title="Disponível após integração com a API"
-                            >
-                                <span
-                                    className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-all ${
-                                        (
-                                            notificacoesEmail ??
-                                            usuario?.notificacoesEmail ??
-                                            false
-                                        )
-                                            ? 'left-7'
-                                            : 'left-1'
-                                    }`}
-                                />
-                            </button>
-                        </div>
-
-                        <p className="mt-5 flex items-start gap-2 text-xs leading-6 text-texto-suave">
-                            <Icone
-                                nome="info"
-                                tamanho="text-lg"
-                            />
-
-                            As preferências poderão ser alteradas
-                            quando esse recurso estiver disponível
-                            na API.
-                        </p>
-                    </section>
-                </div>
-
-                {/* SEGURANÇA DA CONTA */}
-                <section className="mt-6 rounded-2xl border border-[#e3c5af] bg-[#fffaf5] p-6 shadow-sm sm:p-8">
                     <div className="mb-6 flex items-center gap-3">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#f0dfd0] text-primaria">
-                            <Icone nome="shield" />
+
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f0dfd0] text-primaria">
+
+                            <Icone nome="assignment" />
+
                         </div>
 
                         <div>
-                            <h2 className="font-titulo text-lg font-bold text-primaria">
-                                Segurança da Conta
+
+                            <h2 className="font-titulo text-xl font-bold text-primaria">
+                                Histórico de Participação
                             </h2>
 
                             <p className="mt-1 text-xs text-texto-suave">
-                                Acesse as opções de segurança
-                                do seu perfil.
+                                Sua atividade na plataforma.
                             </p>
+
                         </div>
+
                     </div>
+
+                    <div className="grid items-center gap-6 md:grid-cols-[280px_minmax(0,1fr)]">
+
+                        {/* CONTADOR REAL DE OCORRÊNCIAS */}
+                        <div className="rounded-xl bg-[#f4e8dd] px-6 py-6">
+
+                            {carregandoHistorico ? (
+
+                                <div role="status" aria-label="Consultando quantidade de ocorrências" className="flex h-10 items-center">
+
+                                    <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#dfc2ae] border-t-primaria" />
+
+                                </div>
+
+                            ) : (
+
+                                <p className="font-titulo text-4xl font-bold text-primaria" aria-live="polite">
+
+                                    {totalOcorrencias !== null
+                                        ? totalOcorrencias.toLocaleString('pt-BR')
+                                        : '—'}
+
+                                </p>
+
+                            )}
+
+                            <p className="mt-2 text-sm text-texto-suave">
+                                {totalOcorrencias === 1
+                                    ? 'Ocorrência registrada'
+                                    : 'Ocorrências registradas'}
+                            </p>
+
+                            {/* ERRO NA CONTAGEM */}
+                            {erroHistorico && (
+
+                                <div role="alert" className="mt-3">
+
+                                    <p className="text-xs leading-relaxed text-red-700">
+                                        {erroHistorico}
+                                    </p>
+
+                                    <button type="button" onClick={atualizarHistorico} className="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-primaria hover:underline">
+
+                                        <Icone nome="refresh" tamanho="text-base" />
+
+                                        Tentar novamente
+
+                                    </button>
+
+                                </div>
+
+                            )}
+
+                        </div>
+
+                        <div>
+
+                            <p className="text-sm leading-7 text-texto-suave">
+                                Acompanhe as solicitações realizadas e consulte o histórico das suas contribuições para a cidade.
+                            </p>
+
+                            <Link to="/minhas-ocorrencias" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-primaria transition-colors hover:text-primaria-hover">
+
+                                Ver minhas ocorrências
+
+                                <Icone nome="arrow_forward" tamanho="text-lg" />
+
+                            </Link>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                {/* SEGURANÇA DA CONTA */}
+                <section className="mt-6 rounded-2xl border border-[#e3c5af] bg-[#fffaf5] p-6 shadow-sm sm:p-8">
 
                     <div className="flex flex-wrap items-center justify-between gap-4">
-                        <button
-                            type="button"
-                            disabled
-                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#d8b29c] bg-[#fffaf5] px-5 py-3 text-sm font-bold text-primaria opacity-60 cursor-not-allowed"
-                            title="Disponível após integração com a API"
-                        >
-                            <Icone
-                                nome="lock_reset"
-                                tamanho="text-xl"
-                            />
 
-                            Alterar Senha
-                        </button>
+                        <div className="flex items-center gap-3">
 
-                        <button
-                            type="button"
-                            onClick={() =>
-                                setMostrarConfirmacao(true)
-                            }
-                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primaria px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primaria-hover"
-                            style={{ color: '#ffffff' }}
-                        >
-                            <Icone
-                                nome="logout"
-                                tamanho="text-xl"
-                            />
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f0dfd0] text-primaria">
+
+                                <Icone nome="shield" />
+
+                            </div>
+
+                            <div>
+
+                                <h2 className="font-titulo text-lg font-bold text-primaria">
+                                    Segurança da Conta
+                                </h2>
+
+                                <p className="mt-1 text-xs text-texto-suave">
+                                    Encerre sua sessão no Polieus.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <button type="button" onClick={() => setMostrarConfirmacao(true)} className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primaria px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primaria-hover" style={{ color: '#ffffff' }}>
+
+                            <Icone nome="logout" tamanho="text-xl" />
 
                             Sair da Conta
+
                         </button>
+
                     </div>
+
                 </section>
 
                 {/* RODAPÉ INTERNO */}
                 <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-[#e3c5af] pt-6 text-xs text-texto-suave sm:flex-row">
+
                     <p>
                         Polieus — Tecnologia a serviço da cidadania.
                     </p>
 
-                    <Link
-                        to="/contato"
-                        className="inline-flex items-center gap-2 font-semibold text-primaria hover:underline"
-                    >
+                    <Link to="/contato" className="inline-flex items-center gap-2 font-semibold text-primaria hover:underline">
+
                         Precisa de ajuda?
 
-                        <Icone
-                            nome="arrow_forward"
-                            tamanho="text-base"
-                        />
+                        <Icone nome="arrow_forward" tamanho="text-base" />
+
                     </Link>
+
                 </div>
+
             </div>
 
             {/* CONFIRMAÇÃO DE SAÍDA */}
             {mostrarConfirmacao && (
+
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-                    <div
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="titulo-sair"
-                        className="w-full max-w-md rounded-2xl border border-[#e3c5af] bg-[#fffaf5] p-7 text-center shadow-xl"
-                    >
+
+                    <div role="dialog" aria-modal="true" aria-labelledby="titulo-sair" className="w-full max-w-md rounded-2xl border border-[#e3c5af] bg-[#fffaf5] p-7 text-center shadow-xl">
+
                         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#f0dfd0] text-primaria">
-                            <Icone
-                                nome="logout"
-                                tamanho="text-3xl"
-                            />
+
+                            <Icone nome="logout" tamanho="text-3xl" />
+
                         </div>
 
-                        <h2
-                            id="titulo-sair"
-                            className="font-titulo text-xl font-bold text-primaria"
-                        >
+                        <h2 id="titulo-sair" className="font-titulo text-xl font-bold text-primaria">
                             Sair da Conta
                         </h2>
 
                         <p className="mt-4 text-sm leading-7 text-texto-suave">
-                            Deseja realmente sair da sua conta
-                            no Polieus?
+                            Deseja realmente sair da sua conta no Polieus?
                         </p>
 
                         <div className="mt-7 flex flex-wrap justify-center gap-3">
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setMostrarConfirmacao(false)
-                                }
-                                className="rounded-xl border border-[#d8b29c] px-6 py-3 text-sm font-bold text-primaria transition-colors hover:bg-[#f0dfd0]"
-                            >
+
+                            <button type="button" onClick={() => setMostrarConfirmacao(false)} className="cursor-pointer rounded-xl border border-[#d8b29c] px-6 py-3 text-sm font-bold text-primaria transition-colors hover:bg-[#f0dfd0]">
+
                                 Cancelar
+
                             </button>
 
-                            <button
-                                type="button"
-                                onClick={sairDaConta}
-                                className="rounded-xl bg-primaria px-6 py-3 text-sm font-bold transition-colors hover:bg-primaria-hover"
-                                style={{ color: '#ffffff' }}
-                            >
+                            <button type="button" onClick={sairDaConta} className="cursor-pointer rounded-xl bg-primaria px-6 py-3 text-sm font-bold transition-colors hover:bg-primaria-hover" style={{ color: '#ffffff' }}>
+
                                 Confirmar Saída
+
                             </button>
+
                         </div>
+
                     </div>
+
                 </div>
+
             )}
+
         </main>
     );
 }
