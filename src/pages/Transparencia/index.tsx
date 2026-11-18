@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+
 import { listarOcorrencias, type Ocorrencia } from '../../services/ocorrenciaService';
+import { listarHistoricos, type Historico } from '../../services/historicoService';
 
 type Periodo = '3' | '6' | '12';
 type Aba = 'indicadores' | 'orcamento';
@@ -43,6 +45,16 @@ const CORES_CATEGORIAS = [
     '#9879a4',
     '#b77965',
     '#84756a',
+];
+
+const STATUS_RESOLVIDOS = ['resolvida', 'resolvido'];
+
+const STATUS_NAO_RESOLVIDOS = [
+    'pendente',
+    'em analise',
+    'em andamento',
+    'nao resolvida',
+    'nao resolvido',
 ];
 
 const intervencoes: Intervencao[] = [
@@ -98,6 +110,10 @@ const intervencoes: Intervencao[] = [
     },
 ];
 
+// ==================================================
+// FUNÇÕES AUXILIARES
+// ==================================================
+
 const formatarMoeda = (valor: number) =>
     new Intl.NumberFormat('pt-BR', {
         style: 'currency',
@@ -135,6 +151,84 @@ function converterData(valor?: string): Date | null {
     return data;
 }
 
+function integrarHistoricos(
+    ocorrencias: Ocorrencia[],
+    historicos: Historico[]
+): OcorrenciaTransparencia[] {
+
+    const agrupamento = new Map<number, Historico[]>();
+
+    historicos.forEach(historico => {
+        const id = Number(historico.idOcorrencia);
+
+        if (!Number.isInteger(id) || id <= 0) return;
+
+        const registros = agrupamento.get(id) ?? [];
+
+        registros.push(historico);
+
+        agrupamento.set(id, registros);
+    });
+
+    return ocorrencias.map(ocorrencia => {
+
+        if (ocorrencia.idOcorrencia === null) {
+            return { ...ocorrencia };
+        }
+
+        const registros = agrupamento.get(ocorrencia.idOcorrencia) ?? [];
+
+        if (registros.length === 0) {
+            return { ...ocorrencia };
+        }
+
+        // Não determinar a ordem cronológica quando existem datas inválidas.
+        if (registros.some(item => converterData(item.data) === null)) {
+            return { ...ocorrencia };
+        }
+
+        const ordenados = [...registros].sort((a, b) => {
+
+            const dataA = converterData(a.data)?.getTime() ?? 0;
+            const dataB = converterData(b.data)?.getTime() ?? 0;
+
+            return dataA - dataB ||
+                (a.idHistorico ?? 0) - (b.idHistorico ?? 0);
+        });
+
+        const primeiroHistorico = ordenados[0];
+        const ultimoHistorico = ordenados[ordenados.length - 1];
+
+        let dataResolucao: string | undefined;
+
+        // Identifica a data da transição mais recente para o status resolvido.
+        if (STATUS_RESOLVIDOS.includes(normalizarTexto(ultimoHistorico.status))) {
+
+            for (let indice = ordenados.length - 1; indice >= 0; indice--) {
+
+                const registro = ordenados[indice];
+
+                if (!STATUS_RESOLVIDOS.includes(normalizarTexto(registro.status))) {
+                    break;
+                }
+
+                dataResolucao = registro.data;
+            }
+        }
+
+        return {
+            ...ocorrencia,
+            status: ultimoHistorico.status,
+            data: primeiroHistorico.data,
+            dataResolucao,
+        };
+    });
+}
+
+// ==================================================
+// DIVISOR GREGO
+// ==================================================
+
 function DivisorGrego() {
     return (
         <div className="mt-6 flex max-w-xl items-center gap-4" aria-hidden="true">
@@ -145,26 +239,39 @@ function DivisorGrego() {
     );
 }
 
+// ==================================================
+// ESTADO DOS GRÁFICOS
+// ==================================================
+
 function EstadoGrafico({ mensagem, icone = 'bar_chart' }: {
     mensagem: string;
     icone?: string;
 }) {
     return (
         <div className="flex min-h-60 flex-col items-center justify-center px-5 py-8 text-center">
+
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f3e5d9]">
+
                 <span className="material-icons text-3xl text-primaria" aria-hidden="true">
                     {icone}
                 </span>
+
             </div>
 
             <p className="max-w-xs text-sm leading-relaxed text-texto-suave">
                 {mensagem}
             </p>
+
         </div>
     );
 }
 
+// ==================================================
+// GRÁFICO DE CATEGORIAS
+// ==================================================
+
 function GraficoCategorias({ categorias }: { categorias: Categoria[] }) {
+
     const total = categorias.reduce(
         (soma, categoria) => soma + categoria.quantidade, 0
     );
@@ -174,6 +281,7 @@ function GraficoCategorias({ categorias }: { categorias: Categoria[] }) {
     }
 
     const partes = categorias.map((categoria, indice) => {
+
         const acumuladoAnterior = categorias
             .slice(0, indice)
             .reduce((soma, item) => soma + item.quantidade, 0);
@@ -200,6 +308,7 @@ function GraficoCategorias({ categorias }: { categorias: Categoria[] }) {
                     </span>
 
                 </div>
+
             </div>
 
             <div className="w-full space-y-4">
@@ -234,20 +343,27 @@ function GraficoCategorias({ categorias }: { categorias: Categoria[] }) {
                 })}
 
             </div>
+
         </div>
     );
 }
+
+// ==================================================
+// GRÁFICO DE EVOLUÇÃO
+// ==================================================
 
 function GraficoEvolucao({ dados, exibirResolvidas }: {
     dados: DadosMensais[];
     exibirResolvidas: boolean;
 }) {
+
     if (dados.length === 0) {
-        return <EstadoGrafico mensagem="A evolução mensal estará disponível quando as datas das ocorrências forem disponibilizadas pelo sistema." icone="show_chart" />;
+        return <EstadoGrafico mensagem="A evolução mensal estará disponível quando os históricos das ocorrências possuírem datas válidas." icone="show_chart" />;
     }
 
     const largura = 600;
     const altura = 250;
+
     const margemEsquerda = 42;
     const margemDireita = 18;
     const margemSuperior = 20;
@@ -290,15 +406,23 @@ function GraficoEvolucao({ dados, exibirResolvidas }: {
             <div className="mb-5 flex flex-wrap gap-5 text-xs">
 
                 <div className="flex items-center gap-2">
+
                     <span className="h-2.5 w-2.5 rounded-full bg-primaria" />
-                    <span>Registradas</span>
+
+                    <span>Primeiros registros</span>
+
                 </div>
 
                 {exibirResolvidas && (
+
                     <div className="flex items-center gap-2">
+
                         <span className="h-2.5 w-2.5 rounded-full bg-[#d7a17e]" />
+
                         <span>Resolvidas</span>
+
                     </div>
+
                 )}
 
             </div>
@@ -308,6 +432,7 @@ function GraficoEvolucao({ dados, exibirResolvidas }: {
                 <svg viewBox={`0 0 ${largura} ${altura}`} className="h-auto w-full min-w-100" role="img" aria-label="Evolução mensal das ocorrências">
 
                     {marcacoes.map(marcacao => {
+
                         const valor = limite * marcacao;
                         const y = coordenadaY(valor);
 
@@ -327,20 +452,33 @@ function GraficoEvolucao({ dados, exibirResolvidas }: {
                     <polyline points={gerarPontos('registradas')} fill="none" stroke="#b3261e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
                     {exibirResolvidas && (
+
                         <polyline points={gerarPontos('resolvidas')} fill="none" stroke="#d7a17e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+
                     )}
 
                     {dados.map((item, indice) => (
+
                         <g key={`${item.mes}-${indice}`}>
 
                             <circle cx={coordenadaX(indice)} cy={coordenadaY(item.registradas)} r="4" fill="#b3261e">
-                                <title>{`${item.mes}: ${item.registradas} registradas`}</title>
+
+                                <title>
+                                    {`${item.mes}: ${item.registradas} primeiros registros`}
+                                </title>
+
                             </circle>
 
                             {exibirResolvidas && (
+
                                 <circle cx={coordenadaX(indice)} cy={coordenadaY(item.resolvidas)} r="4" fill="#d7a17e">
-                                    <title>{`${item.mes}: ${item.resolvidas} resolvidas`}</title>
+
+                                    <title>
+                                        {`${item.mes}: ${item.resolvidas} resolvidas`}
+                                    </title>
+
                                 </circle>
+
                             )}
 
                             <text x={coordenadaX(indice)} y={altura - 10} textAnchor="middle" fontSize="11" fill="#77655d">
@@ -348,23 +486,35 @@ function GraficoEvolucao({ dados, exibirResolvidas }: {
                             </text>
 
                         </g>
+
                     ))}
 
                 </svg>
 
             </div>
 
+            <p className="mt-3 text-xs leading-relaxed text-texto-suave">
+                A evolução considera as datas dos primeiros históricos disponíveis e das ocorrências atualmente resolvidas.
+            </p>
+
             {!exibirResolvidas && (
+
                 <p className="mt-3 text-xs text-texto-suave">
                     A evolução das resoluções depende da disponibilidade das respectivas datas.
                 </p>
+
             )}
 
         </div>
     );
 }
 
+// ==================================================
+// ESTIMATIVA ORÇAMENTÁRIA
+// ==================================================
+
 function EstimativaOrcamentaria() {
+
     const [intervencaoId, setIntervencaoId] = useState('calcada');
     const [quantidade, setQuantidade] = useState(10);
 
@@ -376,6 +526,7 @@ function EstimativaOrcamentaria() {
         Number.isFinite(quantidade) && quantidade > 0 ? quantidade : 0;
 
     const custos = useMemo(() => {
+
         const materiais = intervencao.materiais * quantidadeValida;
         const maoDeObra = intervencao.maoDeObra * quantidadeValida;
         const equipamentos = intervencao.equipamentos * quantidadeValida;
@@ -388,6 +539,7 @@ function EstimativaOrcamentaria() {
             adicionais,
             total: materiais + maoDeObra + equipamentos + adicionais,
         };
+
     }, [intervencao, quantidadeValida]);
 
     const componentes = [
@@ -425,10 +577,15 @@ function EstimativaOrcamentaria() {
                 <div className="mb-6 flex items-start gap-4">
 
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#f3e5d9] text-primaria">
-                        <span className="material-icons text-3xl" aria-hidden="true">calculate</span>
+
+                        <span className="material-icons text-3xl" aria-hidden="true">
+                            calculate
+                        </span>
+
                     </div>
 
                     <div>
+
                         <h3 className="font-titulo text-xl font-bold text-primaria sm:text-2xl">
                             Simulador de Custos
                         </h3>
@@ -436,6 +593,7 @@ function EstimativaOrcamentaria() {
                         <p className="mt-2 text-sm leading-relaxed text-texto-suave">
                             Selecione uma intervenção urbana e informe a quantidade desejada para visualizar uma estimativa de seus custos.
                         </p>
+
                     </div>
 
                 </div>
@@ -451,9 +609,11 @@ function EstimativaOrcamentaria() {
                         <select id="tipoIntervencao" value={intervencaoId} onChange={event => setIntervencaoId(event.target.value)} className="w-full rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-3 text-sm text-texto outline-none transition-colors focus:border-primaria">
 
                             {intervencoes.map(item => (
+
                                 <option key={item.id} value={item.id}>
                                     {item.nome}
                                 </option>
+
                             ))}
 
                         </select>
@@ -467,6 +627,7 @@ function EstimativaOrcamentaria() {
                         </label>
 
                         <input id="quantidadeIntervencao" type="number" min="1" max="100000" step="1" value={quantidade || ''} onChange={event => {
+
                             const valor = Number(event.target.value);
 
                             setQuantidade(
@@ -474,6 +635,7 @@ function EstimativaOrcamentaria() {
                                     ? Math.min(100000, Math.max(0, Math.trunc(valor)))
                                     : 0
                             );
+
                         }} className="w-full rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-3 text-sm text-texto outline-none transition-colors focus:border-primaria" />
 
                     </div>
@@ -482,7 +644,9 @@ function EstimativaOrcamentaria() {
 
                 <div className="mt-5 flex items-start gap-3 rounded-xl bg-fundo p-4">
 
-                    <span className="material-icons text-xl text-primaria" aria-hidden="true">info</span>
+                    <span className="material-icons text-xl text-primaria" aria-hidden="true">
+                        info
+                    </span>
 
                     <p className="text-sm leading-relaxed text-texto-suave">
                         {intervencao.descricao} Os valores utilizados nesta simulação são fictícios e servem apenas para demonstrar o funcionamento do cálculo.
@@ -495,6 +659,7 @@ function EstimativaOrcamentaria() {
             <div className="grid gap-5 sm:grid-cols-2">
 
                 {componentes.map(componente => (
+
                     <article key={componente.nome} className="rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-6 shadow-sm transition-shadow hover:shadow-md">
 
                         <div className="mb-4 flex items-center gap-3">
@@ -522,6 +687,7 @@ function EstimativaOrcamentaria() {
                         </p>
 
                     </article>
+
                 ))}
 
             </div>
@@ -569,6 +735,7 @@ function EstimativaOrcamentaria() {
                     <div className="grid gap-3 sm:grid-cols-2">
 
                         {componentes.map(componente => (
+
                             <div key={componente.nome} className="flex items-center justify-between gap-3 text-sm">
 
                                 <span className="text-texto-suave">
@@ -580,6 +747,7 @@ function EstimativaOrcamentaria() {
                                 </span>
 
                             </div>
+
                         ))}
 
                     </div>
@@ -620,31 +788,67 @@ function EstimativaOrcamentaria() {
     );
 }
 
+// ==================================================
+// PÁGINA DE TRANSPARÊNCIA
+// ==================================================
+
 export default function Transparencia() {
+
     const [periodo, setPeriodo] = useState<Periodo>('6');
     const [abaAtiva, setAbaAtiva] = useState<Aba>('indicadores');
 
     const [ocorrencias, setOcorrencias] = useState<OcorrenciaTransparencia[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState('');
+    const [aviso, setAviso] = useState('');
     const [tentativa, setTentativa] = useState(0);
 
+    // ==================================================
     // INTEGRAÇÃO COM A API JAVA
+    // ==================================================
+
     useEffect(() => {
+
         let ativo = true;
 
         async function carregarDados() {
+
             setCarregando(true);
             setErro('');
+            setAviso('');
 
             try {
+
                 const registros = await listarOcorrencias();
 
-                if (ativo) {
-                    setOcorrencias(registros);
+                if (!ativo) return;
+
+                let historicos: Historico[] = [];
+
+                try {
+
+                    historicos = await listarHistoricos();
+
+                } catch (erroHistorico) {
+
+                    console.error('Erro ao consultar históricos:', erroHistorico);
+
+                    if (ativo) {
+                        setAviso('Não foi possível consultar os históricos. Os indicadores de resolução e evolução podem estar indisponíveis.');
+                    }
                 }
 
+                if (!ativo) return;
+
+                const dadosIntegrados = integrarHistoricos(
+                    registros,
+                    historicos
+                );
+
+                setOcorrencias(dadosIntegrados);
+
             } catch (erro) {
+
                 console.error('Erro ao carregar transparência:', erro);
 
                 if (ativo) {
@@ -653,9 +857,11 @@ export default function Transparencia() {
                 }
 
             } finally {
+
                 if (ativo) {
                     setCarregando(false);
                 }
+
             }
         }
 
@@ -667,24 +873,27 @@ export default function Transparencia() {
 
     }, [tentativa]);
 
+    // ==================================================
     // INDICADORES GERAIS
+    // ==================================================
+
     const total = ocorrencias.length;
 
-    const statusResolvidos = ['resolvida', 'resolvido'];
-    const statusNaoResolvidos = ['pendente', 'em analise', 'em andamento', 'nao resolvida', 'nao resolvido'];
-
     const statusDisponiveis = total > 0 && ocorrencias.every(item => {
+
         const status = normalizarTexto(item.status);
 
-        return statusResolvidos.includes(status) ||
-            statusNaoResolvidos.includes(status);
+        return STATUS_RESOLVIDOS.includes(status) ||
+            STATUS_NAO_RESOLVIDOS.includes(status);
     });
 
     const totalResolvidas = ocorrencias.filter(item =>
-        statusResolvidos.includes(normalizarTexto(item.status))
+        STATUS_RESOLVIDOS.includes(normalizarTexto(item.status))
     ).length;
 
-    const totalNaoResolvidas = total - totalResolvidas;
+    const totalNaoResolvidas = ocorrencias.filter(item =>
+        STATUS_NAO_RESOLVIDOS.includes(normalizarTexto(item.status))
+    ).length;
 
     const taxaResolucao = total > 0
         ? Math.round((totalResolvidas / total) * 100)
@@ -695,7 +904,8 @@ export default function Transparencia() {
     const indicadores = [
         {
             titulo: 'Total de ocorrências',
-            valor: dadosDisponiveis ? total.toLocaleString('pt-BR') : '—',
+            valor: dadosDisponiveis
+                ? total.toLocaleString('pt-BR') : '—',
             icone: 'assignment',
             cor: '#87221b',
         },
@@ -722,14 +932,19 @@ export default function Transparencia() {
         },
     ];
 
+    // ==================================================
     // DISTRIBUIÇÃO POR CATEGORIA
+    // ==================================================
+
     const categorias = useMemo<Categoria[]>(() => {
+
         const agrupamento = new Map<string, {
             nome: string;
             quantidade: number;
         }>();
 
         ocorrencias.forEach(item => {
+
             const nome = item.categoria?.trim() || 'Não informada';
             const chave = normalizarTexto(nome);
             const existente = agrupamento.get(chave);
@@ -738,10 +953,14 @@ export default function Transparencia() {
                 nome: existente?.nome ?? nome,
                 quantidade: (existente?.quantidade ?? 0) + 1,
             });
+
         });
 
         return Array.from(agrupamento.values())
-            .sort((a, b) => b.quantidade - a.quantidade || a.nome.localeCompare(b.nome, 'pt-BR'))
+            .sort((a, b) =>
+                b.quantidade - a.quantidade ||
+                a.nome.localeCompare(b.nome, 'pt-BR')
+            )
             .map((item, indice) => ({
                 ...item,
                 cor: CORES_CATEGORIAS[indice % CORES_CATEGORIAS.length],
@@ -749,23 +968,33 @@ export default function Transparencia() {
 
     }, [ocorrencias]);
 
+    // ==================================================
     // DISPONIBILIDADE DAS DATAS
+    // ==================================================
+
     const datasDisponiveis = ocorrencias.length > 0 &&
         ocorrencias.every(item => converterData(item.data) !== null);
 
     const datasResolucaoDisponiveis = statusDisponiveis &&
         ocorrencias
-            .filter(item => ['resolvida', 'resolvido'].includes(normalizarTexto(item.status)))
+            .filter(item =>
+                STATUS_RESOLVIDOS.includes(normalizarTexto(item.status))
+            )
             .every(item => converterData(item.dataResolucao) !== null);
 
+    // ==================================================
     // EVOLUÇÃO MENSAL
+    // ==================================================
+
     const dadosFiltrados = useMemo<DadosMensais[]>(() => {
+
         if (!datasDisponiveis) return [];
 
         const hoje = new Date();
         const quantidadeMeses = Number(periodo);
 
         return Array.from({ length: quantidadeMeses }, (_, indice) => {
+
             const referencia = new Date(
                 hoje.getFullYear(),
                 hoje.getMonth() - quantidadeMeses + indice + 1,
@@ -773,6 +1002,7 @@ export default function Transparencia() {
             );
 
             const mesmoMes = (valor?: string) => {
+
                 const data = converterData(valor);
 
                 return data !== null &&
@@ -794,11 +1024,12 @@ export default function Transparencia() {
 
                 resolvidas: datasResolucaoDisponiveis
                     ? ocorrencias.filter(item =>
-                        ['resolvida', 'resolvido'].includes(normalizarTexto(item.status)) &&
+                        STATUS_RESOLVIDOS.includes(normalizarTexto(item.status)) &&
                         mesmoMes(item.dataResolucao)
                     ).length
                     : 0,
             };
+
         });
 
     }, [periodo, ocorrencias, datasDisponiveis, datasResolucaoDisponiveis]);
@@ -891,6 +1122,7 @@ export default function Transparencia() {
 
                 {/* INDICADORES GERAIS */}
                 {abaAtiva === 'indicadores' && (
+
                     <section aria-label="Indicadores gerais" aria-busy={carregando}>
 
                         <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
@@ -923,7 +1155,9 @@ export default function Transparencia() {
 
                         </div>
 
+                        {/* CARREGAMENTO */}
                         {carregando && (
+
                             <div role="status" className="mb-6 flex items-center gap-3 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4 text-sm text-texto-suave">
 
                                 <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#dfc2ae] border-t-primaria" />
@@ -931,9 +1165,12 @@ export default function Transparencia() {
                                 Consultando os dados da plataforma...
 
                             </div>
+
                         )}
 
+                        {/* ERRO */}
                         {erro && (
+
                             <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-red-200 bg-red-50 p-4">
 
                                 <div className="flex items-center gap-3 text-sm text-red-800">
@@ -951,12 +1188,39 @@ export default function Transparencia() {
                                 </button>
 
                             </div>
+
+                        )}
+
+                        {/* AVISO SOBRE HISTÓRICOS */}
+                        {!carregando && aviso && (
+
+                            <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4">
+
+                                <div className="flex flex-1 items-start gap-3">
+
+                                    <span className="material-icons text-xl text-primaria" aria-hidden="true">
+                                        info
+                                    </span>
+
+                                    <p className="text-sm leading-relaxed text-texto-suave">
+                                        {aviso}
+                                    </p>
+
+                                </div>
+
+                                <button type="button" onClick={() => setTentativa(atual => atual + 1)} className="cursor-pointer text-sm font-semibold text-primaria hover:underline">
+                                    Tentar novamente
+                                </button>
+
+                            </div>
+
                         )}
 
                         {/* CARDS */}
                         <section className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores gerais">
 
                             {indicadores.map(indicador => (
+
                                 <article key={indicador.titulo} className="flex items-center gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
 
                                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#f3e5d9]" style={{ color: indicador.cor }}>
@@ -980,11 +1244,13 @@ export default function Transparencia() {
                                     </div>
 
                                 </article>
+
                             ))}
 
                         </section>
 
-                        {dadosDisponiveis && total > 0 && !statusDisponiveis && (
+                        {dadosDisponiveis && total > 0 && !statusDisponiveis && !aviso && (
+
                             <div className="mb-6 flex items-start gap-3 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4">
 
                                 <span className="material-icons text-xl text-primaria" aria-hidden="true">
@@ -996,6 +1262,7 @@ export default function Transparencia() {
                                 </p>
 
                             </div>
+
                         )}
 
                         {/* GRÁFICOS */}
@@ -1016,11 +1283,17 @@ export default function Transparencia() {
                                 </div>
 
                                 {carregando ? (
+
                                     <EstadoGrafico mensagem="Carregando informações..." icone="hourglass_empty" />
+
                                 ) : erro ? (
+
                                     <EstadoGrafico mensagem="Não foi possível consultar as categorias." icone="error_outline" />
+
                                 ) : (
+
                                     <GraficoCategorias categorias={categorias} />
+
                                 )}
 
                             </article>
@@ -1056,11 +1329,21 @@ export default function Transparencia() {
                                 </div>
 
                                 {carregando ? (
+
                                     <EstadoGrafico mensagem="Carregando informações..." icone="hourglass_empty" />
+
                                 ) : erro ? (
+
                                     <EstadoGrafico mensagem="Não foi possível consultar a evolução das ocorrências." icone="error_outline" />
+
+                                ) : total === 0 ? (
+
+                                    <EstadoGrafico mensagem="Nenhuma ocorrência registrada na plataforma." icone="show_chart" />
+
                                 ) : (
+
                                     <GraficoEvolucao dados={dadosFiltrados} exibirResolvidas={datasResolucaoDisponiveis} />
+
                                 )}
 
                             </article>
@@ -1095,7 +1378,11 @@ export default function Transparencia() {
                                     </p>
 
                                     <p className="mt-3 text-sm leading-relaxed text-texto-suave">
-                                        Os dados apresentados são agregados e não exibem informações pessoais dos cidadãos.
+                                        As datas são obtidas dos históricos associados às ocorrências. O primeiro histórico representa o primeiro registro disponível para acompanhamento.
+                                    </p>
+
+                                    <p className="mt-3 text-sm leading-relaxed text-texto-suave">
+                                        Os indicadores apresentados nesta página são agregados e não exibem informações pessoais dos cidadãos.
                                     </p>
 
                                 </div>
@@ -1105,10 +1392,12 @@ export default function Transparencia() {
                         </section>
 
                     </section>
+
                 )}
 
                 {/* ESTIMATIVA ORÇAMENTÁRIA */}
                 {abaAtiva === 'orcamento' && (
+
                     <section aria-label="Estimativa orçamentária">
 
                         <div className="mb-7">
@@ -1130,6 +1419,7 @@ export default function Transparencia() {
                         <EstimativaOrcamentaria />
 
                     </section>
+
                 )}
 
             </div>

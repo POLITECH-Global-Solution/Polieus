@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { listarMinhasOcorrencias, obterUsuarioId } from '../../services/ocorrenciaService';
+import { listarHistoricosPorOcorrencia, obterHistoricoInicial, obterHistoricoAtual, ordenarHistoricos, type Historico } from '../../services/historicoService';
 
 type StatusOcorrencia =
     | 'Pendente'
@@ -19,6 +20,8 @@ interface Ocorrencia {
     endereco: string;
     departamento: string;
     cep: string;
+    historicos: Historico[];
+    erroHistorico: boolean;
 }
 
 const itensPorPagina = 5;
@@ -29,6 +32,14 @@ const estilosStatus: Record<StatusOcorrencia, string> = {
     'Em andamento': 'bg-[#f8c9bd] text-[#922c1d]',
     Resolvida: 'bg-[#dfe8c5] text-[#3e6029]',
     'Não informado': 'bg-[#e8ded5] text-[#554238]',
+};
+
+const iconesStatus: Record<StatusOcorrencia, string> = {
+    Pendente: 'schedule',
+    'Em análise': 'search',
+    'Em andamento': 'construction',
+    Resolvida: 'check_circle',
+    'Não informado': 'info',
 };
 
 const iconesCategoria: Record<string, string> = {
@@ -45,6 +56,51 @@ const iconesCategoria: Record<string, string> = {
     Outros: 'assignment',
 };
 
+// PADRONIZAR STATUS RETORNADO PELO JAVA
+function normalizarStatus(status?: string): StatusOcorrencia {
+    const valor = (status ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/_/g, ' ')
+        .trim()
+        .toLowerCase();
+
+    switch (valor) {
+        case 'pendente':
+            return 'Pendente';
+
+        case 'em analise':
+            return 'Em análise';
+
+        case 'em andamento':
+            return 'Em andamento';
+
+        case 'resolvida':
+        case 'resolvido':
+            return 'Resolvida';
+
+        default:
+            return 'Não informado';
+    }
+}
+
+// FORMATAR DATA RETORNADA PELA API
+function formatarData(data?: string): string {
+    if (!data?.trim()) return 'Não informada';
+
+    if (/^\d{2}-\d{2}-\d{4}$/.test(data)) {
+        return data.replace(/-/g, '/');
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}/.test(data)) {
+        const [ano, mes, dia] = data.slice(0, 10).split('-');
+
+        return `${dia}/${mes}/${ano}`;
+    }
+
+    return data;
+}
+
 export default function MinhasOcorrencias() {
     const navigate = useNavigate();
 
@@ -59,10 +115,12 @@ export default function MinhasOcorrencias() {
     const [filtroCategoria, setFiltroCategoria] = useState('Todas');
     const [paginaAtual, setPaginaAtual] = useState(1);
 
-    const [ocorrenciaSelecionada, setOcorrenciaSelecionada] =
-        useState<Ocorrencia | null>(null);
+    const [ocorrenciaSelecionada, setOcorrenciaSelecionada] = useState<Ocorrencia | null>(null);
 
-    // CARREGAR OCORRÊNCIAS DO CIDADÃO
+    // ==================================================
+    // CARREGAR OCORRÊNCIAS E HISTÓRICOS DO CIDADÃO
+    // ==================================================
+
     useEffect(() => {
         const idUsuario = obterUsuarioId();
 
@@ -77,37 +135,72 @@ export default function MinhasOcorrencias() {
             setCarregando(true);
             setErro('');
             setOcorrencias([]);
+            setOcorrenciaSelecionada(null);
 
             try {
+                // CONSULTAR SOMENTE AS OCORRÊNCIAS DO USUÁRIO
                 const dadosOcorrencias = await listarMinhasOcorrencias(id);
 
                 if (!ativo) return;
 
+                const ocorrenciasValidas = dadosOcorrencias.filter(
+                    item =>
+                        typeof item.idOcorrencia === 'number' &&
+                        Number.isInteger(item.idOcorrencia) &&
+                        item.idOcorrencia > 0 &&
+                        item.idUsuario === id
+                );
+
                 const ocorrenciasFormatadas: Ocorrencia[] = [];
 
-                for (const item of dadosOcorrencias) {
-                    if (
-                        typeof item.idOcorrencia !== 'number' ||
-                        !Number.isInteger(item.idOcorrencia) ||
-                        item.idOcorrencia <= 0
-                    ) {
-                        continue;
+                // CONSULTAR HISTÓRICOS VINCULADOS ÀS OCORRÊNCIAS
+                for (const item of ocorrenciasValidas) {
+                    if (!ativo) return;
+
+                    const idOcorrencia = item.idOcorrencia;
+
+                    if (idOcorrencia === null) continue;
+
+                    let historicos: Historico[] = [];
+                    let erroHistorico = false;
+
+                    try {
+                        const dadosHistoricos = await listarHistoricosPorOcorrencia(idOcorrencia);
+
+                        historicos = ordenarHistoricos(dadosHistoricos);
+
+                    } catch (erro) {
+                        console.error(`Erro ao consultar histórico da ocorrência ${idOcorrencia}:`, erro);
+
+                        erroHistorico = true;
                     }
 
+                    if (!ativo) return;
+
+                    // PRIMEIRO HISTÓRICO: PROTOCOLO E DATA INICIAL
+                    const historicoInicial = obterHistoricoInicial(historicos);
+
+                    // ÚLTIMO HISTÓRICO: STATUS ATUAL
+                    const historicoAtual = obterHistoricoAtual(historicos);
+
                     ocorrenciasFormatadas.push({
-                        id: item.idOcorrencia,
-                        protocolo: 'Não informado',
-                        categoria: item.categoria,
-                        descricao: item.descricao,
-                        data: 'Não informada',
-                        status: 'Não informado',
-                        endereco: item.endereco,
-                        departamento: item.departamento,
-                        cep: item.cep,
+                        id: idOcorrencia,
+                        protocolo: String(historicoInicial?.protocolo || historicoAtual?.protocolo || 'Não informado'),
+                        categoria: item.categoria ?? 'Outros',
+                        descricao: item.descricao ?? '',
+                        data: formatarData(historicoInicial?.data),
+                        status: normalizarStatus(historicoAtual?.status),
+                        endereco: item.endereco ?? 'Não informado',
+                        departamento: item.departamento ?? 'Não informado',
+                        cep: item.cep ?? '',
+                        historicos,
+                        erroHistorico,
                     });
                 }
 
-                setOcorrencias(ocorrenciasFormatadas);
+                if (ativo) {
+                    setOcorrencias(ocorrenciasFormatadas);
+                }
 
             } catch (erro) {
                 console.error('Erro ao carregar ocorrências:', erro);
@@ -137,9 +230,12 @@ export default function MinhasOcorrencias() {
 
     // CATEGORIAS DISPONÍVEIS
     const categorias = useMemo(
-        () => [...new Set(ocorrencias.map(item => item.categoria))],
+        () => [...new Set(ocorrencias.map(item => item.categoria))].sort(),
         [ocorrencias]
     );
+
+    // VERIFICAR FALHAS NA CONSULTA DE HISTÓRICOS
+    const possuiErroHistorico = ocorrencias.some(item => item.erroHistorico);
 
     // BUSCA, FILTROS E ORDENAÇÃO
     const ocorrenciasFiltradas = useMemo(() => {
@@ -162,20 +258,14 @@ export default function MinhasOcorrencias() {
                     filtroCategoria === 'Todas' ||
                     item.categoria === filtroCategoria;
 
-                return (
-                    correspondeBusca &&
-                    correspondeStatus &&
-                    correspondeCategoria
-                );
+                return correspondeBusca && correspondeStatus && correspondeCategoria;
             })
             .sort((a, b) => b.id - a.id);
 
     }, [ocorrencias, busca, filtroStatus, filtroCategoria]);
 
     // PAGINAÇÃO
-    const totalPaginas = Math.ceil(
-        ocorrenciasFiltradas.length / itensPorPagina
-    );
+    const totalPaginas = Math.ceil(ocorrenciasFiltradas.length / itensPorPagina);
 
     const ocorrenciasPagina = ocorrenciasFiltradas.slice(
         (paginaAtual - 1) * itensPorPagina,
@@ -236,7 +326,7 @@ export default function MinhasOcorrencias() {
         setPaginaAtual(1);
     }
 
-    // TENTAR CARREGAR NOVAMENTE
+    // ATUALIZAR OCORRÊNCIAS
     function tentarNovamente() {
         limparFiltros();
         setTentativa(atual => atual + 1);
@@ -286,8 +376,7 @@ export default function MinhasOcorrencias() {
                             </h2>
 
                             <p className="mt-2 text-sm text-texto-suave sm:text-base">
-                                Acompanhe o status das suas solicitações e consulte
-                                os registros realizados.
+                                Acompanhe o status das suas solicitações e consulte os registros realizados.
                             </p>
                         </div>
 
@@ -303,9 +392,11 @@ export default function MinhasOcorrencias() {
                     </div>
 
                     <div className="mt-6 flex max-w-xl items-center gap-4" aria-hidden="true">
+
                         <div className="h-px flex-1 bg-[#b77965]" />
                         <div className="h-2.5 w-2.5 rotate-45 bg-[#78221b]" />
                         <div className="h-px flex-1 bg-[#d8b9a8]" />
+
                     </div>
 
                 </section>
@@ -337,10 +428,17 @@ export default function MinhasOcorrencias() {
 
                             Filtros
 
-                            <span className={`material-icons text-lg transition-transform duration-300 ${
-                                mostrarFiltros ? 'rotate-180' : ''
-                            }`} aria-hidden="true">
+                            <span className={`material-icons text-lg transition-transform duration-300 ${mostrarFiltros ? 'rotate-180' : ''}`} aria-hidden="true">
                                 expand_more
+                            </span>
+
+                        </button>
+
+                        {/* ATUALIZAR DADOS */}
+                        <button type="button" onClick={tentarNovamente} disabled={carregando} aria-label="Atualizar ocorrências" title="Atualizar ocorrências" className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-3 text-sm font-semibold text-[#78221b] transition-colors hover:bg-[#f3e5d9] disabled:cursor-not-allowed disabled:opacity-50">
+
+                            <span className={`material-icons text-xl ${carregando ? 'animate-spin' : ''}`} aria-hidden="true">
+                                refresh
                             </span>
 
                         </button>
@@ -397,11 +495,33 @@ export default function MinhasOcorrencias() {
                                 </button>
 
                             </div>
-
                         </div>
                     )}
 
                 </section>
+
+                {/* AVISO DE HISTÓRICO INDISPONÍVEL */}
+                {!carregando && !erro && possuiErroHistorico && (
+                    <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dfc2ae] bg-[#fff7ee] p-4">
+
+                        <div className="flex flex-1 items-start gap-3">
+
+                            <span className="material-icons text-xl text-primaria" aria-hidden="true">
+                                info
+                            </span>
+
+                            <p className="text-sm leading-relaxed text-texto-suave">
+                                Algumas ocorrências foram carregadas, mas seus históricos estão temporariamente indisponíveis.
+                            </p>
+
+                        </div>
+
+                        <button type="button" onClick={tentarNovamente} className="cursor-pointer text-sm font-semibold text-primaria hover:underline">
+                            Tentar novamente
+                        </button>
+
+                    </div>
+                )}
 
                 {/* HISTÓRICO DE OCORRÊNCIAS */}
                 <section aria-label="Histórico das minhas ocorrências" aria-busy={carregando}>
@@ -413,16 +533,16 @@ export default function MinhasOcorrencias() {
                             <table className="w-full min-w-195 border-collapse text-left">
 
                                 <thead className="bg-[#f0dfd4]">
-
                                     <tr className="font-corpo text-sm font-bold text-[#54251e]">
+
                                         <th scope="col" className="px-5 py-4">Protocolo</th>
                                         <th scope="col" className="px-5 py-4">Categoria</th>
                                         <th scope="col" className="px-5 py-4">Descrição</th>
                                         <th scope="col" className="px-5 py-4">Data do registro</th>
                                         <th scope="col" className="px-5 py-4">Status</th>
                                         <th scope="col" className="px-5 py-4 text-center">Ações</th>
-                                    </tr>
 
+                                    </tr>
                                 </thead>
 
                                 <tbody>
@@ -448,7 +568,6 @@ export default function MinhasOcorrencias() {
                                                     </span>
 
                                                 </div>
-
                                             </td>
 
                                             <td className="max-w-70 px-5 py-5 text-sm leading-relaxed text-texto">
@@ -465,9 +584,7 @@ export default function MinhasOcorrencias() {
 
                                             <td className="px-5 py-5">
 
-                                                <span className={`inline-flex min-w-28 items-center justify-center rounded-full px-3 py-2 text-center text-xs font-semibold ${
-                                                    estilosStatus[ocorrencia.status]
-                                                }`}>
+                                                <span className={`inline-flex min-w-28 items-center justify-center rounded-full px-3 py-2 text-center text-xs font-semibold ${estilosStatus[ocorrencia.status]}`}>
                                                     {ocorrencia.status}
                                                 </span>
 
@@ -482,21 +599,18 @@ export default function MinhasOcorrencias() {
                                                     </span>
 
                                                 </button>
-
                                             </td>
 
                                         </tr>
-
                                     ))}
 
                                 </tbody>
-                            </table>
 
+                            </table>
                         </div>
 
                         {/* CARREGAMENTO */}
                         {carregando && (
-
                             <div role="status" className="flex flex-col items-center justify-center px-5 py-16 text-center">
 
                                 <div className="mb-5 h-12 w-12 animate-spin rounded-full border-4 border-[#ead7c9] border-t-primaria" />
@@ -506,7 +620,7 @@ export default function MinhasOcorrencias() {
                                 </h3>
 
                                 <p className="mt-3 text-sm text-texto-suave">
-                                    Aguarde enquanto recuperamos os seus registros.
+                                    Aguarde enquanto recuperamos os seus registros e históricos.
                                 </p>
 
                             </div>
@@ -514,7 +628,6 @@ export default function MinhasOcorrencias() {
 
                         {/* ERRO NA CONSULTA */}
                         {!carregando && erro && (
-
                             <div role="alert" className="flex flex-col items-center px-5 py-14 text-center">
 
                                 <span className="material-icons mb-4 text-6xl text-primaria" aria-hidden="true">
@@ -543,7 +656,6 @@ export default function MinhasOcorrencias() {
 
                         {/* ESTADO VAZIO */}
                         {!carregando && !erro && ocorrenciasFiltradas.length === 0 && (
-
                             <div className="flex flex-col items-center px-5 py-14 text-center">
 
                                 <span className="material-icons mb-4 text-6xl text-primaria" aria-hidden="true">
@@ -551,11 +663,9 @@ export default function MinhasOcorrencias() {
                                 </span>
 
                                 <h3 className="font-titulo text-xl font-semibold text-primaria">
-
                                     {ocorrencias.length === 0
                                         ? 'Nenhuma ocorrência registrada neste histórico'
                                         : 'Nenhuma ocorrência encontrada'}
-
                                 </h3>
 
                                 <p className="mt-3 max-w-md font-corpo text-sm text-texto-suave">
@@ -575,7 +685,6 @@ export default function MinhasOcorrencias() {
                                         </span>
 
                                         Registrar ocorrência
-
                                     </Link>
 
                                 ) : (
@@ -593,7 +702,6 @@ export default function MinhasOcorrencias() {
 
                     {/* PAGINAÇÃO */}
                     {!carregando && !erro && ocorrenciasFiltradas.length > 0 && (
-
                         <div className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
 
                             <p className="text-sm text-texto-suave" role="status">
@@ -611,10 +719,7 @@ export default function MinhasOcorrencias() {
 
                                 </button>
 
-                                {Array.from(
-                                    { length: totalPaginas },
-                                    (_, indice) => indice + 1
-                                ).map(pagina => (
+                                {Array.from({ length: totalPaginas }, (_, indice) => indice + 1).map(pagina => (
 
                                     <button key={pagina} type="button" onClick={() => setPaginaAtual(pagina)} aria-label={`Ir para a página ${pagina}`} aria-current={paginaAtual === pagina ? 'page' : undefined} className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border text-sm font-semibold transition-colors ${
                                         paginaAtual === pagina
@@ -636,12 +741,10 @@ export default function MinhasOcorrencias() {
                                 </button>
 
                             </nav>
-
                         </div>
                     )}
 
                 </section>
-
             </div>
 
             {/* MODAL DE DETALHES */}
@@ -657,6 +760,7 @@ export default function MinhasOcorrencias() {
 
                     <section role="dialog" aria-modal="true" aria-labelledby="titulo-detalhes-ocorrencia" className="w-full max-w-xl overflow-hidden rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] shadow-2xl">
 
+                        {/* CABEÇALHO DO MODAL */}
                         <div className="flex items-start justify-between gap-4 bg-[#78221b] px-6 py-5">
 
                             <div>
@@ -683,18 +787,15 @@ export default function MinhasOcorrencias() {
 
                         <div className="max-h-[70vh] space-y-5 overflow-y-auto p-6">
 
+                            {/* INFORMAÇÕES DO REGISTRO */}
                             <div className="flex flex-wrap items-center justify-between gap-3">
 
                                 <span className="font-titulo text-lg font-semibold text-[#78221b]">
                                     Informações do registro
                                 </span>
 
-                                <span className={`rounded-full px-4 py-2 text-xs font-semibold ${
-                                    estilosStatus[ocorrenciaSelecionada.status]
-                                }`}>
-
+                                <span className={`rounded-full px-4 py-2 text-xs font-semibold ${estilosStatus[ocorrenciaSelecionada.status]}`}>
                                     {ocorrenciaSelecionada.status}
-
                                 </span>
 
                             </div>
@@ -774,13 +875,140 @@ export default function MinhasOcorrencias() {
                                 </p>
 
                                 <p className="mt-2 pl-7 text-sm text-texto-suave">
-                                    CEP: {ocorrenciaSelecionada.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2')}
+                                    CEP: {ocorrenciaSelecionada.cep
+                                        ? ocorrenciaSelecionada.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2')
+                                        : 'Não informado'}
                                 </p>
 
                             </div>
 
+                            {/* HISTÓRICO DE ACOMPANHAMENTO */}
+                            <section className="border-t border-[#ead7c9] pt-5">
+
+                                <div className="flex items-center gap-2">
+
+                                    <span className="material-icons text-2xl text-[#78221b]" aria-hidden="true">
+                                        history
+                                    </span>
+
+                                    <h3 className="font-titulo text-xl font-bold text-[#78221b]">
+                                        Histórico de acompanhamento
+                                    </h3>
+
+                                </div>
+
+                                <p className="mt-2 text-xs leading-relaxed text-texto-suave">
+                                    Acompanhe as atualizações registradas para esta ocorrência.
+                                </p>
+
+                                {/* ERRO NO HISTÓRICO */}
+                                {ocorrenciaSelecionada.erroHistorico ? (
+
+                                    <div className="mt-4 rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-4 text-center">
+
+                                        <span className="material-icons text-3xl text-primaria" aria-hidden="true">
+                                            error_outline
+                                        </span>
+
+                                        <p className="mt-2 text-sm text-texto-suave">
+                                            Não foi possível consultar o histórico desta ocorrência.
+                                        </p>
+
+                                        <button type="button" onClick={tentarNovamente} className="mt-3 cursor-pointer text-sm font-semibold text-primaria hover:underline">
+                                            Tentar novamente
+                                        </button>
+
+                                    </div>
+
+                                ) : ocorrenciaSelecionada.historicos.length === 0 ? (
+
+                                    /* HISTÓRICO VAZIO */
+                                    <div className="mt-4 rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-5 text-center">
+
+                                        <span className="material-icons text-3xl text-primaria" aria-hidden="true">
+                                            history
+                                        </span>
+
+                                        <p className="mt-2 text-sm text-texto-suave">
+                                            Nenhuma atualização disponível no histórico.
+                                        </p>
+
+                                    </div>
+
+                                ) : (
+
+                                    /* LINHA DO TEMPO */
+                                    <div className="mt-5 rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-5">
+
+                                        <ol>
+
+                                            {ocorrenciaSelecionada.historicos.map((historico, indice) => {
+
+                                                const status = normalizarStatus(historico.status);
+
+                                                const ultimo = indice === ocorrenciaSelecionada.historicos.length - 1;
+
+                                                return (
+
+                                                    <li key={`${historico.idHistorico ?? 'historico'}-${indice}`} className="relative flex gap-4">
+
+                                                        {/* LINHA VERTICAL */}
+                                                        {!ultimo && (
+                                                            <div className="absolute bottom-0 left-5 top-10 w-px -translate-x-1/2 bg-[#c9a28d]" aria-hidden="true" />
+                                                        )}
+
+                                                        {/* ÍCONE DO STATUS */}
+                                                        <div className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${estilosStatus[status]}`}>
+
+                                                            <span className="material-icons text-xl" aria-hidden="true">
+                                                                {iconesStatus[status]}
+                                                            </span>
+
+                                                        </div>
+
+                                                        {/* INFORMAÇÕES DO HISTÓRICO */}
+                                                        <div className={`min-w-0 flex-1 ${ultimo ? '' : 'pb-6'}`}>
+
+                                                            <div className="flex flex-wrap items-center gap-2">
+
+                                                                <h4 className="text-sm font-bold text-[#78221b]">
+                                                                    {status === 'Não informado'
+                                                                        ? historico.status || 'Não informado'
+                                                                        : status}
+                                                                </h4>
+
+                                                                {ultimo && (
+                                                                    <span className="rounded-full bg-[#78221b] px-2.5 py-1 text-[10px] font-semibold text-white">
+                                                                        Status atual
+                                                                    </span>
+                                                                )}
+
+                                                            </div>
+
+                                                            <p className="mt-1 text-xs text-texto-suave">
+                                                                {formatarData(historico.data)}
+                                                            </p>
+
+                                                            <p className="mt-2 text-xs leading-relaxed text-texto-suave">
+                                                                Protocolo: {historico.protocolo || 'Não informado'}
+                                                            </p>
+
+                                                        </div>
+
+                                                    </li>
+                                                );
+                                            })}
+
+                                        </ol>
+
+                                    </div>
+                                )}
+
+                            </section>
+
                         </div>
 
+                        {/* RODAPÉ DO MODAL */}
                         <div className="flex justify-end border-t border-[#ead7c9] px-6 py-4">
 
                             <button type="button" onClick={() => setOcorrenciaSelecionada(null)} className="cursor-pointer rounded-full bg-primaria px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primaria-hover">

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { buscarUsuarioPorId } from '../../services/usuarioService';
+import { contarMinhasOcorrencias } from '../../services/ocorrenciaService';
 
 type Usuario = {
     nomeUsuario: string;
@@ -41,6 +42,7 @@ function obterUsuarioSessao(): UsuarioSessao | null {
         }
 
         return usuario;
+
     } catch {
         return null;
     }
@@ -71,6 +73,7 @@ function formatarTelefone(telefone: string): string {
 function CampoInformacao({ titulo, valor }: { titulo: string; valor?: string }) {
     return (
         <div className="grid gap-1 border-b border-[#ead8c9] py-4 last:border-b-0 sm:grid-cols-[150px_minmax(0,1fr)] sm:items-center">
+
             <span className="text-sm font-semibold text-texto">
                 {titulo}
             </span>
@@ -78,6 +81,7 @@ function CampoInformacao({ titulo, valor }: { titulo: string; valor?: string }) 
             <span className="min-w-0 wrap-break-word text-sm text-texto-suave">
                 {valor || 'Não informado'}
             </span>
+
         </div>
     );
 }
@@ -90,17 +94,27 @@ export default function Perfil() {
     const [usuario, setUsuario] = useState<Usuario | null>(null);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState('');
+
     const [fotoPerfil, setFotoPerfil] = useState('');
     const [mensagemFoto, setMensagemFoto] = useState('');
     const [erroFoto, setErroFoto] = useState(false);
     const [processandoFoto, setProcessandoFoto] = useState(false);
     const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
 
+    // HISTÓRICO DE PARTICIPAÇÃO
+    const [totalOcorrencias, setTotalOcorrencias] = useState<number | null>(null);
+    const [carregandoHistorico, setCarregandoHistorico] = useState(true);
+    const [erroHistorico, setErroHistorico] = useState('');
+    const [tentativaHistorico, setTentativaHistorico] = useState(0);
+
     const chaveFoto = sessao
         ? `polieus_foto_perfil_${sessao.idUsuario}`
         : '';
 
+    // ==================================================
     // CARREGAR DADOS DO USUÁRIO
+    // ==================================================
+
     useEffect(() => {
         if (!sessao) {
             navigate('/login-usuario', { replace: true });
@@ -125,10 +139,12 @@ export default function Perfil() {
                         telefone: dados.telefone,
                     });
                 }
+
             } catch {
                 if (ativo) {
                     setErro('Não foi possível carregar suas informações. Tente novamente.');
                 }
+
             } finally {
                 if (ativo) setCarregando(false);
             }
@@ -139,7 +155,55 @@ export default function Perfil() {
         return () => {
             ativo = false;
         };
+
     }, [sessao, navigate]);
+
+    // ==================================================
+    // CONTABILIZAR OCORRÊNCIAS DO CIDADÃO
+    // ==================================================
+
+    useEffect(() => {
+        if (!sessao) return;
+
+        let ativo = true;
+
+        async function carregarHistorico(idUsuario: number) {
+            setCarregandoHistorico(true);
+            setErroHistorico('');
+            setTotalOcorrencias(null);
+
+            try {
+                const quantidade = await contarMinhasOcorrencias(idUsuario);
+
+                if (!Number.isInteger(quantidade) || quantidade < 0) {
+                    throw new Error('Quantidade de ocorrências inválida.');
+                }
+
+                if (ativo) {
+                    setTotalOcorrencias(quantidade);
+                }
+
+            } catch (erro) {
+                console.error('Erro ao consultar participação do cidadão:', erro);
+
+                if (ativo) {
+                    setErroHistorico('Não foi possível consultar suas ocorrências.');
+                }
+
+            } finally {
+                if (ativo) {
+                    setCarregandoHistorico(false);
+                }
+            }
+        }
+
+        void carregarHistorico(sessao.idUsuario);
+
+        return () => {
+            ativo = false;
+        };
+
+    }, [sessao, tentativaHistorico]);
 
     // CARREGAR FOTO DE PERFIL
     useEffect(() => {
@@ -147,9 +211,11 @@ export default function Perfil() {
 
         try {
             setFotoPerfil(localStorage.getItem(chaveFoto) || '');
+
         } catch {
             setFotoPerfil('');
         }
+
     }, [chaveFoto]);
 
     const nomeExibicao = usuario?.nomeUsuario || sessao?.nomeUsuario || 'Meu Perfil';
@@ -240,9 +306,11 @@ export default function Perfil() {
             localStorage.setItem(chaveFoto, foto);
             setFotoPerfil(foto);
             setMensagemFoto('Foto de perfil atualizada!');
+
         } catch {
             setErroFoto(true);
             setMensagemFoto('Não foi possível salvar a foto de perfil.');
+
         } finally {
             setProcessandoFoto(false);
         }
@@ -257,10 +325,16 @@ export default function Perfil() {
             setFotoPerfil('');
             setErroFoto(false);
             setMensagemFoto('Foto de perfil removida.');
+
         } catch {
             setErroFoto(true);
             setMensagemFoto('Não foi possível remover a foto.');
         }
+    }
+
+    // ATUALIZAR HISTÓRICO
+    function atualizarHistorico() {
+        setTentativaHistorico(atual => atual + 1);
     }
 
     // ENCERRAR SESSÃO LOCAL
@@ -270,6 +344,7 @@ export default function Perfil() {
         setMostrarConfirmacao(false);
         setUsuario(null);
         setFotoPerfil('');
+        setTotalOcorrencias(null);
 
         navigate('/', { replace: true });
     }
@@ -303,6 +378,7 @@ export default function Perfil() {
                         <span className="h-10 w-1.5 rounded-full bg-primaria" />
 
                         <div>
+
                             <h1 className="font-titulo text-3xl font-bold text-primaria sm:text-4xl">
                                 Meu Perfil
                             </h1>
@@ -310,6 +386,7 @@ export default function Perfil() {
                             <p className="mt-2 text-sm text-texto-suave sm:text-base">
                                 Gerencie suas informações pessoais e acompanhe sua participação.
                             </p>
+
                         </div>
 
                     </div>
@@ -319,8 +396,11 @@ export default function Perfil() {
                 {/* MENSAGENS DA API */}
                 {erro && (
                     <div role="alert" className="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+
                         <Icone nome="error_outline" tamanho="text-xl" />
+
                         {erro}
+
                     </div>
                 )}
 
@@ -336,19 +416,27 @@ export default function Perfil() {
                             <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-[#e9cdbb] bg-[#76241e] text-white shadow-md">
 
                                 {fotoPerfil ? (
+
                                     <img src={fotoPerfil} alt="Foto de perfil do usuário" className="h-full w-full object-cover" />
+
                                 ) : iniciais ? (
+
                                     <span className="font-titulo text-4xl font-bold">
                                         {iniciais}
                                     </span>
+
                                 ) : (
+
                                     <Icone nome="person" tamanho="text-7xl" />
+
                                 )}
 
                             </div>
 
                             <button type="button" onClick={selecionarFoto} disabled={processandoFoto} aria-label="Alterar foto de perfil" title="Alterar foto de perfil" className="absolute right-0 bottom-0 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-4 border-[#fffaf5] bg-primaria text-white shadow-md transition-colors hover:bg-primaria-hover disabled:opacity-60">
+
                                 <Icone nome="photo_camera" tamanho="text-xl" />
+
                             </button>
 
                             <input ref={inputFoto} type="file" accept="image/jpeg,image/png,image/webp" onChange={alterarFoto} className="hidden" aria-label="Selecionar foto de perfil" />
@@ -367,30 +455,43 @@ export default function Perfil() {
                         <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
 
                             <button type="button" onClick={selecionarFoto} disabled={processandoFoto} className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-primaria hover:underline disabled:opacity-60">
+
                                 <Icone nome="edit" tamanho="text-base" />
+
                                 {processandoFoto ? 'Salvando...' : 'Alterar foto'}
+
                             </button>
 
                             {fotoPerfil && (
+
                                 <button type="button" onClick={removerFoto} disabled={processandoFoto} className="inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-red-700 hover:underline disabled:opacity-60">
+
                                     <Icone nome="delete_outline" tamanho="text-base" />
+
                                     Remover
+
                                 </button>
+
                             )}
 
                         </div>
 
                         {mensagemFoto && (
+
                             <p role={erroFoto ? 'alert' : 'status'} className={`mt-3 text-xs font-medium ${erroFoto ? 'text-red-700' : 'text-green-700'}`}>
                                 {mensagemFoto}
                             </p>
+
                         )}
 
                         <div className="my-6 h-px w-full bg-[#ead8c9]" />
 
                         <div className="flex items-center gap-2 rounded-full bg-[#f0dfd0] px-4 py-2 text-sm font-semibold text-primaria">
+
                             <Icone nome="verified_user" tamanho="text-lg" />
+
                             Perfil do Cidadão
+
                         </div>
 
                         <p className="mt-6 text-sm leading-7 text-texto-suave">
@@ -405,10 +506,13 @@ export default function Perfil() {
                         <div className="mb-5 flex items-center gap-3 border-b border-[#ead8c9] pb-5">
 
                             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#f0dfd0] text-primaria">
+
                                 <Icone nome="badge" />
+
                             </div>
 
                             <div>
+
                                 <h2 className="font-titulo text-xl font-bold text-primaria">
                                     Informações Pessoais
                                 </h2>
@@ -416,11 +520,13 @@ export default function Perfil() {
                                 <p className="mt-1 text-xs text-texto-suave">
                                     Dados associados à sua conta.
                                 </p>
+
                             </div>
 
                         </div>
 
                         {carregando ? (
+
                             <div role="status" className="flex min-h-56 flex-col items-center justify-center gap-3">
 
                                 <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#ead8c9] border-t-primaria" />
@@ -430,7 +536,9 @@ export default function Perfil() {
                                 </p>
 
                             </div>
+
                         ) : (
+
                             <div>
 
                                 <CampoInformacao titulo="Nome completo" valor={usuario?.nomeUsuario || sessao.nomeUsuario} />
@@ -442,12 +550,15 @@ export default function Perfil() {
                                 <CampoInformacao titulo="Telefone" valor={usuario?.telefone ? formatarTelefone(usuario.telefone) : undefined} />
 
                             </div>
+
                         )}
 
                         <div className="mt-6 flex items-start gap-3 rounded-xl bg-[#f4e8dd] p-4">
 
                             <span className="mt-0.5 text-primaria">
+
                                 <Icone nome="info" tamanho="text-xl" />
+
                             </span>
 
                             <p className="text-xs leading-6 text-texto-suave">
@@ -461,15 +572,18 @@ export default function Perfil() {
                 </div>
 
                 {/* HISTÓRICO DE PARTICIPAÇÃO */}
-                <section className="mt-6 rounded-2xl border border-[#e3c5af] bg-[#fffaf5] p-6 shadow-sm sm:p-8">
+                <section className="mt-6 rounded-2xl border border-[#e3c5af] bg-[#fffaf5] p-6 shadow-sm sm:p-8" aria-busy={carregandoHistorico}>
 
                     <div className="mb-6 flex items-center gap-3">
 
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f0dfd0] text-primaria">
+
                             <Icone nome="assignment" />
+
                         </div>
 
                         <div>
+
                             <h2 className="font-titulo text-xl font-bold text-primaria">
                                 Histórico de Participação
                             </h2>
@@ -477,21 +591,62 @@ export default function Perfil() {
                             <p className="mt-1 text-xs text-texto-suave">
                                 Sua atividade na plataforma.
                             </p>
+
                         </div>
 
                     </div>
 
                     <div className="grid items-center gap-6 md:grid-cols-[280px_minmax(0,1fr)]">
 
+                        {/* CONTADOR REAL DE OCORRÊNCIAS */}
                         <div className="rounded-xl bg-[#f4e8dd] px-6 py-6">
 
-                            <p className="font-titulo text-4xl font-bold text-primaria">
-                                —
-                            </p>
+                            {carregandoHistorico ? (
+
+                                <div role="status" aria-label="Consultando quantidade de ocorrências" className="flex h-10 items-center">
+
+                                    <span className="h-8 w-8 animate-spin rounded-full border-4 border-[#dfc2ae] border-t-primaria" />
+
+                                </div>
+
+                            ) : (
+
+                                <p className="font-titulo text-4xl font-bold text-primaria" aria-live="polite">
+
+                                    {totalOcorrencias !== null
+                                        ? totalOcorrencias.toLocaleString('pt-BR')
+                                        : '—'}
+
+                                </p>
+
+                            )}
 
                             <p className="mt-2 text-sm text-texto-suave">
-                                Ocorrências registradas
+                                {totalOcorrencias === 1
+                                    ? 'Ocorrência registrada'
+                                    : 'Ocorrências registradas'}
                             </p>
+
+                            {/* ERRO NA CONTAGEM */}
+                            {erroHistorico && (
+
+                                <div role="alert" className="mt-3">
+
+                                    <p className="text-xs leading-relaxed text-red-700">
+                                        {erroHistorico}
+                                    </p>
+
+                                    <button type="button" onClick={atualizarHistorico} className="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs font-semibold text-primaria hover:underline">
+
+                                        <Icone nome="refresh" tamanho="text-base" />
+
+                                        Tentar novamente
+
+                                    </button>
+
+                                </div>
+
+                            )}
 
                         </div>
 
@@ -502,8 +657,11 @@ export default function Perfil() {
                             </p>
 
                             <Link to="/minhas-ocorrencias" className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-primaria transition-colors hover:text-primaria-hover">
+
                                 Ver minhas ocorrências
+
                                 <Icone nome="arrow_forward" tamanho="text-lg" />
+
                             </Link>
 
                         </div>
@@ -520,10 +678,13 @@ export default function Perfil() {
                         <div className="flex items-center gap-3">
 
                             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f0dfd0] text-primaria">
+
                                 <Icone nome="shield" />
+
                             </div>
 
                             <div>
+
                                 <h2 className="font-titulo text-lg font-bold text-primaria">
                                     Segurança da Conta
                                 </h2>
@@ -531,13 +692,17 @@ export default function Perfil() {
                                 <p className="mt-1 text-xs text-texto-suave">
                                     Encerre sua sessão no Polieus.
                                 </p>
+
                             </div>
 
                         </div>
 
                         <button type="button" onClick={() => setMostrarConfirmacao(true)} className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-primaria px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-primaria-hover" style={{ color: '#ffffff' }}>
+
                             <Icone nome="logout" tamanho="text-xl" />
+
                             Sair da Conta
+
                         </button>
 
                     </div>
@@ -552,8 +717,11 @@ export default function Perfil() {
                     </p>
 
                     <Link to="/contato" className="inline-flex items-center gap-2 font-semibold text-primaria hover:underline">
+
                         Precisa de ajuda?
+
                         <Icone nome="arrow_forward" tamanho="text-base" />
+
                     </Link>
 
                 </div>
@@ -568,7 +736,9 @@ export default function Perfil() {
                     <div role="dialog" aria-modal="true" aria-labelledby="titulo-sair" className="w-full max-w-md rounded-2xl border border-[#e3c5af] bg-[#fffaf5] p-7 text-center shadow-xl">
 
                         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#f0dfd0] text-primaria">
+
                             <Icone nome="logout" tamanho="text-3xl" />
+
                         </div>
 
                         <h2 id="titulo-sair" className="font-titulo text-xl font-bold text-primaria">
@@ -582,11 +752,15 @@ export default function Perfil() {
                         <div className="mt-7 flex flex-wrap justify-center gap-3">
 
                             <button type="button" onClick={() => setMostrarConfirmacao(false)} className="cursor-pointer rounded-xl border border-[#d8b29c] px-6 py-3 text-sm font-bold text-primaria transition-colors hover:bg-[#f0dfd0]">
+
                                 Cancelar
+
                             </button>
 
                             <button type="button" onClick={sairDaConta} className="cursor-pointer rounded-xl bg-primaria px-6 py-3 text-sm font-bold transition-colors hover:bg-primaria-hover" style={{ color: '#ffffff' }}>
+
                                 Confirmar Saída
+
                             </button>
 
                         </div>

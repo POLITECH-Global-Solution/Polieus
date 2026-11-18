@@ -26,6 +26,13 @@ interface MapaProps {
     carregando?: boolean;
 }
 
+interface GrupoOcorrencias {
+    chave: string;
+    latitude: number;
+    longitude: number;
+    ocorrencias: OcorrenciaMapa[];
+}
+
 const CENTRO_SAO_PAULO: [number, number] = [-22.6, -48.5];
 
 const LIMITES_SAO_PAULO: LatLngBoundsExpression = [
@@ -51,6 +58,8 @@ const NOMES_PRIORIDADE: Record<PrioridadeOcorrencia, string> = {
     baixa: 'Baixa',
     'nao-informada': 'Não informada',
 };
+
+// CRIAR MARCADOR INDIVIDUAL
 
 function criarIconePrioridade(prioridade: PrioridadeOcorrencia, selecionado: boolean) {
     const cor = CORES_PRIORIDADE[prioridade];
@@ -80,23 +89,112 @@ function criarIconePrioridade(prioridade: PrioridadeOcorrencia, selecionado: boo
     });
 }
 
-function AjustarVisualizacao({ ocorrenciaSelecionada }: {
+// CRIAR MARCADOR DE OCORRÊNCIAS AGRUPADAS
+
+function criarIconeGrupo(quantidade: number, selecionado: boolean) {
+    const tamanho = selecionado ? 52 : 46;
+
+    return L.divIcon({
+        className: '',
+        html: `
+            <div style="
+                width: ${tamanho}px;
+                height: ${tamanho}px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: #78221b;
+                border: 3px solid #ffffff;
+                border-radius: 50%;
+                color: #ffffff;
+                font-size: 17px;
+                font-weight: bold;
+                box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+            ">
+                ${quantidade}
+            </div>
+        `,
+        iconSize: [tamanho, tamanho],
+        iconAnchor: [tamanho / 2, tamanho / 2],
+        popupAnchor: [0, -tamanho / 2],
+    });
+}
+
+// AGRUPAR OCORRÊNCIAS COM AS MESMAS COORDENADAS
+
+function agruparOcorrencias(ocorrencias: OcorrenciaMapa[]): GrupoOcorrencias[] {
+    const grupos = new Map<string, GrupoOcorrencias>();
+
+    for (const ocorrencia of ocorrencias) {
+        const chave = `${ocorrencia.latitude},${ocorrencia.longitude}`;
+        const grupo = grupos.get(chave);
+
+        if (grupo) {
+            grupo.ocorrencias.push(ocorrencia);
+        } else {
+            grupos.set(chave, {
+                chave,
+                latitude: ocorrencia.latitude,
+                longitude: ocorrencia.longitude,
+                ocorrencias: [ocorrencia],
+            });
+        }
+    }
+
+    return Array.from(grupos.values());
+}
+
+// AJUSTAR VISUALIZAÇÃO DO MAPA
+
+function AjustarVisualizacao({ grupos, ocorrenciaSelecionada }: {
+    grupos: GrupoOcorrencias[];
     ocorrenciaSelecionada?: OcorrenciaMapa;
 }) {
     const mapa = useMap();
+
+    useEffect(() => {
+        if (grupos.length === 0) {
+            mapa.setView(CENTRO_SAO_PAULO, 7);
+            return;
+        }
+
+        if (grupos.length === 1) {
+            mapa.setView(
+                [grupos[0].latitude, grupos[0].longitude],
+                11
+            );
+
+            return;
+        }
+
+        const limites = L.latLngBounds(
+            grupos.map(grupo =>
+                L.latLng(grupo.latitude, grupo.longitude)
+            )
+        );
+
+        mapa.fitBounds(limites, {
+            padding: [50, 50],
+            maxZoom: 12,
+        });
+
+    }, [mapa, grupos]);
 
     useEffect(() => {
         if (!ocorrenciaSelecionada) return;
 
         mapa.flyTo(
             [ocorrenciaSelecionada.latitude, ocorrenciaSelecionada.longitude],
-            Math.max(mapa.getZoom(), 15),
+            Math.max(mapa.getZoom(), 12),
             { animate: true, duration: 1.2 }
         );
+
     }, [mapa, ocorrenciaSelecionada]);
 
     return null;
 }
+
+// COMPONENTE PRINCIPAL
 
 export default function Mapa({
     ocorrencias = [],
@@ -106,6 +204,8 @@ export default function Mapa({
     carregando = false,
 }: MapaProps) {
     const [mapaPronto, setMapaPronto] = useState(false);
+
+    // VALIDAR COORDENADAS
 
     const ocorrenciasValidas = useMemo(
         () => ocorrencias.filter(ocorrencia =>
@@ -119,12 +219,19 @@ export default function Mapa({
         [ocorrencias]
     );
 
+    // AGRUPAR MARCADORES
+
+    const grupos = useMemo(
+        () => agruparOcorrencias(ocorrenciasValidas),
+        [ocorrenciasValidas]
+    );
+
     const ocorrenciaSelecionada = ocorrenciasValidas.find(
         ocorrencia => ocorrencia.id === ocorrenciaSelecionadaId
     );
 
     return (
-        <div className="relative w-full overflow-hidden rounded-xl border border-secundaria bg-fundo shadow-sm" style={{ height: altura }}>
+        <div className="relative isolate w-full overflow-hidden rounded-xl border border-secundaria bg-fundo shadow-sm" style={{ height: altura }}>
 
             <MapContainer center={CENTRO_SAO_PAULO} zoom={7} minZoom={6} maxZoom={19} maxBounds={LIMITES_NAVEGACAO} maxBoundsViscosity={1} zoomControl={false} scrollWheelZoom={true} className="h-full w-full" whenReady={() => setMapaPronto(true)}>
 
@@ -132,47 +239,144 @@ export default function Mapa({
 
                 <ZoomControl position="bottomleft" />
 
-                <AjustarVisualizacao ocorrenciaSelecionada={ocorrenciaSelecionada} />
+                <AjustarVisualizacao grupos={grupos} ocorrenciaSelecionada={ocorrenciaSelecionada} />
 
-                {ocorrenciasValidas.map(ocorrencia => {
-                    const selecionado = ocorrencia.id === ocorrenciaSelecionadaId;
+                {/* MARCADORES */}
+
+                {grupos.map(grupo => {
+                    const agrupado = grupo.ocorrencias.length > 1;
+
+                    const selecionado = grupo.ocorrencias.some(
+                        ocorrencia => ocorrencia.id === ocorrenciaSelecionadaId
+                    );
+
+                    const primeiraOcorrencia = grupo.ocorrencias[0];
+
+                    const icone = agrupado
+                        ? criarIconeGrupo(grupo.ocorrencias.length, selecionado)
+                        : criarIconePrioridade(primeiraOcorrencia.prioridade, selecionado);
 
                     return (
-                        <Marker key={ocorrencia.id} position={[ocorrencia.latitude, ocorrencia.longitude]} icon={criarIconePrioridade(ocorrencia.prioridade, selecionado)} eventHandlers={{
-                            click: () => aoSelecionarOcorrencia?.(ocorrencia),
+                        <Marker key={grupo.chave} position={[grupo.latitude, grupo.longitude]} icon={icone} eventHandlers={{
+                            click: () => {
+                                if (!agrupado) {
+                                    aoSelecionarOcorrencia?.(primeiraOcorrencia);
+                                }
+                            },
                         }}>
 
-                            <Popup>
-                                <div className="min-w-48 font-corpo">
+                            <Popup maxWidth={320}>
 
-                                    <p className="mb-1 text-base font-bold text-primaria">
-                                        {ocorrencia.categoria}
-                                    </p>
+                                {agrupado ? (
 
-                                    <p className="mb-2 text-sm text-texto">
-                                        {ocorrencia.descricao}
-                                    </p>
+                                    /* POPUP DE OCORRÊNCIAS AGRUPADAS */
 
-                                    <div className="space-y-1 text-xs text-texto-suave">
+                                    <div className="min-w-52 font-corpo">
 
-                                        <p>
-                                            <strong>Endereço:</strong> {ocorrencia.endereco}
+                                        <h3 className="mb-1 font-titulo text-lg font-bold text-primaria">
+                                            {primeiraOcorrencia.cidade}
+                                        </h3>
+
+                                        <p className="text-sm text-texto-suave">
+                                            {grupo.ocorrencias.length} ocorrências registradas
                                         </p>
 
-                                        <p>
-                                            <strong>Cidade:</strong> {ocorrencia.cidade}
+                                        <p className="text-xs text-texto-suave">
+                                            Localização aproximada por município.
                                         </p>
 
-                                        <p>
-                                            <strong>Prioridade:</strong> {NOMES_PRIORIDADE[ocorrencia.prioridade]}
-                                        </p>
+                                        <div className="my-3 h-px bg-secundaria" />
 
-                                        <p>
-                                            <strong>Status:</strong> {ocorrencia.status}
-                                        </p>
+                                        <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+
+                                            {grupo.ocorrencias.map(ocorrencia => (
+                                                <button key={ocorrencia.id} type="button" onClick={() => aoSelecionarOcorrencia?.(ocorrencia)} aria-pressed={ocorrencia.id === ocorrenciaSelecionadaId} className={`w-full cursor-pointer rounded-lg border p-3 text-left transition-colors ${ocorrencia.id === ocorrenciaSelecionadaId ? 'border-primaria bg-[#f0dfd4]' : 'border-[#dfc2ae] bg-[#fffaf5] hover:bg-[#f3e5d9]'}`}>
+
+                                                    <div className="flex items-center gap-2">
+
+                                                        <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: CORES_PRIORIDADE[ocorrencia.prioridade] }} />
+
+                                                        <span className="text-sm font-bold text-primaria">
+                                                            {ocorrencia.categoria}
+                                                        </span>
+
+                                                    </div>
+
+                                                    <div className="mt-2 text-xs leading-relaxed text-texto">
+                                                        {ocorrencia.descricao}
+                                                    </div>
+
+                                                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+
+                                                        <span className="text-xs text-texto-suave">
+                                                            {ocorrencia.status}
+                                                        </span>
+
+                                                        <span className="text-xs font-semibold text-primaria">
+                                                            Ver detalhes
+                                                        </span>
+
+                                                    </div>
+
+                                                </button>
+                                            ))}
+
+                                        </div>
 
                                     </div>
-                                </div>
+
+                                ) : (
+
+                                    /* POPUP DE OCORRÊNCIA INDIVIDUAL */
+
+                                    <div className="min-w-48 font-corpo">
+
+                                        <h3 className="mb-1 text-base font-bold text-primaria">
+                                            {primeiraOcorrencia.categoria}
+                                        </h3>
+
+                                        <p className="mb-2 text-sm text-texto">
+                                            {primeiraOcorrencia.descricao}
+                                        </p>
+
+                                        <div className="space-y-1 text-xs text-texto-suave">
+
+                                            <p>
+                                                <strong>Endereço:</strong> {primeiraOcorrencia.endereco}
+                                            </p>
+
+                                            {primeiraOcorrencia.cep && (
+                                                <p>
+                                                    <strong>CEP:</strong> {primeiraOcorrencia.cep}
+                                                </p>
+                                            )}
+
+                                            <p>
+                                                <strong>Cidade:</strong> {primeiraOcorrencia.cidade}
+                                            </p>
+
+                                            <p>
+                                                <strong>Prioridade:</strong> {NOMES_PRIORIDADE[primeiraOcorrencia.prioridade]}
+                                            </p>
+
+                                            <p>
+                                                <strong>Status:</strong> {primeiraOcorrencia.status}
+                                            </p>
+
+                                        </div>
+
+                                        <div className="mt-3 border-t border-secundaria pt-3 text-xs text-texto-suave">
+                                            Localização aproximada por município.
+                                        </div>
+
+                                        <button type="button" onClick={() => aoSelecionarOcorrencia?.(primeiraOcorrencia)} className="mt-3 w-full cursor-pointer rounded-lg bg-primaria px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90">
+                                            Ver detalhes
+                                        </button>
+
+                                    </div>
+
+                                )}
+
                             </Popup>
 
                         </Marker>
@@ -181,8 +385,10 @@ export default function Mapa({
 
             </MapContainer>
 
+            {/* CARREGAMENTO */}
+
             {carregando && (
-                <div role="status" className="pointer-events-none absolute bottom-5 left-1/2 z-400 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 rounded-xl border border-secundaria bg-fundo px-4 py-4 text-center shadow-md">
+                <div role="status" className="pointer-events-none absolute bottom-5 left-1/2 z-1000 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 rounded-xl border border-secundaria bg-fundo px-4 py-4 text-center shadow-md">
 
                     <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-secundaria border-t-primaria" />
 
@@ -193,8 +399,10 @@ export default function Mapa({
                 </div>
             )}
 
+            {/* NENHUMA OCORRÊNCIA */}
+
             {mapaPronto && !carregando && ocorrenciasValidas.length === 0 && (
-                <div className="pointer-events-none absolute bottom-5 left-1/2 z-400 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 rounded-xl border border-secundaria bg-fundo px-4 py-3 text-center shadow-md">
+                <div role="status" className="pointer-events-none absolute bottom-5 left-1/2 z-1000 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 rounded-xl border border-secundaria bg-fundo px-4 py-3 text-center shadow-md">
 
                     <span className="material-icons mb-1 text-2xl text-primaria" aria-hidden="true">
                         location_off
@@ -211,13 +419,31 @@ export default function Mapa({
                 </div>
             )}
 
-            <div className="pointer-events-none absolute right-4 top-4 z-400 rounded-lg border border-secundaria bg-fundo px-3 py-2 shadow-sm">
+            {/* IDENTIFICAÇÃO DO ESTADO */}
+
+            <div className="pointer-events-none absolute right-4 top-4 z-1000 rounded-lg border border-secundaria bg-fundo px-3 py-2 shadow-sm">
 
                 <p className="font-corpo text-xs font-semibold text-primaria">
                     Estado de São Paulo
                 </p>
 
             </div>
+
+            {/* LEGENDA DOS AGRUPAMENTOS */}
+
+            {!carregando && grupos.some(grupo => grupo.ocorrencias.length > 1) && (
+                <div className="pointer-events-none absolute bottom-8 right-3 z-1000 flex max-w-[65%] items-center gap-2 rounded-lg border border-secundaria bg-fundo px-3 py-2 shadow-sm">
+
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#78221b] text-xs font-bold text-white">
+                        #
+                    </span>
+
+                    <p className="font-corpo text-xs text-texto-suave">
+                        Ocorrências agrupadas
+                    </p>
+
+                </div>
+            )}
 
         </div>
     );

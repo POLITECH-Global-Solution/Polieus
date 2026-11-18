@@ -1,6 +1,8 @@
+
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cadastrarOcorrencia, obterUsuarioId } from '../../services/ocorrenciaService';
+import { cadastrarHistoricoInicial } from '../../services/historicoService';
 
 type Etapa = 1 | 2 | 3;
 
@@ -14,7 +16,6 @@ interface DadosOcorrencia {
     bairro: string;
     cidade: string;
     estado: string;
-    departamento: string;
 }
 
 const dadosIniciais: DadosOcorrencia = {
@@ -27,28 +28,18 @@ const dadosIniciais: DadosOcorrencia = {
     bairro: '',
     cidade: '',
     estado: '',
-    departamento: '',
 };
 
 const categorias = [
-    'Iluminação pública',
-    'Saneamento',
+    'Iluminação',
+    'Sanitário',
+    'Estrada',
     'Transporte público',
     'Infraestrutura',
     'Limpeza urbana',
     'Segurança',
     'Meio ambiente',
     'Acessibilidade',
-    'Outros',
-];
-
-const departamentos = [
-    'Secretaria de Obras e Infraestrutura',
-    'Secretaria de Transportes e Mobilidade',
-    'Secretaria de Meio Ambiente',
-    'Secretaria de Serviços Urbanos',
-    'Secretaria de Segurança',
-    'Secretaria de Assistência Social',
     'Outros',
 ];
 
@@ -80,6 +71,8 @@ export default function RegistrarOcorrencia() {
     const [finalizado, setFinalizado] = useState(false);
     const [enviando, setEnviando] = useState(false);
     const [idOcorrencia, setIdOcorrencia] = useState<number | null>(null);
+    const [protocolo, setProtocolo] = useState<string | null>(null);
+    const [avisoHistorico, setAvisoHistorico] = useState('');
 
     const envioEmAndamento = useRef(false);
 
@@ -92,6 +85,7 @@ export default function RegistrarOcorrencia() {
     }, [fotoPreview]);
 
     // ATUALIZAR CAMPOS DO FORMULÁRIO
+
     const atualizarCampo = (campo: keyof DadosOcorrencia, valor: string) => {
         setDados(anterior => ({
             ...anterior,
@@ -102,6 +96,7 @@ export default function RegistrarOcorrencia() {
     };
 
     // SELECIONAR FOTO
+
     const selecionarFoto = (evento: ChangeEvent<HTMLInputElement>) => {
         const arquivo = evento.target.files?.[0];
 
@@ -127,12 +122,14 @@ export default function RegistrarOcorrencia() {
     };
 
     // REMOVER FOTO
+
     const removerFoto = () => {
         setFoto(null);
         setFotoPreview(null);
     };
 
     // VALIDAR DESCRIÇÃO
+
     const validarDescricao = () => {
         if (!categorias.includes(dados.categoria)) {
             setErro('Selecione a categoria da ocorrência.');
@@ -153,6 +150,7 @@ export default function RegistrarOcorrencia() {
     };
 
     // VALIDAR LOCALIZAÇÃO
+
     const validarLocalizacao = () => {
         if (dados.cep.replace(/\D/g, '').length !== 8) {
             setErro('Digite um CEP válido com 8 números.');
@@ -164,8 +162,7 @@ export default function RegistrarOcorrencia() {
             !dados.numero.trim() ||
             !dados.bairro.trim() ||
             !dados.cidade.trim() ||
-            !estados.includes(dados.estado) ||
-            !departamentos.includes(dados.departamento)
+            !estados.includes(dados.estado)
         ) {
             setErro('Preencha todos os campos obrigatórios da localização.');
             return false;
@@ -175,6 +172,7 @@ export default function RegistrarOcorrencia() {
     };
 
     // VALIDAR ETAPA ATUAL
+
     const validarEtapa = () => {
         if (etapa === 1 && !validarDescricao()) return false;
         if (etapa === 2 && !validarLocalizacao()) return false;
@@ -185,6 +183,7 @@ export default function RegistrarOcorrencia() {
     };
 
     // AVANÇAR ETAPA
+
     const proximaEtapa = () => {
         if (enviando || !validarEtapa()) return;
 
@@ -195,6 +194,7 @@ export default function RegistrarOcorrencia() {
     };
 
     // VOLTAR ETAPA
+
     const etapaAnterior = () => {
         if (enviando) return;
 
@@ -206,6 +206,7 @@ export default function RegistrarOcorrencia() {
     };
 
     // REGISTRAR OCORRÊNCIA NA API JAVA
+
     const finalizarOcorrencia = async (evento: FormEvent<HTMLFormElement>) => {
         evento.preventDefault();
 
@@ -233,41 +234,75 @@ export default function RegistrarOcorrencia() {
         setEnviando(true);
         setErro('');
         setIdOcorrencia(null);
+        setProtocolo(null);
+        setAvisoHistorico('');
 
-        const enderecoCompleto = [
-            `${dados.endereco.trim()}, ${dados.numero.trim()}`,
-            dados.complemento.trim(),
-            dados.bairro.trim(),
-            `${dados.cidade.trim()} - ${dados.estado}`,
-        ].filter(Boolean).join(', ');
+        // DADOS NO FORMATO UTILIZADO PELO JAVA
 
         const dadosEnvio = {
+            idUsuario,
             categoria: dados.categoria,
             descricao: dados.descricao.trim(),
-            endereco: enderecoCompleto,
-            departamento: dados.departamento,
-            cep: dados.cep.replace(/\D/g, ''),
+            endereco: dados.endereco.trim(),
+            departamento: dados.numero.trim(),
+            cep: formatarCep(dados.cep),
         };
 
         try {
-            // ENVIAR OS DADOS PARA O BACK-END JAVA
+            // CADASTRAR OCORRÊNCIA NO JAVA
+
             const ocorrencia = await cadastrarOcorrencia(dadosEnvio);
 
-            // UTILIZAR O ID SOMENTE QUANDO RETORNADO PELA API
-            if (
-                ocorrencia &&
-                typeof ocorrencia.idOcorrencia === 'number' &&
-                Number.isInteger(ocorrencia.idOcorrencia) &&
-                ocorrencia.idOcorrencia > 0
-            ) {
-                setIdOcorrencia(ocorrencia.idOcorrencia);
-            }
+            const id = ocorrencia.idOcorrencia;
 
-            // ACEITAR RESPOSTAS HTTP DE SUCESSO SEM CONTEÚDO
+            // IMPEDIR NOVO ENVIO DA MESMA OCORRÊNCIA
+
             setFinalizado(true);
             removerFoto();
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // VERIFICAR SE O ID REAL FOI RECUPERADO
+
+            if (typeof id === 'number' && Number.isInteger(id) && id > 0) {
+                setIdOcorrencia(id);
+
+                try {
+                    // CONSULTAR OU CADASTRAR O HISTÓRICO INICIAL
+
+                    const historico = await cadastrarHistoricoInicial(
+                        id,
+                        ocorrencia.categoria
+                    );
+
+                    // EXIBIR SOMENTE O PROTOCOLO CONFIRMADO
+
+                    if (
+                        typeof historico.idHistorico === 'number' &&
+                        Number.isInteger(historico.idHistorico) &&
+                        historico.idHistorico > 0 &&
+                        historico.protocolo?.trim()
+                    ) {
+                        setProtocolo(historico.protocolo);
+                    } else {
+                        setAvisoHistorico(
+                            'A ocorrência foi registrada, mas ainda não foi possível confirmar o protocolo. Consulte suas ocorrências para acompanhar o registro.'
+                        );
+                    }
+
+                } catch (erroHistorico) {
+                    console.error('Erro ao cadastrar histórico:', erroHistorico);
+
+                    setAvisoHistorico(
+                        'Sua ocorrência foi registrada, mas não foi possível confirmar o histórico neste momento. Não é necessário cadastrar a ocorrência novamente.'
+                    );
+                }
+
+            } else {
+                setAvisoHistorico(
+                    'O servidor recebeu sua ocorrência, mas não foi possível recuperar sua identificação. Consulte Minhas Ocorrências antes de realizar outro registro.'
+                );
+            }
 
         } catch (erro) {
             console.error('Erro ao registrar ocorrência:', erro);
@@ -284,13 +319,13 @@ export default function RegistrarOcorrencia() {
                 setErro('O serviço de registro de ocorrências não foi encontrado.');
 
             } else if (/\b500\b|\b502\b|\b503\b|\b504\b/.test(mensagem)) {
-                setErro('O servidor apresentou uma instabilidade. Verifique o registro antes de tentar novamente.');
+                setErro('O servidor apresentou uma instabilidade. Verifique suas ocorrências antes de tentar novamente.');
 
             } else if (/failed to fetch|networkerror|cors/i.test(mensagem)) {
-                setErro('Não foi possível confirmar o envio. Verifique sua conexão antes de tentar novamente.');
+                setErro('Não foi possível confirmar o envio. Verifique sua conexão e suas ocorrências antes de tentar novamente.');
 
             } else {
-                setErro('Não foi possível confirmar o registro da ocorrência. Verifique antes de reenviar.');
+                setErro('Não foi possível confirmar o registro da ocorrência. Verifique suas ocorrências antes de reenviar.');
             }
 
         } finally {
@@ -300,28 +335,32 @@ export default function RegistrarOcorrencia() {
     };
 
     // REGISTRAR NOVA OCORRÊNCIA
+
     const novaOcorrencia = () => {
+        if (enviando) return;
+
         removerFoto();
 
         setDados(dadosIniciais);
         setEtapa(1);
         setFinalizado(false);
         setIdOcorrencia(null);
+        setProtocolo(null);
+        setAvisoHistorico('');
         setErro('');
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const campoClasse =
-        'w-full rounded-lg border border-[#dfc2ae] bg-[#fffaf5] px-4 py-3 font-corpo text-sm text-texto outline-none transition-colors placeholder:text-[#998a7d] focus:border-primaria focus:ring-2 focus:ring-primaria/15';
+    const campoClasse = 'w-full rounded-lg border border-[#dfc2ae] bg-[#fffaf5] px-4 py-3 font-corpo text-sm text-texto outline-none transition-colors placeholder:text-[#998a7d] focus:border-primaria focus:ring-2 focus:ring-primaria/15';
 
-    const rotuloClasse =
-        'mb-2 block font-corpo text-sm font-semibold text-[#46352d]';
+    const rotuloClasse = 'mb-2 block font-corpo text-sm font-semibold text-[#46352d]';
 
     return (
         <main className="min-h-screen w-full bg-fundo font-corpo text-texto">
 
             {/* CABEÇALHO DA PÁGINA */}
+
             <header className="border-b border-[#dfc2ae] bg-[#fffaf5] px-5 py-5 sm:px-8 lg:px-10">
                 <h1 className="font-titulo text-3xl font-bold text-[#78221b] sm:text-4xl">
                     Registrar Ocorrência
@@ -345,6 +384,7 @@ export default function RegistrarOcorrencia() {
             <div className="mx-auto max-w-5xl px-4 py-10 sm:px-8 lg:py-12">
 
                 {/* APRESENTAÇÃO */}
+
                 <section className="mb-8 text-center">
                     <span className="material-icons mb-3 text-5xl text-[#78221b]" aria-hidden="true">
                         add_location_alt
@@ -374,10 +414,11 @@ export default function RegistrarOcorrencia() {
 
                         {!finalizado ? (
                             <>
+
                                 {/* INDICADOR DE ETAPAS */}
+
                                 <div className="mb-10">
                                     <div className="relative mx-auto flex max-w-2xl items-start justify-between">
-
                                         <div className="absolute left-[16%] right-[16%] top-5 h-0.5 bg-[#dfc2ae]" aria-hidden="true" />
 
                                         <div className="absolute left-[16%] top-5 h-0.5 bg-primaria transition-all duration-500" style={{ width: etapa === 1 ? '0%' : etapa === 2 ? '34%' : '68%' }} aria-hidden="true" />
@@ -388,12 +429,7 @@ export default function RegistrarOcorrencia() {
                                             { numero: 3, titulo: 'Confirmação' },
                                         ].map(item => (
                                             <div key={item.numero} className="relative z-10 flex w-1/3 flex-col items-center text-center">
-
-                                                <div className={`flex h-10 w-10 items-center justify-center rounded-full border-2 font-semibold transition-all duration-300 ${
-                                                    etapa >= item.numero
-                                                        ? 'border-primaria bg-primaria text-white'
-                                                        : 'border-[#dfc2ae] bg-[#fffaf5] text-[#8d8178]'
-                                                }`}>
+                                                <div className={`flex h-10 w-10 items-center justify-center rounded-full border-2 font-semibold transition-all duration-300 ${etapa >= item.numero ? 'border-primaria bg-primaria text-white' : 'border-[#dfc2ae] bg-[#fffaf5] text-[#8d8178]'}`}>
                                                     {etapa > item.numero ? (
                                                         <span className="material-icons text-xl">
                                                             check
@@ -403,14 +439,9 @@ export default function RegistrarOcorrencia() {
                                                     )}
                                                 </div>
 
-                                                <span className={`mt-3 text-xs font-semibold sm:text-sm ${
-                                                    etapa >= item.numero
-                                                        ? 'text-[#78221b]'
-                                                        : 'text-texto-suave'
-                                                }`}>
+                                                <span className={`mt-3 text-xs font-semibold sm:text-sm ${etapa >= item.numero ? 'text-[#78221b]' : 'text-texto-suave'}`}>
                                                     {item.titulo}
                                                 </span>
-
                                             </div>
                                         ))}
                                     </div>
@@ -419,9 +450,9 @@ export default function RegistrarOcorrencia() {
                                 <form onSubmit={finalizarOcorrencia} noValidate aria-busy={enviando}>
 
                                     {/* ETAPA 1 - DESCRIÇÃO */}
+
                                     {etapa === 1 && (
                                         <div className="space-y-6">
-
                                             <div className="border-b border-[#dfc2ae] pb-5">
                                                 <div className="flex items-center gap-3">
                                                     <span className="material-icons text-3xl text-[#78221b]" aria-hidden="true">
@@ -439,6 +470,7 @@ export default function RegistrarOcorrencia() {
                                             </div>
 
                                             {/* CATEGORIA */}
+
                                             <div>
                                                 <label htmlFor="categoria" className={rotuloClasse}>
                                                     Categoria do problema
@@ -457,6 +489,7 @@ export default function RegistrarOcorrencia() {
                                             </div>
 
                                             {/* DESCRIÇÃO */}
+
                                             <div>
                                                 <label htmlFor="descricao" className={rotuloClasse}>
                                                     Descrição
@@ -477,10 +510,10 @@ export default function RegistrarOcorrencia() {
                                             </div>
 
                                             {/* FOTO OPCIONAL */}
+
                                             <div>
                                                 <label className={rotuloClasse}>
                                                     Foto da ocorrência
-
                                                     <span className="ml-2 font-normal text-texto-suave">
                                                         (opcional)
                                                     </span>
@@ -488,7 +521,6 @@ export default function RegistrarOcorrencia() {
 
                                                 {!fotoPreview ? (
                                                     <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#d8b9a5] bg-[#f9f0e7] px-5 py-9 text-center transition-colors hover:border-primaria hover:bg-[#f3e4d7]">
-
                                                         <span className="material-icons text-4xl text-[#78221b]" aria-hidden="true">
                                                             add_a_photo
                                                         </span>
@@ -507,6 +539,7 @@ export default function RegistrarOcorrencia() {
 
                                                         <input type="file" accept="image/jpeg,image/png,image/webp" onChange={selecionarFoto} className="sr-only" aria-label="Selecionar foto da ocorrência" />
                                                     </label>
+
                                                 ) : (
                                                     <div className="rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-4">
                                                         <img src={fotoPreview} alt="Pré-visualização da foto selecionada" className="mx-auto max-h-64 rounded-lg object-contain" />
@@ -535,9 +568,9 @@ export default function RegistrarOcorrencia() {
                                     )}
 
                                     {/* ETAPA 2 - LOCALIZAÇÃO */}
+
                                     {etapa === 2 && (
                                         <div className="space-y-6">
-
                                             <div className="border-b border-[#dfc2ae] pb-5">
                                                 <div className="flex items-center gap-3">
                                                     <span className="material-icons text-3xl text-[#78221b]" aria-hidden="true">
@@ -550,11 +583,12 @@ export default function RegistrarOcorrencia() {
                                                 </div>
 
                                                 <p className="mt-2 text-sm text-texto-suave">
-                                                    Informe o endereço onde o problema foi identificado e o departamento responsável.
+                                                    Informe o endereço onde o problema foi identificado.
                                                 </p>
                                             </div>
 
                                             {/* CEP */}
+
                                             <div className="max-w-xs">
                                                 <label htmlFor="cep" className={rotuloClasse}>
                                                     CEP
@@ -565,6 +599,7 @@ export default function RegistrarOcorrencia() {
                                             </div>
 
                                             {/* ENDEREÇO E NÚMERO */}
+
                                             <div className="grid grid-cols-1 gap-5 sm:grid-cols-[2fr_1fr]">
                                                 <div>
                                                     <label htmlFor="endereco" className={rotuloClasse}>
@@ -581,22 +616,22 @@ export default function RegistrarOcorrencia() {
                                                         <span className="ml-1 text-red-700">*</span>
                                                     </label>
 
-                                                    <input id="numero" type="text" value={dados.numero} onChange={evento => atualizarCampo('numero', evento.target.value)} placeholder="Ex.: 100" className={campoClasse} required />
+                                                    <input id="numero" type="text" value={dados.numero} onChange={evento => atualizarCampo('numero', evento.target.value)} placeholder="Ex.: 250" className={campoClasse} required />
                                                 </div>
                                             </div>
 
                                             {/* COMPLEMENTO E BAIRRO */}
+
                                             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                                                 <div>
                                                     <label htmlFor="complemento" className={rotuloClasse}>
                                                         Complemento
-
                                                         <span className="ml-2 font-normal text-texto-suave">
                                                             (opcional)
                                                         </span>
                                                     </label>
 
-                                                    <input id="complemento" type="text" value={dados.complemento} onChange={evento => atualizarCampo('complemento', evento.target.value)} placeholder="Próximo à praça, escola..." className={campoClasse} />
+                                                    <input id="complemento" type="text" value={dados.complemento} onChange={evento => atualizarCampo('complemento', evento.target.value)} placeholder="Apartamento, bloco ou referência" className={campoClasse} />
                                                 </div>
 
                                                 <div>
@@ -610,6 +645,7 @@ export default function RegistrarOcorrencia() {
                                             </div>
 
                                             {/* CIDADE E ESTADO */}
+
                                             <div className="grid grid-cols-1 gap-5 sm:grid-cols-[2fr_1fr]">
                                                 <div>
                                                     <label htmlFor="cidade" className={rotuloClasse}>
@@ -638,34 +674,22 @@ export default function RegistrarOcorrencia() {
                                                 </div>
                                             </div>
 
-                                            {/* DEPARTAMENTO */}
-                                            <div>
-                                                <label htmlFor="departamento" className={rotuloClasse}>
-                                                    Departamento responsável
-                                                    <span className="ml-1 text-red-700">*</span>
-                                                </label>
+                                            <div className="flex items-start gap-3 rounded-xl border border-[#dfc2ae] bg-[#fff7ee] p-4">
+                                                <span className="material-icons text-xl text-[#78221b]" aria-hidden="true">
+                                                    info
+                                                </span>
 
-                                                <select id="departamento" value={dados.departamento} onChange={evento => atualizarCampo('departamento', evento.target.value)} className={campoClasse} required>
-                                                    <option value="">Selecione o departamento</option>
-
-                                                    {departamentos.map(departamento => (
-                                                        <option key={departamento} value={departamento}>
-                                                            {departamento}
-                                                        </option>
-                                                    ))}
-                                                </select>
-
-                                                <p className="mt-2 text-xs text-texto-suave">
-                                                    Selecione o setor relacionado ao problema identificado.
+                                                <p className="text-xs leading-relaxed text-texto-suave">
+                                                    Nesta versão, o servidor recebe o endereço, o número e o CEP. Os demais campos são utilizados para conferência da localização.
                                                 </p>
                                             </div>
                                         </div>
                                     )}
 
                                     {/* ETAPA 3 - CONFIRMAÇÃO */}
+
                                     {etapa === 3 && (
                                         <div className="space-y-6">
-
                                             <div className="border-b border-[#dfc2ae] pb-5">
                                                 <div className="flex items-center gap-3">
                                                     <span className="material-icons text-3xl text-[#78221b]" aria-hidden="true">
@@ -683,8 +707,8 @@ export default function RegistrarOcorrencia() {
                                             </div>
 
                                             {/* RESUMO DA DESCRIÇÃO */}
-                                            <section className="rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-5">
 
+                                            <section className="rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-5">
                                                 <div className="mb-4 flex items-center justify-between gap-3">
                                                     <h4 className="flex items-center gap-2 font-titulo text-lg font-bold text-[#78221b]">
                                                         <span className="material-icons" aria-hidden="true">
@@ -702,6 +726,7 @@ export default function RegistrarOcorrencia() {
                                                 <div className="space-y-3 text-sm">
                                                     <div>
                                                         <span className="font-semibold">Categoria:</span>
+
                                                         <p className="mt-1 text-texto-suave">
                                                             {dados.categoria}
                                                         </p>
@@ -709,6 +734,7 @@ export default function RegistrarOcorrencia() {
 
                                                     <div>
                                                         <span className="font-semibold">Descrição:</span>
+
                                                         <p className="mt-1 whitespace-pre-wrap leading-relaxed text-texto-suave">
                                                             {dados.descricao}
                                                         </p>
@@ -716,6 +742,7 @@ export default function RegistrarOcorrencia() {
 
                                                     <div>
                                                         <span className="font-semibold">Foto:</span>
+
                                                         <p className="mt-1 text-texto-suave">
                                                             {foto ? `${foto.name} (pré-visualização local)` : 'Nenhuma foto adicionada'}
                                                         </p>
@@ -724,8 +751,8 @@ export default function RegistrarOcorrencia() {
                                             </section>
 
                                             {/* RESUMO DA LOCALIZAÇÃO */}
-                                            <section className="rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-5">
 
+                                            <section className="rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-5">
                                                 <div className="mb-4 flex items-center justify-between gap-3">
                                                     <h4 className="flex items-center gap-2 font-titulo text-lg font-bold text-[#78221b]">
                                                         <span className="material-icons" aria-hidden="true">
@@ -748,6 +775,7 @@ export default function RegistrarOcorrencia() {
 
                                                     <div>
                                                         <span className="font-semibold">Endereço:</span>
+
                                                         <p className="mt-1 text-texto-suave">
                                                             {dados.endereco}, {dados.numero}
                                                         </p>
@@ -774,15 +802,11 @@ export default function RegistrarOcorrencia() {
                                                         <span className="font-semibold">Estado:</span>
                                                         <p className="mt-1 text-texto-suave">{dados.estado}</p>
                                                     </div>
-
-                                                    <div className="sm:col-span-2">
-                                                        <span className="font-semibold">Departamento:</span>
-                                                        <p className="mt-1 text-texto-suave">{dados.departamento}</p>
-                                                    </div>
                                                 </div>
                                             </section>
 
                                             {/* AVISO */}
+
                                             <div className="flex items-start gap-3 rounded-xl border border-[#dfc2ae] bg-[#fff7ee] p-4">
                                                 <span className="material-icons text-2xl text-[#78221b]" aria-hidden="true">
                                                     info
@@ -790,14 +814,14 @@ export default function RegistrarOcorrencia() {
 
                                                 <p className="text-sm leading-relaxed text-texto-suave">
                                                     Confira se todas as informações estão corretas.
-                                                    Após a confirmação, os dados da ocorrência serão enviados ao sistema Polieus.
+                                                    Após a confirmação, os dados compatíveis com o servidor serão enviados ao sistema Polieus e vinculados à sua conta.
                                                 </p>
                                             </div>
-
                                         </div>
                                     )}
 
                                     {/* MENSAGENS DE ERRO */}
+
                                     {erro && (
                                         <div role="alert" className="mt-6 flex items-center gap-3 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
                                             <span className="material-icons" aria-hidden="true">
@@ -809,15 +833,15 @@ export default function RegistrarOcorrencia() {
                                     )}
 
                                     {/* NAVEGAÇÃO ENTRE ETAPAS */}
-                                    <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-[#dfc2ae] pt-6">
 
+                                    <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-[#dfc2ae] pt-6">
                                         {etapa === 1 ? (
                                             <Link to="/inicio" className="inline-flex items-center justify-center rounded-lg border border-[#b77b5e] px-6 py-3 text-sm font-semibold text-[#78221b] transition-colors hover:bg-[#f3e4d7]">
                                                 Cancelar
                                             </Link>
+
                                         ) : (
                                             <button type="button" disabled={enviando} onClick={etapaAnterior} className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#b77b5e] px-6 py-3 text-sm font-semibold text-[#78221b] transition-colors hover:bg-[#f3e4d7] disabled:cursor-not-allowed disabled:opacity-50">
-
                                                 <span className="material-icons text-lg">
                                                     arrow_back
                                                 </span>
@@ -834,15 +858,16 @@ export default function RegistrarOcorrencia() {
                                                     arrow_forward
                                                 </span>
                                             </button>
+
                                         ) : (
                                             <button type="submit" disabled={enviando} className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primaria px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primaria-hover disabled:cursor-not-allowed disabled:opacity-60">
-
                                                 {enviando ? (
                                                     <>
                                                         <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />
 
                                                         Registrando ocorrência...
                                                     </>
+
                                                 ) : (
                                                     <>
                                                         Confirmar ocorrência
@@ -857,45 +882,86 @@ export default function RegistrarOcorrencia() {
                                     </div>
                                 </form>
                             </>
-                        ) : (
-                            /* TELA DE SUCESSO */
-                            <div className="py-12 text-center" role="status">
 
-                                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[#e8f1e5]">
-                                    <span className="material-icons text-6xl text-green-700" aria-hidden="true">
-                                        check_circle
+                        ) : (
+
+                            /* TELA DE SUCESSO */
+
+                            <div className="py-12 text-center" role="status" aria-busy={enviando}>
+                                <div className={`mx-auto flex h-24 w-24 items-center justify-center rounded-full ${idOcorrencia !== null ? 'bg-[#e8f1e5]' : 'bg-[#f9f0e7]'}`}>
+                                    <span className={`material-icons text-6xl ${idOcorrencia !== null ? 'text-green-700' : 'text-primaria'}`} aria-hidden="true">
+                                        {idOcorrencia !== null ? 'check_circle' : 'info'}
                                     </span>
                                 </div>
 
                                 <h3 className="mt-6 font-titulo text-3xl font-bold text-[#78221b]">
-                                    Ocorrência Registrada!
+                                    {idOcorrencia !== null ? 'Ocorrência Registrada!' : 'Ocorrência Enviada!'}
                                 </h3>
 
                                 <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-texto-suave">
-                                    Sua ocorrência foi registrada com sucesso no sistema Polieus.
-                                    Agradecemos por contribuir para uma cidade mais organizada,
-                                    acessível e participativa.
+                                    {idOcorrencia !== null
+                                        ? 'Sua ocorrência foi registrada com sucesso no sistema Polieus.'
+                                        : 'Sua solicitação foi recebida pelo servidor.'}
+
+                                    {' '}Agradecemos por contribuir para uma cidade mais organizada, acessível e participativa.
                                 </p>
 
-                                {/* IDENTIFICAÇÃO RETORNADA PELA API */}
+                                {/* PROTOCOLO E IDENTIFICAÇÃO */}
+
                                 {idOcorrencia !== null && (
                                     <div className="mx-auto mt-6 max-w-xs rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-5">
-
                                         <p className="text-xs font-semibold uppercase tracking-wider text-texto-suave">
-                                            Identificação da ocorrência
+                                            Protocolo da ocorrência
                                         </p>
 
                                         <p className="mt-2 font-titulo text-2xl font-bold text-[#78221b]">
-                                            #{String(idOcorrencia).padStart(6, '0')}
+                                            {enviando ? 'Gerando protocolo...' : protocolo ?? 'Não disponível'}
+                                        </p>
+
+                                        <p className="mt-3 text-xs text-texto-suave">
+                                            Identificação: #{String(idOcorrencia).padStart(6, '0')}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* CARREGAMENTO DO HISTÓRICO */}
+
+                                {enviando && (
+                                    <div className="mt-5 flex items-center justify-center gap-3 text-sm text-texto-suave">
+                                        <span className="h-5 w-5 animate-spin rounded-full border-2 border-[#dfc2ae] border-t-primaria" aria-hidden="true" />
+
+                                        Finalizando histórico da ocorrência...
+                                    </div>
+                                )}
+
+                                {/* AVISO SOBRE O HISTÓRICO */}
+
+                                {avisoHistorico && (
+                                    <div className="mx-auto mt-5 flex max-w-lg items-start gap-3 rounded-xl border border-[#dfc2ae] bg-[#fff7ee] p-4 text-left">
+                                        <span className="material-icons text-xl text-[#78221b]" aria-hidden="true">
+                                            info
+                                        </span>
+
+                                        <p className="text-sm leading-relaxed text-texto-suave">
+                                            {avisoHistorico}
                                         </p>
                                     </div>
                                 )}
 
                                 {/* BOTÕES DE NAVEGAÇÃO */}
+
                                 <div className="mt-8 flex flex-wrap justify-center gap-4">
+                                    {!enviando && (
+                                        <Link to="/minhas-ocorrencias" className="inline-flex items-center gap-2 rounded-lg bg-primaria px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primaria-hover">
+                                            <span className="material-icons text-lg">
+                                                assignment
+                                            </span>
 
-                                    <button type="button" onClick={novaOcorrencia} className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primaria px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primaria-hover">
+                                            Acompanhar ocorrência
+                                        </Link>
+                                    )}
 
+                                    <button type="button" disabled={enviando || idOcorrencia === null} onClick={novaOcorrencia} className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-[#b77b5e] px-6 py-3 text-sm font-semibold text-[#78221b] transition-colors hover:bg-[#f3e4d7] disabled:cursor-not-allowed disabled:opacity-50">
                                         <span className="material-icons text-lg">
                                             add_circle_outline
                                         </span>
@@ -903,10 +969,11 @@ export default function RegistrarOcorrencia() {
                                         Nova ocorrência
                                     </button>
 
-                                    <Link to="/inicio" className="inline-flex items-center gap-2 rounded-lg border border-[#b77b5e] px-6 py-3 text-sm font-semibold text-[#78221b] hover:bg-[#f3e4d7]">
-                                        Voltar ao início
-                                    </Link>
-
+                                    {!enviando && (
+                                        <Link to="/inicio" className="inline-flex items-center gap-2 rounded-lg border border-[#b77b5e] px-6 py-3 text-sm font-semibold text-[#78221b] hover:bg-[#f3e4d7]">
+                                            Voltar ao início
+                                        </Link>
+                                    )}
                                 </div>
                             </div>
                         )}
