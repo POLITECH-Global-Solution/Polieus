@@ -1,8 +1,17 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { administradorLogado } from '../../services/administrativoService';
 
 export default function RotaProtegida() {
 
-    function verificarSessao(): boolean {
+    const location = useLocation();
+
+    const administrador =
+        location.pathname === '/admin' ||
+        location.pathname.startsWith('/admin/');
+
+    // VERIFICAR SESSÃO DO CIDADÃO
+
+    function verificarSessaoUsuario(): boolean {
         try {
             const dados = sessionStorage.getItem('usuario');
 
@@ -21,7 +30,19 @@ export default function RotaProtegida() {
         }
     }
 
-    if (!verificarSessao()) {
+    // PROTEGER ROTAS ADMINISTRATIVAS
+
+    if (administrador) {
+        if (!administradorLogado()) {
+            return <Navigate to="/login-admin" replace />;
+        }
+
+        return <Outlet />;
+    }
+
+    // PROTEGER ROTAS DO CIDADÃO
+
+    if (!verificarSessaoUsuario()) {
         return <Navigate to="/login-usuario" replace />;
     }
 

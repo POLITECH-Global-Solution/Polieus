@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { logoutAdministrador } from '../../services/administrativoService';
 
 interface CabecalhoProps {
     aoSair?: () => void;
 }
 
 export default function Cabecalho({ aoSair }: CabecalhoProps) {
+
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -84,7 +86,9 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
     const fazerLogout = () => {
         fecharMenu();
 
-        if (!administrador) {
+        if (administrador) {
+            logoutAdministrador();
+        } else {
             sessionStorage.removeItem('usuario');
         }
 
@@ -117,9 +121,11 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
                     ? 'translate-y-0 opacity-100'
                     : '-translate-y-16 opacity-0 pointer-events-none'
             }`}>
+
                 <span className="material-icons">
                     {menuAberto ? 'close' : 'menu'}
                 </span>
+
             </button>
 
             {/* FUNDO DO MENU MOBILE */}
@@ -185,6 +191,7 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
                                         Relatórios e Indicadores
                                     </NavLink>
                                 </li>
+
                             </>
                         ) : (
                             <>
@@ -224,6 +231,7 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
                                         Transparência
                                     </NavLink>
                                 </li>
+
                             </>
                         )}
 
