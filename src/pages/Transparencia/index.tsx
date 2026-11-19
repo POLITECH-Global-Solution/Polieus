@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-
 import { listarOcorrencias, type Ocorrencia } from '../../services/ocorrenciaService';
 import { listarHistoricos, type Historico } from '../../services/historicoService';
-
 
 type Periodo = '3' | '6' | '12';
 type Aba = 'indicadores' | 'orcamento';
@@ -127,7 +125,6 @@ const formatarMoeda = (valor: number) =>
     }).format(valor);
 
 function normalizarTexto(valor?: string) {
-
     return (valor ?? '')
         .trim()
         .normalize('NFD')
@@ -138,13 +135,11 @@ function normalizarTexto(valor?: string) {
 // PADRONIZAÇÃO DOS STATUS
 
 function normalizarStatus(status?: string): StatusOcorrencia {
-
     const valor = normalizarTexto(status)
         .replace(/_/g, ' ')
         .trim();
 
     switch (valor) {
-
         case 'pendente':
             return 'Pendente';
 
@@ -168,7 +163,6 @@ function normalizarStatus(status?: string): StatusOcorrencia {
 // CONVERTER DATA
 
 function converterData(valor?: string): Date | null {
-
     if (!valor) return null;
 
     const brasileira = valor.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
@@ -201,7 +195,6 @@ function integrarHistoricos(
     const agrupamento = new Map<number, Historico[]>();
 
     historicos.forEach(historico => {
-
         const id = Number(historico.idOcorrencia);
 
         if (!Number.isInteger(id) || id <= 0) return;
@@ -214,9 +207,7 @@ function integrarHistoricos(
     });
 
     return ocorrencias.map(ocorrencia => {
-
         if (ocorrencia.idOcorrencia === null) {
-
             return {
                 ...ocorrencia,
                 status: 'Não informado',
@@ -226,7 +217,6 @@ function integrarHistoricos(
         const registros = agrupamento.get(ocorrencia.idOcorrencia) ?? [];
 
         if (registros.length === 0) {
-
             return {
                 ...ocorrencia,
                 status: 'Não informado',
@@ -236,7 +226,6 @@ function integrarHistoricos(
         // NÃO DETERMINAR A ORDEM QUANDO EXISTEM DATAS INVÁLIDAS
 
         if (registros.some(item => converterData(item.data) === null)) {
-
             return {
                 ...ocorrencia,
                 status: 'Não informado',
@@ -244,7 +233,6 @@ function integrarHistoricos(
         }
 
         const ordenados = [...registros].sort((a, b) => {
-
             const dataA = converterData(a.data)?.getTime() ?? 0;
             const dataB = converterData(b.data)?.getTime() ?? 0;
 
@@ -262,13 +250,10 @@ function integrarHistoricos(
         // IDENTIFICAR A DATA DA ÚLTIMA TRANSIÇÃO PARA CONCLUÍDO
 
         if (statusAtual === 'Concluído') {
-
             for (let indice = ordenados.length - 1; indice >= 0; indice--) {
-
                 const registro = ordenados[indice];
 
                 if (normalizarStatus(registro.status) !== 'Concluído') {
-
                     break;
                 }
 
@@ -290,19 +275,12 @@ function integrarHistoricos(
 // ==================================================
 
 function DivisorGrego() {
-
     return (
-
         <div className="mt-6 flex max-w-xl items-center gap-4" aria-hidden="true">
-
             <div className="h-px flex-1 bg-[#b77965]" />
-
             <div className="h-2.5 w-2.5 rotate-45 bg-[#78221b]" />
-
             <div className="h-px flex-1 bg-[#d8b9a8]" />
-
         </div>
-
     );
 }
 
@@ -314,25 +292,18 @@ function EstadoGrafico({ mensagem, icone = 'bar_chart' }: {
     mensagem: string;
     icone?: string;
 }) {
-
     return (
-
-        <div className="flex min-h-60 flex-col items-center justify-center px-5 py-8 text-center">
-
+        <div className="flex min-h-60 min-w-0 flex-col items-center justify-center px-4 py-8 text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f3e5d9]">
-
                 <span className="material-icons text-3xl text-primaria" aria-hidden="true">
                     {icone}
                 </span>
-
             </div>
 
-            <p className="max-w-xs text-sm leading-relaxed text-texto-suave">
+            <p className="max-w-xs text-sm leading-relaxed text-[#51453e]">
                 {mensagem}
             </p>
-
         </div>
-
     );
 }
 
@@ -347,12 +318,10 @@ function GraficoCategorias({ categorias }: { categorias: Categoria[] }) {
     );
 
     if (total === 0) {
-
         return <EstadoGrafico mensagem="Nenhuma ocorrência disponível para apresentar a distribuição por categoria." icone="donut_large" />;
     }
 
     const partes = categorias.map((categoria, indice) => {
-
         const acumuladoAnterior = categorias
             .slice(0, indice)
             .reduce((soma, item) => soma + item.quantidade, 0);
@@ -364,18 +333,17 @@ function GraficoCategorias({ categorias }: { categorias: Categoria[] }) {
     });
 
     return (
+        <div className="flex w-full min-w-0 flex-col items-center gap-6 2xl:flex-row">
 
-        <div className="flex flex-col items-center gap-8 sm:flex-row">
+            <div className="relative aspect-square w-44 max-w-full shrink-0 rounded-full sm:w-48" style={{ background: `conic-gradient(${partes.join(', ')})` }} role="img" aria-label="Distribuição de ocorrências por categoria">
 
-            <div className="relative h-48 w-48 shrink-0 rounded-full" style={{ background: `conic-gradient(${partes.join(', ')})` }} role="img" aria-label="Distribuição de ocorrências por categoria">
+                <div className="absolute inset-[19%] flex flex-col items-center justify-center rounded-full bg-[#fffaf4]">
 
-                <div className="absolute inset-9 flex flex-col items-center justify-center rounded-full bg-[#fffaf4]">
-
-                    <span className="font-titulo text-2xl font-bold text-primaria">
+                    <span className="font-titulo text-2xl font-bold text-[#78221b]">
                         {total.toLocaleString('pt-BR')}
                     </span>
 
-                    <span className="text-xs text-texto-suave">
+                    <span className="text-xs text-[#51453e]">
                         Ocorrências
                     </span>
 
@@ -383,7 +351,7 @@ function GraficoCategorias({ categorias }: { categorias: Categoria[] }) {
 
             </div>
 
-            <div className="w-full space-y-4">
+            <div className="w-full min-w-0 flex-1 space-y-4">
 
                 {categorias.map(categoria => {
 
@@ -394,32 +362,29 @@ function GraficoCategorias({ categorias }: { categorias: Categoria[] }) {
                     });
 
                     return (
+                        <div key={categoria.nome} className="flex min-w-0 items-center justify-between gap-3">
 
-                        <div key={categoria.nome} className="flex items-center justify-between gap-4">
+                            <div className="flex min-w-0 items-center gap-2">
 
-                            <div className="flex items-center gap-2">
+                                <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: categoria.cor }} aria-hidden="true" />
 
-                                <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: categoria.cor }} />
-
-                                <span className="text-sm text-texto">
+                                <span className="wrap-break-word text-sm text-texto">
                                     {categoria.nome}
                                 </span>
 
                             </div>
 
-                            <span className="text-sm font-semibold text-primaria">
+                            <span className="shrink-0 text-sm font-semibold text-[#78221b]">
                                 {percentual}%
                             </span>
 
                         </div>
-
                     );
                 })}
 
             </div>
 
         </div>
-
     );
 }
 
@@ -433,7 +398,6 @@ function GraficoEvolucao({ dados, exibirConcluidas }: {
 }) {
 
     if (dados.length === 0) {
-
         return <EstadoGrafico mensagem="A evolução mensal estará disponível quando os históricos das ocorrências possuírem datas válidas." icone="show_chart" />;
     }
 
@@ -459,19 +423,16 @@ function GraficoEvolucao({ dados, exibirConcluidas }: {
     const limite = Math.ceil(maiorValor / 4) * 4;
 
     function coordenadaX(indice: number) {
-
         return margemEsquerda +
             (indice / Math.max(dados.length - 1, 1)) * larguraUtil;
     }
 
     function coordenadaY(valor: number) {
-
         return margemSuperior + alturaUtil -
             (valor / limite) * alturaUtil;
     }
 
     function gerarPontos(campo: 'registradas' | 'concluidas') {
-
         return dados.map((item, indice) =>
             `${coordenadaX(indice)},${coordenadaY(item[campo])}`
         ).join(' ');
@@ -480,36 +441,33 @@ function GraficoEvolucao({ dados, exibirConcluidas }: {
     const marcacoes = [0, 0.25, 0.5, 0.75, 1];
 
     return (
+        <div className="w-full min-w-0">
 
-        <div>
-
-            <div className="mb-5 flex flex-wrap gap-5 text-xs">
+            <div className="mb-5 flex flex-wrap gap-x-5 gap-y-3 text-xs text-[#51453e]">
 
                 <div className="flex items-center gap-2">
 
-                    <span className="h-2.5 w-2.5 rounded-full bg-primaria" />
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-primaria" aria-hidden="true" />
 
                     <span>Primeiros registros</span>
 
                 </div>
 
                 {exibirConcluidas && (
-
                     <div className="flex items-center gap-2">
 
-                        <span className="h-2.5 w-2.5 rounded-full bg-[#d7a17e]" />
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#d7a17e]" aria-hidden="true" />
 
                         <span>Concluídas</span>
 
                     </div>
-
                 )}
 
             </div>
 
-            <div className="w-full overflow-x-auto">
+            <div className="w-full min-w-0 max-w-full overflow-x-auto">
 
-                <svg viewBox={`0 0 ${largura} ${altura}`} className="h-auto w-full min-w-100" role="img" aria-label="Evolução mensal das ocorrências">
+                <svg viewBox={`0 0 ${largura} ${altura}`} className={`block h-auto w-full ${dados.length > 6 ? 'min-w-120' : 'min-w-0'}`} role="img" aria-label="Evolução mensal das ocorrências">
 
                     {marcacoes.map(marcacao => {
 
@@ -517,30 +475,25 @@ function GraficoEvolucao({ dados, exibirConcluidas }: {
                         const y = coordenadaY(valor);
 
                         return (
-
                             <g key={marcacao}>
 
                                 <line x1={margemEsquerda} x2={largura - margemDireita} y1={y} y2={y} stroke="#ead8ca" strokeDasharray="4 5" />
 
-                                <text x={margemEsquerda - 10} y={y + 4} textAnchor="end" fontSize="11" fill="#77655d">
+                                <text x={margemEsquerda - 10} y={y + 4} textAnchor="end" fontSize="16" fill="#77655d">
                                     {Math.round(valor)}
                                 </text>
 
                             </g>
-
                         );
                     })}
 
                     <polyline points={gerarPontos('registradas')} fill="none" stroke="#b3261e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
                     {exibirConcluidas && (
-
                         <polyline points={gerarPontos('concluidas')} fill="none" stroke="#d7a17e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-
                     )}
 
                     {dados.map((item, indice) => (
-
                         <g key={`${item.mes}-${indice}`}>
 
                             <circle cx={coordenadaX(indice)} cy={coordenadaY(item.registradas)} r="4" fill="#b3261e">
@@ -552,7 +505,6 @@ function GraficoEvolucao({ dados, exibirConcluidas }: {
                             </circle>
 
                             {exibirConcluidas && (
-
                                 <circle cx={coordenadaX(indice)} cy={coordenadaY(item.concluidas)} r="4" fill="#d7a17e">
 
                                     <title>
@@ -560,35 +512,30 @@ function GraficoEvolucao({ dados, exibirConcluidas }: {
                                     </title>
 
                                 </circle>
-
                             )}
 
-                            <text x={coordenadaX(indice)} y={altura - 10} textAnchor="middle" fontSize="11" fill="#77655d">
+                            <text x={coordenadaX(indice)} y={altura - 10} textAnchor="middle" fontSize="16" fill="#77655d">
                                 {item.mes}
                             </text>
 
                         </g>
-
                     ))}
 
                 </svg>
 
             </div>
 
-            <p className="mt-3 text-xs leading-relaxed text-texto-suave">
+            <p className="mt-3 wrap-break-word text-xs leading-relaxed text-[#51453e]">
                 A evolução considera as datas dos primeiros históricos disponíveis e das ocorrências atualmente concluídas.
             </p>
 
             {!exibirConcluidas && (
-
-                <p className="mt-3 text-xs text-texto-suave">
+                <p className="mt-3 text-xs text-[#51453e]">
                     A evolução das conclusões depende da disponibilidade das respectivas datas.
                 </p>
-
             )}
 
         </div>
-
     );
 }
 
@@ -653,14 +600,13 @@ function EstimativaOrcamentaria() {
     ];
 
     return (
+        <section className="relative w-full min-w-0 space-y-6" aria-label="Estimativa orçamentária">
 
-        <section className="relative space-y-6" aria-label="Estimativa orçamentária">
+            <div className="min-w-0 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-4 shadow-sm sm:p-8">
 
-            <div className="rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm sm:p-8">
+                <div className="mb-6 flex items-start gap-3 sm:gap-4">
 
-                <div className="mb-6 flex items-start gap-4">
-
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#f3e5d9] text-primaria">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f3e5d9] text-primaria sm:h-14 sm:w-14">
 
                         <span className="material-icons text-3xl" aria-hidden="true">
                             calculate
@@ -668,13 +614,13 @@ function EstimativaOrcamentaria() {
 
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
 
-                        <h3 className="font-titulo text-xl font-bold text-primaria sm:text-2xl">
+                        <h3 className="font-titulo text-xl font-bold text-[#78221b] sm:text-2xl">
                             Simulador de Custos
                         </h3>
 
-                        <p className="mt-2 text-sm leading-relaxed text-texto-suave">
+                        <p className="mt-2 text-sm leading-relaxed text-[#51453e]">
                             Selecione uma intervenção urbana e informe a quantidade desejada para visualizar uma estimativa de seus custos.
                         </p>
 
@@ -682,29 +628,27 @@ function EstimativaOrcamentaria() {
 
                 </div>
 
-                <div className="grid gap-5 md:grid-cols-2">
+                <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2">
 
-                    <div>
+                    <div className="min-w-0">
 
                         <label htmlFor="tipoIntervencao" className="mb-2 block text-sm font-semibold text-texto">
                             Tipo de intervenção
                         </label>
 
-                        <select id="tipoIntervencao" value={intervencaoId} onChange={event => setIntervencaoId(event.target.value)} className="w-full rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-3 text-sm text-texto outline-none transition-colors focus:border-primaria">
+                        <select id="tipoIntervencao" value={intervencaoId} onChange={event => setIntervencaoId(event.target.value)} className="w-full min-w-0 max-w-full rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-3 text-sm text-texto outline-none transition-colors focus:border-primaria">
 
                             {intervencoes.map(item => (
-
                                 <option key={item.id} value={item.id}>
                                     {item.nome}
                                 </option>
-
                             ))}
 
                         </select>
 
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
 
                         <label htmlFor="quantidadeIntervencao" className="mb-2 block text-sm font-semibold text-texto">
                             Quantidade ({intervencao.unidade})
@@ -720,7 +664,7 @@ function EstimativaOrcamentaria() {
                                     : 0
                             );
 
-                        }} className="w-full rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-3 text-sm text-texto outline-none transition-colors focus:border-primaria" />
+                        }} className="w-full min-w-0 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-3 text-sm text-texto outline-none transition-colors focus:border-primaria" />
 
                     </div>
 
@@ -728,11 +672,11 @@ function EstimativaOrcamentaria() {
 
                 <div className="mt-5 flex items-start gap-3 rounded-xl bg-fundo p-4">
 
-                    <span className="material-icons text-xl text-primaria" aria-hidden="true">
+                    <span className="material-icons shrink-0 text-xl text-primaria" aria-hidden="true">
                         info
                     </span>
 
-                    <p className="text-sm leading-relaxed text-texto-suave">
+                    <p className="min-w-0 text-sm leading-relaxed text-[#51453e]">
                         {intervencao.descricao} Os valores utilizados nesta simulação são fictícios e servem apenas para demonstrar o funcionamento do cálculo.
                     </p>
 
@@ -740,15 +684,14 @@ function EstimativaOrcamentaria() {
 
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
 
                 {componentes.map(componente => (
-
-                    <article key={componente.nome} className="rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-6 shadow-sm transition-shadow hover:shadow-md">
+                    <article key={componente.nome} className="min-w-0 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
 
                         <div className="mb-4 flex items-center gap-3">
 
-                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#f3e5d9] text-primaria">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f3e5d9] text-primaria">
 
                                 <span className="material-icons text-2xl" aria-hidden="true">
                                     {componente.icone}
@@ -756,57 +699,56 @@ function EstimativaOrcamentaria() {
 
                             </div>
 
-                            <h4 className="font-titulo text-lg font-bold text-primaria">
+                            <h4 className="min-w-0 font-titulo text-lg font-bold text-[#78221b]">
                                 {componente.nome}
                             </h4>
 
                         </div>
 
-                        <p className="font-titulo text-2xl font-bold text-texto">
+                        <p className="wrap-break-word font-titulo text-xl font-bold text-texto sm:text-2xl">
                             {formatarMoeda(componente.valor)}
                         </p>
 
-                        <p className="mt-2 text-sm text-texto-suave">
+                        <p className="mt-2 text-sm text-[#51453e]">
                             {componente.descricao}
                         </p>
 
                     </article>
-
                 ))}
 
             </div>
 
-            <div className="rounded-2xl border border-[#b77965] bg-[#f3e5d9] p-6 shadow-sm sm:p-8">
+            <div className="min-w-0 rounded-2xl border border-[#b77965] bg-[#f3e5d9] p-5 shadow-sm sm:p-8">
 
-                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
 
-                    <div>
+                    <div className="min-w-0">
 
                         <div className="mb-2 flex items-center gap-2">
 
-                            <span className="material-icons text-2xl text-primaria" aria-hidden="true">
+                            <span className="material-icons shrink-0 text-2xl text-primaria" aria-hidden="true">
                                 account_balance_wallet
                             </span>
 
-                            <h3 className="font-titulo text-xl font-bold text-primaria">
+                            <h3 className="font-titulo text-xl font-bold text-[#78221b]">
                                 Custo Total Estimado
                             </h3>
 
                         </div>
 
-                        <p className="text-sm text-texto-suave">
+                        <p className="text-sm text-[#51453e]">
                             {intervencao.nome} — {quantidadeValida} {intervencao.unidade}
                         </p>
 
                     </div>
 
-                    <div className="sm:text-right">
+                    <div className="min-w-0 lg:text-right">
 
-                        <p className="font-titulo text-3xl font-bold text-primaria sm:text-4xl" aria-live="polite">
+                        <p className="wrap-break-word font-titulo text-2xl font-bold text-[#78221b] sm:text-4xl" aria-live="polite">
                             {formatarMoeda(custos.total)}
                         </p>
 
-                        <p className="mt-2 text-xs text-texto-suave">
+                        <p className="mt-2 text-xs text-[#51453e]">
                             Valor demonstrativo
                         </p>
 
@@ -816,22 +758,20 @@ function EstimativaOrcamentaria() {
 
                 <div className="mt-6 border-t border-[#d8b9a8] pt-5">
 
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
 
                         {componentes.map(componente => (
+                            <div key={componente.nome} className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
 
-                            <div key={componente.nome} className="flex items-center justify-between gap-3 text-sm">
-
-                                <span className="text-texto-suave">
+                                <span className="text-[#51453e]">
                                     {componente.nome}
                                 </span>
 
-                                <span className="font-semibold text-texto">
+                                <span className="min-w-0 wrap-break-word font-semibold text-texto">
                                     {formatarMoeda(componente.valor)}
                                 </span>
 
                             </div>
-
                         ))}
 
                     </div>
@@ -840,25 +780,25 @@ function EstimativaOrcamentaria() {
 
             </div>
 
-            <div className="rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-6 sm:p-8">
+            <div className="min-w-0 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-5 sm:p-8">
 
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3 sm:gap-4">
 
-                    <span className="material-icons text-3xl text-primaria" aria-hidden="true">
+                    <span className="material-icons shrink-0 text-3xl text-primaria" aria-hidden="true">
                         verified_user
                     </span>
 
-                    <div>
+                    <div className="min-w-0">
 
-                        <h3 className="font-titulo text-lg font-bold text-primaria">
+                        <h3 className="font-titulo text-lg font-bold text-[#78221b]">
                             Transparência e Responsabilidade
                         </h3>
 
-                        <p className="mt-3 text-sm leading-relaxed text-texto-suave">
+                        <p className="mt-3 text-sm leading-relaxed text-[#51453e]">
                             O Polieus busca tornar as informações sobre intervenções urbanas mais acessíveis, contribuindo para que os cidadãos compreendam os possíveis custos das melhorias solicitadas.
                         </p>
 
-                        <p className="mt-3 text-sm leading-relaxed text-texto-suave">
+                        <p className="mt-3 text-sm leading-relaxed text-[#51453e]">
                             Este simulador não representa um orçamento oficial, cotação de fornecedores, disponibilidade de recursos públicos ou compromisso de execução. Os valores reais dependerão das características da intervenção e das informações fornecidas pelos órgãos responsáveis.
                         </p>
 
@@ -869,7 +809,6 @@ function EstimativaOrcamentaria() {
             </div>
 
         </section>
-
     );
 }
 
@@ -910,14 +849,11 @@ export default function Transparencia() {
                 if (!ativo) return;
 
                 if (!Array.isArray(registros)) {
-
                     throw new Error('Resposta inválida ao consultar ocorrências.');
                 }
 
                 if (registros.length === 0) {
-
                     setOcorrencias([]);
-
                     return;
                 }
 
@@ -939,7 +875,6 @@ export default function Transparencia() {
                     console.error('Erro ao consultar históricos:', erroHistorico);
 
                     if (ativo) {
-
                         setAviso('Não foi possível consultar os históricos. Os indicadores de conclusão e evolução podem estar indisponíveis.');
                     }
                 }
@@ -966,7 +901,6 @@ export default function Transparencia() {
             } finally {
 
                 if (ativo) {
-
                     setCarregando(false);
                 }
             }
@@ -975,7 +909,6 @@ export default function Transparencia() {
         void carregarDados();
 
         return () => {
-
             ativo = false;
         };
 
@@ -1123,6 +1056,7 @@ export default function Transparencia() {
             }).replace('.', '');
 
             return {
+
                 mes: mes.charAt(0).toUpperCase() + mes.slice(1),
 
                 registradas: ocorrencias.filter(item =>
@@ -1142,28 +1076,27 @@ export default function Transparencia() {
     }, [periodo, ocorrencias, datasDisponiveis, datasConclusaoDisponiveis, hoje]);
 
     return (
-
-        <main className="min-h-screen w-full flex-1 bg-fundo font-corpo text-texto">
+        <main className="min-h-screen w-full min-w-0 flex-1 bg-fundo font-corpo text-texto">
 
             {/* CABEÇALHO */}
 
-            <header className="border-b border-[#d8b9a8] bg-[#fffaf4] px-5 py-5 sm:px-8 lg:px-10">
+            <header className="border-b border-[#d8b9a5] bg-[#fffaf4] py-5 pr-5 pl-20 sm:pr-8 sm:pl-20 lg:px-10">
 
-                <h1 className="font-titulo text-3xl font-bold text-primaria sm:text-4xl">
+                <h1 className="font-titulo text-3xl font-bold text-[#78221b] sm:text-4xl">
                     Transparência
                 </h1>
 
-                <nav aria-label="Navegação estrutural" className="mt-2 flex items-center gap-2 text-sm">
+                <nav aria-label="Navegação estrutural" className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[#6b4438]">
 
-                    <Link to="/inicio" className="text-[#6b4438] transition-colors hover:text-primaria">
+                    <Link to="/inicio" className="text-[#6b4438] transition-colors hover:text-primaria hover:underline">
                         Início
                     </Link>
 
-                    <span className="material-icons text-base text-primaria" aria-hidden="true">
+                    <span className="material-icons text-base text-[#6b4438]" aria-hidden="true">
                         chevron_right
                     </span>
 
-                    <span className="font-semibold text-primaria">
+                    <span aria-current="page" className="font-semibold text-[#78221b]">
                         Transparência
                     </span>
 
@@ -1171,7 +1104,7 @@ export default function Transparencia() {
 
             </header>
 
-            <div className="relative mx-auto w-full max-w-7xl overflow-hidden px-4 py-8 sm:px-8 lg:px-10">
+            <div className="relative mx-auto w-full min-w-0 max-w-7xl overflow-hidden px-4 py-8 sm:px-8 lg:px-10">
 
                 <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-12 h-72 w-72 rounded-full border border-[#dfc2ae] opacity-40" />
 
@@ -1179,17 +1112,17 @@ export default function Transparencia() {
 
                 {/* APRESENTAÇÃO */}
 
-                <section className="relative mb-8">
+                <section className="relative mb-8 min-w-0">
 
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#a34a37]">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#a34c3a]">
                         Dados abertos da plataforma
                     </p>
 
-                    <h2 className="font-titulo text-3xl font-bold text-primaria sm:text-4xl">
+                    <h2 className="font-titulo text-3xl font-bold text-[#78221b] sm:text-4xl">
                         Transparência
                     </h2>
 
-                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-texto-suave sm:text-base">
+                    <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#51453e] sm:text-base">
                         Acompanhe os indicadores gerais do Polieus e explore estimativas orçamentárias de intervenções urbanas.
                     </p>
 
@@ -1199,15 +1132,15 @@ export default function Transparencia() {
 
                 {/* ABAS */}
 
-                <div className="relative mb-8 flex flex-wrap gap-3" aria-label="Seções de transparência">
+                <div className="relative mb-8 flex min-w-0 flex-wrap gap-3" aria-label="Seções de transparência">
 
-                    <button type="button" aria-pressed={abaAtiva === 'indicadores'} onClick={() => setAbaAtiva('indicadores')} className={`flex cursor-pointer items-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold transition-all duration-300 ${
+                    <button type="button" aria-pressed={abaAtiva === 'indicadores'} onClick={() => setAbaAtiva('indicadores')} className={`flex max-w-full cursor-pointer items-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaria sm:px-5 ${
                         abaAtiva === 'indicadores'
                             ? 'border-primaria bg-primaria text-white shadow-md'
                             : 'border-[#dfc2ae] bg-[#fffaf4] text-primaria hover:bg-[#f3e5d9]'
                     }`}>
 
-                        <span className={`material-icons text-xl ${abaAtiva === 'indicadores' ? 'text-white' : 'text-primaria'}`} aria-hidden="true">
+                        <span className={`material-icons shrink-0 text-xl ${abaAtiva === 'indicadores' ? 'text-white' : 'text-primaria'}`} aria-hidden="true">
                             bar_chart
                         </span>
 
@@ -1217,13 +1150,13 @@ export default function Transparencia() {
 
                     </button>
 
-                    <button type="button" aria-pressed={abaAtiva === 'orcamento'} onClick={() => setAbaAtiva('orcamento')} className={`flex cursor-pointer items-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold transition-all duration-300 ${
+                    <button type="button" aria-pressed={abaAtiva === 'orcamento'} onClick={() => setAbaAtiva('orcamento')} className={`flex max-w-full cursor-pointer items-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition-all duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaria sm:px-5 ${
                         abaAtiva === 'orcamento'
                             ? 'border-primaria bg-primaria text-white shadow-md'
                             : 'border-[#dfc2ae] bg-[#fffaf4] text-primaria hover:bg-[#f3e5d9]'
                     }`}>
 
-                        <span className={`material-icons text-xl ${abaAtiva === 'orcamento' ? 'text-white' : 'text-primaria'}`} aria-hidden="true">
+                        <span className={`material-icons shrink-0 text-xl ${abaAtiva === 'orcamento' ? 'text-white' : 'text-primaria'}`} aria-hidden="true">
                             account_balance
                         </span>
 
@@ -1239,17 +1172,17 @@ export default function Transparencia() {
 
                 {abaAtiva === 'indicadores' && (
 
-                    <section aria-label="Indicadores gerais" aria-busy={carregando}>
+                    <section className="w-full min-w-0" aria-label="Indicadores gerais" aria-busy={carregando}>
 
-                        <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
+                        <div className="mb-7 flex min-w-0 flex-wrap items-center justify-between gap-4">
 
-                            <div>
+                            <div className="min-w-0">
 
-                                <h3 className="font-titulo text-2xl font-bold text-primaria">
+                                <h3 className="font-titulo text-2xl font-bold text-[#78221b] sm:text-3xl">
                                     Visão Geral das Ocorrências
                                 </h3>
 
-                                <p className="mt-1 text-sm text-texto-suave">
+                                <p className="mt-1 text-sm text-[#51453e]">
                                     Indicadores gerais dos registros da plataforma.
                                 </p>
 
@@ -1257,7 +1190,7 @@ export default function Transparencia() {
 
                             <div className="flex items-center gap-2">
 
-                                <button type="button" disabled={carregando} onClick={() => setTentativa(atual => atual + 1)} className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-3 text-sm font-semibold text-primaria transition-colors hover:bg-[#f3e5d9] disabled:cursor-not-allowed disabled:opacity-50">
+                                <button type="button" disabled={carregando} onClick={() => setTentativa(atual => atual + 1)} className="flex cursor-pointer items-center gap-2 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-3 text-sm font-semibold text-primaria transition-colors hover:bg-[#f3e5d9] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaria disabled:cursor-not-allowed disabled:opacity-50">
 
                                     <span className={`material-icons text-xl ${carregando ? 'animate-spin' : ''}`} aria-hidden="true">
                                         refresh
@@ -1275,9 +1208,9 @@ export default function Transparencia() {
 
                         {carregando && (
 
-                            <div role="status" className="mb-6 flex items-center gap-3 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4 text-sm text-texto-suave">
+                            <div role="status" className="mb-6 flex items-center gap-3 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4 text-sm text-[#51453e]">
 
-                                <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#dfc2ae] border-t-primaria" />
+                                <div className="h-6 w-6 shrink-0 animate-spin rounded-full border-2 border-[#dfc2ae] border-t-primaria" aria-hidden="true" />
 
                                 Consultando os dados da plataforma...
 
@@ -1291,9 +1224,9 @@ export default function Transparencia() {
 
                             <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-red-200 bg-red-50 p-4">
 
-                                <div className="flex items-center gap-3 text-sm text-red-800">
+                                <div className="flex min-w-0 items-center gap-3 text-sm text-red-800">
 
-                                    <span className="material-icons" aria-hidden="true">
+                                    <span className="material-icons shrink-0" aria-hidden="true">
                                         error_outline
                                     </span>
 
@@ -1301,7 +1234,7 @@ export default function Transparencia() {
 
                                 </div>
 
-                                <button type="button" onClick={() => setTentativa(atual => atual + 1)} className="cursor-pointer rounded-lg bg-primaria px-4 py-2 text-sm font-semibold">
+                                <button type="button" onClick={() => setTentativa(atual => atual + 1)} className="cursor-pointer rounded-lg bg-primaria px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaria">
 
                                     <span className="text-white">
                                         Tentar novamente
@@ -1319,13 +1252,13 @@ export default function Transparencia() {
 
                             <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4">
 
-                                <div className="flex flex-1 items-start gap-3">
+                                <div className="flex min-w-0 flex-1 items-start gap-3">
 
-                                    <span className="material-icons text-xl text-primaria" aria-hidden="true">
+                                    <span className="material-icons shrink-0 text-xl text-primaria" aria-hidden="true">
                                         info
                                     </span>
 
-                                    <p className="text-sm leading-relaxed text-texto-suave">
+                                    <p className="text-sm leading-relaxed text-[#51453e]">
                                         {aviso}
                                     </p>
 
@@ -1341,11 +1274,11 @@ export default function Transparencia() {
 
                         {/* CARDS */}
 
-                        <section className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores gerais">
+                        <section className="mb-7 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores gerais">
 
                             {indicadores.map(indicador => (
 
-                                <article key={indicador.titulo} className="flex items-center gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                                <article key={indicador.titulo} className="flex min-w-0 items-center gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
 
                                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#f3e5d9]" style={{ color: indicador.cor }}>
 
@@ -1355,13 +1288,13 @@ export default function Transparencia() {
 
                                     </div>
 
-                                    <div>
+                                    <div className="min-w-0">
 
-                                        <p className="font-titulo text-3xl font-bold text-primaria">
+                                        <p className="wrap-break-word font-titulo text-3xl font-bold text-[#78221b]">
                                             {indicador.valor}
                                         </p>
 
-                                        <p className="mt-1 text-xs text-texto-suave sm:text-sm">
+                                        <p className="mt-1 text-xs text-[#51453e] sm:text-sm">
                                             {indicador.titulo}
                                         </p>
 
@@ -1377,11 +1310,11 @@ export default function Transparencia() {
 
                             <div className="mb-6 flex items-start gap-3 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4">
 
-                                <span className="material-icons text-xl text-primaria" aria-hidden="true">
+                                <span className="material-icons shrink-0 text-xl text-primaria" aria-hidden="true">
                                     info
                                 </span>
 
-                                <p className="text-sm leading-relaxed text-texto-suave">
+                                <p className="min-w-0 text-sm leading-relaxed text-[#51453e]">
                                     Os indicadores de conclusão serão apresentados quando os status de todas as ocorrências estiverem disponíveis.
                                 </p>
 
@@ -1391,17 +1324,17 @@ export default function Transparencia() {
 
                         {/* GRÁFICOS */}
 
-                        <section className="grid items-stretch gap-6 xl:grid-cols-2" aria-label="Gráficos de transparência">
+                        <section className="grid w-full min-w-0 grid-cols-1 items-stretch gap-6 xl:grid-cols-2" aria-label="Gráficos de transparência">
 
-                            <article className="rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm sm:p-7">
+                            <article className="w-full min-w-0 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-4 shadow-sm sm:p-7">
 
-                                <div className="mb-7 flex items-center gap-3">
+                                <div className="mb-7 flex min-w-0 items-center gap-3">
 
-                                    <span className="material-icons text-2xl text-primaria" aria-hidden="true">
+                                    <span className="material-icons shrink-0 text-2xl text-primaria" aria-hidden="true">
                                         donut_large
                                     </span>
 
-                                    <h3 className="font-titulo text-xl font-bold text-primaria">
+                                    <h3 className="min-w-0 font-titulo text-lg font-bold text-[#78221b] sm:text-xl">
                                         Ocorrências por Categoria
                                     </h3>
 
@@ -1423,17 +1356,17 @@ export default function Transparencia() {
 
                             </article>
 
-                            <article className="rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm sm:p-7">
+                            <article className="w-full min-w-0 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-4 shadow-sm sm:p-7">
 
-                                <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                                <div className="mb-5 flex min-w-0 flex-wrap items-center justify-between gap-3">
 
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex min-w-0 items-center gap-3">
 
-                                        <span className="material-icons text-2xl text-primaria" aria-hidden="true">
+                                        <span className="material-icons shrink-0 text-2xl text-primaria" aria-hidden="true">
                                             show_chart
                                         </span>
 
-                                        <h3 className="font-titulo text-xl font-bold text-primaria">
+                                        <h3 className="min-w-0 font-titulo text-lg font-bold text-[#78221b] sm:text-xl">
                                             Evolução no Período
                                         </h3>
 
@@ -1443,7 +1376,7 @@ export default function Transparencia() {
                                         Período do gráfico
                                     </label>
 
-                                    <select id="periodo" value={periodo} disabled={!dadosDisponiveis || !datasDisponiveis} onChange={event => setPeriodo(event.target.value as Periodo)} className="rounded-lg border border-[#dfc2ae] bg-[#fffaf4] px-3 py-2 text-xs font-semibold text-primaria outline-none focus:border-primaria disabled:opacity-50">
+                                    <select id="periodo" value={periodo} disabled={!dadosDisponiveis || !datasDisponiveis} onChange={event => setPeriodo(event.target.value as Periodo)} className="max-w-full rounded-lg border border-[#dfc2ae] bg-[#fffaf4] px-3 py-2 text-sm font-semibold text-[#78221b] outline-none focus:border-primaria disabled:opacity-50">
 
                                         <option value="3">Últimos 3 meses</option>
                                         <option value="6">Últimos 6 meses</option>
@@ -1477,9 +1410,9 @@ export default function Transparencia() {
 
                         {/* INFORMAÇÕES ADICIONAIS */}
 
-                        <section className="mt-7 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-6 shadow-sm sm:p-8">
+                        <section className="mt-7 min-w-0 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm sm:p-8">
 
-                            <div className="flex items-start gap-4">
+                            <div className="flex flex-col items-start gap-4 sm:flex-row">
 
                                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f3e5d9]">
 
@@ -1489,25 +1422,25 @@ export default function Transparencia() {
 
                                 </div>
 
-                                <div>
+                                <div className="min-w-0">
 
-                                    <h3 className="font-titulo text-lg font-bold text-primaria">
+                                    <h3 className="font-titulo text-lg font-bold text-[#78221b]">
                                         Sobre os dados apresentados
                                     </h3>
 
-                                    <p className="mt-2 text-sm leading-relaxed text-texto-suave">
+                                    <p className="mt-2 text-sm leading-relaxed text-[#51453e]">
                                         Esta página reúne indicadores sobre as ocorrências registradas na plataforma, permitindo acompanhar categorias, volumes de solicitações e índices de conclusão.
                                     </p>
 
-                                    <p className="mt-3 text-sm leading-relaxed text-texto-suave">
+                                    <p className="mt-3 text-sm leading-relaxed text-[#51453e]">
                                         Os indicadores são calculados com base nos registros disponibilizados pelo sistema Polieus. Informações indisponíveis não são substituídas por valores fictícios.
                                     </p>
 
-                                    <p className="mt-3 text-sm leading-relaxed text-texto-suave">
+                                    <p className="mt-3 text-sm leading-relaxed text-[#51453e]">
                                         As datas são obtidas dos históricos associados às ocorrências. O primeiro histórico representa o primeiro registro disponível para acompanhamento.
                                     </p>
 
-                                    <p className="mt-3 text-sm leading-relaxed text-texto-suave">
+                                    <p className="mt-3 text-sm leading-relaxed text-[#51453e]">
                                         Os indicadores apresentados nesta página são agregados e não exibem informações pessoais dos cidadãos.
                                     </p>
 
@@ -1525,19 +1458,19 @@ export default function Transparencia() {
 
                 {abaAtiva === 'orcamento' && (
 
-                    <section aria-label="Estimativa orçamentária">
+                    <section className="w-full min-w-0" aria-label="Estimativa orçamentária">
 
                         <div className="mb-7">
 
-                            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#a34a37]">
+                            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#a34c3a]">
                                 Planejamento e transparência
                             </p>
 
-                            <h3 className="font-titulo text-2xl font-bold text-primaria sm:text-3xl">
+                            <h3 className="font-titulo text-2xl font-bold text-[#78221b] sm:text-3xl">
                                 Estimativa de Custos das Intervenções
                             </h3>
 
-                            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-texto-suave sm:text-base">
+                            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#51453e] sm:text-base">
                                 Entenda como diferentes componentes podem influenciar o custo de uma intervenção urbana. Faça uma simulação e acompanhe o resultado detalhado.
                             </p>
 
@@ -1552,6 +1485,5 @@ export default function Transparencia() {
             </div>
 
         </main>
-
     );
 }

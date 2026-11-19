@@ -629,29 +629,33 @@ export default function MapaOcorrencias() {
         setOcorrenciaSelecionada(ocorrenciaCompleta ?? null);
     }
 
+    const focoClasse = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaria';
+
+    const campoClasse = 'w-full min-w-0 max-w-full rounded-lg border border-[#dfc2ae] bg-white px-3 py-3 text-sm text-texto outline-none transition-colors focus:border-primaria focus:ring-2 focus:ring-primaria/20';
+
     return (
 
-        <main className="min-h-screen w-full flex-1 bg-fundo font-corpo text-texto">
+        <main className="min-h-screen w-full min-w-0 flex-1 bg-fundo font-corpo text-texto">
 
             {/* CABEÇALHO */}
 
-            <header className="border-b border-[#d8b9a8] bg-[#fffaf4] px-5 py-5 sm:px-8 lg:px-10">
+            <header className="border-b border-[#d8b9a5] bg-[#fffaf4] py-5 pr-5 pl-20 sm:pr-8 sm:pl-20 lg:px-10">
 
-                <h1 className="font-titulo text-3xl font-bold text-primaria sm:text-4xl">
+                <h1 className="font-titulo text-3xl font-bold text-[#78221b] sm:text-4xl">
                     Mapa de Ocorrências
                 </h1>
 
-                <nav aria-label="Navegação estrutural" className="mt-2 flex items-center gap-2 text-sm">
+                <nav aria-label="Navegação estrutural" className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[#6b4438]">
 
-                    <Link to="/inicio" className="text-[#6b4438] transition-colors hover:text-primaria">
+                    <Link to="/inicio" className={`text-[#6b4438] transition-colors hover:text-primaria hover:underline ${focoClasse}`}>
                         Início
                     </Link>
 
-                    <span className="material-icons text-base text-primaria" aria-hidden="true">
+                    <span className="material-icons text-base text-[#6b4438]" aria-hidden="true">
                         chevron_right
                     </span>
 
-                    <span className="font-semibold text-primaria">
+                    <span aria-current="page" className="font-semibold text-[#78221b]">
                         Mapa de Ocorrências
                     </span>
 
@@ -659,21 +663,21 @@ export default function MapaOcorrencias() {
 
             </header>
 
-            <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-8 lg:px-10">
+            <div className="mx-auto w-full min-w-0 max-w-7xl px-4 py-8 sm:px-8 sm:py-10 lg:px-10">
 
                 {/* APRESENTAÇÃO */}
 
-                <section className="mb-8">
+                <section className="mb-8 min-w-0">
 
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#a34a37]">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#a34c3a]">
                         Participação cidadã
                     </p>
 
-                    <h2 className="font-titulo text-3xl font-bold text-primaria sm:text-4xl">
+                    <h2 className="font-titulo text-3xl font-bold text-[#78221b] sm:text-4xl">
                         Explore as Ocorrências
                     </h2>
 
-                    <p className="mt-2 max-w-3xl text-sm leading-relaxed text-texto-suave sm:text-base">
+                    <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#51453e] sm:text-base">
                         Visualize a distribuição das ocorrências urbanas no estado de São Paulo, consulte suas prioridades e acompanhe as solicitações registradas na plataforma Polieus.
                     </p>
 
@@ -681,7 +685,7 @@ export default function MapaOcorrencias() {
 
                         <div className="h-px flex-1 bg-[#b77965]" />
 
-                        <div className="h-2.5 w-2.5 rotate-45 bg-[#78221b]" />
+                        <div className="h-2.5 w-2.5 shrink-0 rotate-45 bg-[#78221b]" />
 
                         <div className="h-px flex-1 bg-[#d8b9a8]" />
 
@@ -691,21 +695,21 @@ export default function MapaOcorrencias() {
 
                 {/* BUSCA E FILTROS */}
 
-                <section className="mb-6" aria-label="Busca e filtros do mapa">
+                <section className="mb-6 min-w-0" aria-label="Busca e filtros do mapa">
 
-                    <div className="flex flex-col gap-3 sm:flex-row">
+                    <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap">
 
-                        <div className="relative min-w-0 flex-1">
+                        <div className="relative w-full min-w-0 flex-1">
 
-                            <span className="material-icons pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xl text-primaria" aria-hidden="true">
+                            <span className="material-icons pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-xl text-[#78221b]" aria-hidden="true">
                                 search
                             </span>
 
-                            <input type="search" value={busca} onChange={event => setBusca(event.target.value)} placeholder="Buscar por cidade, endereço ou categoria..." aria-label="Buscar ocorrências no mapa" className="w-full rounded-xl border border-[#dfc2ae] bg-[#fffaf4] py-3.5 pl-12 pr-4 text-sm text-texto shadow-sm outline-none transition-colors placeholder:text-[#8d8179] focus:border-primaria focus:ring-2 focus:ring-primaria/15" />
+                            <input type="search" value={busca} onChange={event => setBusca(event.target.value)} placeholder="Buscar por cidade, endereço ou categoria..." aria-label="Buscar ocorrências no mapa" className="w-full min-w-0 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] py-3.5 pr-4 pl-12 text-sm text-texto shadow-sm outline-none transition-colors placeholder:text-[#807167] focus:border-primaria focus:ring-2 focus:ring-primaria/20" />
 
                         </div>
 
-                        <button type="button" onClick={() => setMostrarFiltros(atual => !atual)} aria-expanded={mostrarFiltros} aria-controls="filtros-mapa" className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-colors ${mostrarFiltros ? 'border-primaria bg-[#f0dfd4] text-primaria' : 'border-[#dfc2ae] bg-[#fffaf4] text-primaria hover:bg-[#f3e5d9]'}`}>
+                        <button type="button" onClick={() => setMostrarFiltros(atual => !atual)} aria-expanded={mostrarFiltros} aria-controls="filtros-mapa" className={`flex w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-colors sm:w-auto ${focoClasse} ${mostrarFiltros ? 'border-primaria bg-[#f0dfd4] text-[#78221b]' : 'border-[#dfc2ae] bg-[#fffaf4] text-[#78221b] hover:bg-[#f3e5d9]'}`}>
 
                             <span className="material-icons text-xl" aria-hidden="true">
                                 filter_alt
@@ -713,15 +717,15 @@ export default function MapaOcorrencias() {
 
                             Filtros
 
-                            <span className={`material-icons text-lg transition-transform duration-300 ${mostrarFiltros ? 'rotate-180' : ''}`} aria-hidden="true">
+                            <span className={`material-icons text-lg transition-transform duration-300 motion-reduce:transition-none ${mostrarFiltros ? 'rotate-180' : ''}`} aria-hidden="true">
                                 expand_more
                             </span>
 
                         </button>
 
-                        <button type="button" onClick={() => setTentativa(atual => atual + 1)} disabled={carregando} aria-label="Atualizar ocorrências" title="Atualizar ocorrências" className="flex cursor-pointer items-center justify-center rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-5 py-3 text-primaria transition-colors hover:bg-[#f3e5d9] disabled:cursor-not-allowed disabled:opacity-50">
+                        <button type="button" onClick={() => setTentativa(atual => atual + 1)} disabled={carregando} aria-label="Atualizar ocorrências" title="Atualizar ocorrências" className={`flex w-full shrink-0 cursor-pointer items-center justify-center rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-5 py-3 text-[#78221b] transition-colors hover:bg-[#f3e5d9] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto ${focoClasse}`}>
 
-                            <span className={`material-icons ${carregando ? 'animate-spin' : ''}`} aria-hidden="true">
+                            <span className={`material-icons ${carregando ? 'animate-spin motion-reduce:animate-none' : ''}`} aria-hidden="true">
                                 refresh
                             </span>
 
@@ -729,92 +733,96 @@ export default function MapaOcorrencias() {
 
                     </div>
 
-                    {mostrarFiltros && (
+                    <div id="filtros-mapa" hidden={!mostrarFiltros}>
 
-                        <div id="filtros-mapa" className="mt-3 grid gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]">
+                        {mostrarFiltros && (
 
-                            {/* FILTRO DE PRIORIDADE */}
+                            <div className="mt-3 grid min-w-0 grid-cols-1 gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4 shadow-sm sm:grid-cols-2 sm:p-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
 
-                            <div>
+                                {/* FILTRO DE PRIORIDADE */}
 
-                                <label htmlFor="filtro-prioridade-mapa" className="mb-2 block text-sm font-semibold text-primaria">
-                                    Prioridade
-                                </label>
+                                <div className="min-w-0">
 
-                                <select id="filtro-prioridade-mapa" value={filtroPrioridade} onChange={event => setFiltroPrioridade(event.target.value as FiltroPrioridade)} className="w-full rounded-lg border border-[#dfc2ae] bg-white px-3 py-3 text-sm text-texto outline-none focus:border-primaria">
+                                    <label htmlFor="filtro-prioridade-mapa" className="mb-2 block text-sm font-semibold text-[#78221b]">
+                                        Prioridade
+                                    </label>
 
-                                    <option value="todas">Todas as prioridades</option>
-                                    <option value="alta">Alta</option>
-                                    <option value="media">Média</option>
-                                    <option value="baixa">Baixa</option>
-                                    <option value="nao-informada">Não informada</option>
-                                    <option value="indisponivel">Indisponível</option>
+                                    <select id="filtro-prioridade-mapa" value={filtroPrioridade} onChange={event => setFiltroPrioridade(event.target.value as FiltroPrioridade)} className={campoClasse}>
 
-                                </select>
+                                        <option value="todas">Todas as prioridades</option>
+                                        <option value="alta">Alta</option>
+                                        <option value="media">Média</option>
+                                        <option value="baixa">Baixa</option>
+                                        <option value="nao-informada">Não informada</option>
+                                        <option value="indisponivel">Indisponível</option>
+
+                                    </select>
+
+                                </div>
+
+                                {/* FILTRO DE CATEGORIA */}
+
+                                <div className="min-w-0">
+
+                                    <label htmlFor="filtro-categoria-mapa" className="mb-2 block text-sm font-semibold text-[#78221b]">
+                                        Categoria
+                                    </label>
+
+                                    <select id="filtro-categoria-mapa" value={filtroCategoria} onChange={event => setFiltroCategoria(event.target.value)} className={campoClasse}>
+
+                                        <option value="todas">Todas as categorias</option>
+
+                                        {categorias.map(categoria => (
+
+                                            <option key={categoria} value={categoria}>
+                                                {categoria}
+                                            </option>
+
+                                        ))}
+
+                                    </select>
+
+                                </div>
+
+                                <div className="flex min-w-0 items-end">
+
+                                    <button type="button" onClick={limparFiltros} className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#b77965] px-4 py-3 text-sm font-semibold text-[#78221b] transition-colors hover:bg-[#f0dfd4] ${focoClasse}`}>
+
+                                        <span className="material-icons shrink-0 text-lg" aria-hidden="true">
+                                            restart_alt
+                                        </span>
+
+                                        Limpar filtros
+
+                                    </button>
+
+                                </div>
 
                             </div>
 
-                            {/* FILTRO DE CATEGORIA */}
+                        )}
 
-                            <div>
-
-                                <label htmlFor="filtro-categoria-mapa" className="mb-2 block text-sm font-semibold text-primaria">
-                                    Categoria
-                                </label>
-
-                                <select id="filtro-categoria-mapa" value={filtroCategoria} onChange={event => setFiltroCategoria(event.target.value)} className="w-full rounded-lg border border-[#dfc2ae] bg-white px-3 py-3 text-sm text-texto outline-none focus:border-primaria">
-
-                                    <option value="todas">Todas as categorias</option>
-
-                                    {categorias.map(categoria => (
-
-                                        <option key={categoria} value={categoria}>
-                                            {categoria}
-                                        </option>
-
-                                    ))}
-
-                                </select>
-
-                            </div>
-
-                            <div className="flex items-end">
-
-                                <button type="button" onClick={limparFiltros} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#b77965] px-4 py-3 text-sm font-semibold text-primaria transition-colors hover:bg-[#f0dfd4]">
-
-                                    <span className="material-icons text-lg" aria-hidden="true">
-                                        restart_alt
-                                    </span>
-
-                                    Limpar filtros
-
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                    )}
+                    </div>
 
                 </section>
 
                 {/* LEGENDA */}
 
-                <section className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-5 py-4 shadow-sm" aria-label="Legenda das prioridades">
+                <section className="mb-6 flex w-full min-w-0 flex-wrap items-center justify-between gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-4 shadow-sm sm:px-5" aria-label="Legenda das prioridades">
 
-                    <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-6 gap-y-3">
 
-                        <span className="text-sm font-semibold text-primaria">
+                        <span className="text-sm font-semibold text-[#78221b]">
                             Prioridade:
                         </span>
 
                         {(['alta', 'media', 'baixa', 'nao-informada'] as const).map(prioridade => (
 
-                            <div key={prioridade} className="flex items-center gap-2">
+                            <div key={prioridade} className="flex min-w-0 items-center gap-2">
 
-                                <span className="h-3.5 w-3.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: CORES_PRIORIDADE[prioridade] }} />
+                                <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-white shadow-sm" style={{ backgroundColor: CORES_PRIORIDADE[prioridade] }} aria-hidden="true" />
 
-                                <span className="text-sm text-texto-suave">
+                                <span className="text-sm text-[#51453e]">
 
                                     {prioridade === 'nao-informada'
                                         ? 'Não informada ou indisponível'
@@ -828,7 +836,7 @@ export default function MapaOcorrencias() {
 
                     </div>
 
-                    <p className="text-sm font-semibold text-primaria" role="status">
+                    <p className="text-sm font-semibold text-[#78221b]" role="status">
 
                         {carregando
                             ? 'Carregando ocorrências...'
@@ -844,19 +852,21 @@ export default function MapaOcorrencias() {
 
                 {erro && (
 
-                    <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-red-200 bg-red-50 p-4">
+                    <div role="alert" className="mb-6 flex min-w-0 flex-wrap items-center justify-between gap-4 rounded-xl border border-red-200 bg-red-50 p-4">
 
-                        <div className="flex items-center gap-3 text-sm text-red-800">
+                        <div className="flex min-w-0 items-start gap-3 text-sm text-red-800">
 
-                            <span className="material-icons" aria-hidden="true">
+                            <span className="material-icons shrink-0" aria-hidden="true">
                                 error_outline
                             </span>
 
-                            {erro}
+                            <span className="min-w-0 wrap-break-word">
+                                {erro}
+                            </span>
 
                         </div>
 
-                        <button type="button" onClick={() => setTentativa(atual => atual + 1)} className="cursor-pointer rounded-lg bg-primaria px-4 py-2 text-sm font-semibold transition-colors hover:bg-primaria-hover">
+                        <button type="button" onClick={() => setTentativa(atual => atual + 1)} className={`w-full cursor-pointer rounded-lg bg-primaria px-4 py-2 text-sm font-semibold transition-colors hover:bg-primaria-hover sm:w-auto ${focoClasse}`}>
 
                             <span className="text-white">
                                 Tentar novamente
@@ -872,19 +882,21 @@ export default function MapaOcorrencias() {
 
                 {aviso && (
 
-                    <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4 text-sm text-texto-suave">
+                    <div role="alert" className="mb-6 flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4 text-sm text-[#51453e]">
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex min-w-0 items-start gap-3">
 
-                            <span className="material-icons text-primaria" aria-hidden="true">
+                            <span className="material-icons shrink-0 text-[#78221b]" aria-hidden="true">
                                 info
                             </span>
 
-                            {aviso}
+                            <span className="min-w-0 wrap-break-word">
+                                {aviso}
+                            </span>
 
                         </div>
 
-                        <button type="button" onClick={() => setTentativa(atual => atual + 1)} className="cursor-pointer font-semibold text-primaria hover:underline">
+                        <button type="button" onClick={() => setTentativa(atual => atual + 1)} className={`cursor-pointer font-semibold text-[#78221b] hover:underline ${focoClasse}`}>
                             Tentar novamente
                         </button>
 
@@ -896,13 +908,13 @@ export default function MapaOcorrencias() {
 
                 {!carregando && !erro && semLocalizacao > 0 && (
 
-                    <div role="status" className="mb-6 flex items-center gap-3 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4 text-sm text-texto-suave">
+                    <div role="status" className="mb-6 flex min-w-0 items-start gap-3 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4 text-sm text-[#51453e]">
 
-                        <span className="material-icons text-2xl text-primaria" aria-hidden="true">
+                        <span className="material-icons shrink-0 text-2xl text-[#78221b]" aria-hidden="true">
                             location_off
                         </span>
 
-                        <p>
+                        <p className="min-w-0 wrap-break-word">
 
                             {semLocalizacao} {semLocalizacao === 1
                                 ? 'ocorrência não possui um município identificado no mapa.'
@@ -916,13 +928,13 @@ export default function MapaOcorrencias() {
 
                 {/* MAPA E PAINEL LATERAL */}
 
-                <section className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]" aria-label="Visualização das ocorrências" aria-busy={carregando}>
+                <section className="grid w-full min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_340px]" aria-label="Visualização das ocorrências" aria-busy={carregando}>
 
-                    <div className="min-w-0">
+                    <div className="w-full min-w-0">
 
-                        <Mapa ocorrencias={ocorrenciasFiltradas} ocorrenciaSelecionadaId={ocorrenciaVisivel?.id ?? null} aoSelecionarOcorrencia={selecionarOcorrencia} altura="600px" carregando={carregando} />
+                        <Mapa ocorrencias={ocorrenciasFiltradas} ocorrenciaSelecionadaId={ocorrenciaVisivel?.id ?? null} aoSelecionarOcorrencia={selecionarOcorrencia} altura="clamp(350px, 65dvh, 600px)" carregando={carregando} />
 
-                        <p className="mt-3 text-xs text-texto-suave">
+                        <p className="mt-3 text-xs leading-relaxed text-[#51453e]">
                             Os marcadores representam localizações aproximadas por município.
                         </p>
 
@@ -930,23 +942,23 @@ export default function MapaOcorrencias() {
 
                     {/* PAINEL DE DETALHES */}
 
-                    <aside className="flex min-h-100 flex-col overflow-hidden rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] shadow-sm lg:min-h-150">
+                    <aside className="flex min-h-80 w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] shadow-sm xl:min-h-150">
 
-                        <div className="border-b border-[#dfc2ae] bg-[#f0dfd4] px-5 py-5">
+                        <div className="border-b border-[#dfc2ae] bg-[#f0dfd4] px-4 py-5 sm:px-5">
 
-                            <div className="flex items-center gap-3">
+                            <div className="flex min-w-0 items-center gap-3">
 
-                                <span className="material-icons text-2xl text-primaria" aria-hidden="true">
+                                <span className="material-icons shrink-0 text-2xl text-[#78221b]" aria-hidden="true">
                                     location_on
                                 </span>
 
-                                <h3 className="font-titulo text-lg font-bold text-primaria">
+                                <h3 className="min-w-0 font-titulo text-lg font-bold text-[#78221b]">
                                     Detalhes da Ocorrência
                                 </h3>
 
                             </div>
 
-                            <p className="mt-2 text-xs text-texto-suave">
+                            <p className="mt-2 text-xs leading-relaxed text-[#51453e]">
                                 Selecione um marcador para consultar as informações.
                             </p>
 
@@ -954,15 +966,15 @@ export default function MapaOcorrencias() {
 
                         {ocorrenciaVisivel ? (
 
-                            <div className="flex flex-1 flex-col gap-5 p-5">
+                            <div className="flex min-w-0 flex-1 flex-col gap-5 p-4 sm:p-5">
 
-                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
 
-                                    <h4 className="font-titulo text-lg font-bold text-primaria">
+                                    <h4 className="min-w-0 wrap-break-word font-titulo text-lg font-bold text-[#78221b]">
                                         {ocorrenciaVisivel.categoria}
                                     </h4>
 
-                                    <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${ESTILOS_PRIORIDADE[ocorrenciaVisivel.prioridade]}`}>
+                                    <span className={`max-w-full rounded-full px-3 py-1.5 text-xs font-semibold ${ESTILOS_PRIORIDADE[ocorrenciaVisivel.prioridade]}`}>
 
                                         Prioridade {ocorrenciaVisivel.prioridadeDisponivel
                                             ? NOMES_PRIORIDADE[ocorrenciaVisivel.prioridade]
@@ -974,13 +986,13 @@ export default function MapaOcorrencias() {
 
                                 {/* PROTOCOLO */}
 
-                                <div>
+                                <div className="min-w-0">
 
-                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-texto-suave">
+                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#51453e]">
                                         Protocolo
                                     </p>
 
-                                    <p className="text-sm font-semibold text-primaria">
+                                    <p className="wrap-break-word text-sm font-semibold text-[#78221b]">
                                         {ocorrenciaVisivel.protocolo}
                                     </p>
 
@@ -988,13 +1000,13 @@ export default function MapaOcorrencias() {
 
                                 {/* DESCRIÇÃO */}
 
-                                <div className="border-t border-[#ead7c9] pt-4">
+                                <div className="min-w-0 border-t border-[#ead7c9] pt-4">
 
-                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-texto-suave">
+                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#51453e]">
                                         Descrição
                                     </p>
 
-                                    <p className="text-sm leading-relaxed text-texto">
+                                    <p className="wrap-break-word text-sm leading-relaxed text-texto">
                                         {ocorrenciaVisivel.descricao}
                                     </p>
 
@@ -1002,28 +1014,26 @@ export default function MapaOcorrencias() {
 
                                 {/* ENDEREÇO */}
 
-                                <div className="border-t border-[#ead7c9] pt-4">
+                                <div className="min-w-0 border-t border-[#ead7c9] pt-4">
 
-                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-texto-suave">
+                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#51453e]">
                                         Endereço
                                     </p>
 
-                                    <div className="flex items-start gap-2">
+                                    <div className="flex min-w-0 items-start gap-2">
 
-                                        <span className="material-icons text-lg text-primaria" aria-hidden="true">
+                                        <span className="material-icons shrink-0 text-lg text-[#78221b]" aria-hidden="true">
                                             place
                                         </span>
 
-                                        <div className="text-sm leading-relaxed text-texto">
+                                        <div className="min-w-0 wrap-break-word text-sm leading-relaxed text-texto">
 
                                             <p>{ocorrenciaVisivel.endereco}</p>
 
                                             {ocorrenciaVisivel.cep && (
 
                                                 <p>
-
                                                     CEP: {ocorrenciaVisivel.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2')}
-
                                                 </p>
 
                                             )}
@@ -1036,19 +1046,19 @@ export default function MapaOcorrencias() {
 
                                 {/* CIDADE */}
 
-                                <div className="border-t border-[#ead7c9] pt-4">
+                                <div className="min-w-0 border-t border-[#ead7c9] pt-4">
 
-                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-texto-suave">
+                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#51453e]">
                                         Cidade
                                     </p>
 
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex min-w-0 items-center gap-2">
 
-                                        <span className="material-icons text-lg text-primaria" aria-hidden="true">
+                                        <span className="material-icons shrink-0 text-lg text-[#78221b]" aria-hidden="true">
                                             location_city
                                         </span>
 
-                                        <span className="text-sm text-texto">
+                                        <span className="min-w-0 wrap-break-word text-sm text-texto">
                                             {ocorrenciaVisivel.cidade} - SP
                                         </span>
 
@@ -1058,19 +1068,19 @@ export default function MapaOcorrencias() {
 
                                 {/* STATUS */}
 
-                                <div className="border-t border-[#ead7c9] pt-4">
+                                <div className="min-w-0 border-t border-[#ead7c9] pt-4">
 
-                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-texto-suave">
+                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#51453e]">
                                         Status
                                     </p>
 
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex min-w-0 items-center gap-2">
 
-                                        <span className="material-icons text-xl text-primaria" aria-hidden="true">
+                                        <span className="material-icons shrink-0 text-xl text-[#78221b]" aria-hidden="true">
                                             info
                                         </span>
 
-                                        <span className="text-sm font-semibold text-texto">
+                                        <span className="min-w-0 wrap-break-word text-sm font-semibold text-texto">
                                             {ocorrenciaVisivel.status}
                                         </span>
 
@@ -1080,7 +1090,7 @@ export default function MapaOcorrencias() {
 
                                 <div className="mt-auto border-t border-[#ead7c9] pt-4">
 
-                                    <button type="button" onClick={() => setOcorrenciaSelecionada(null)} className="w-full cursor-pointer rounded-xl border border-primaria px-4 py-3 text-sm font-semibold text-primaria transition-colors hover:bg-[#f3e5d9]">
+                                    <button type="button" onClick={() => setOcorrenciaSelecionada(null)} className={`w-full cursor-pointer rounded-xl border border-primaria px-4 py-3 text-sm font-semibold text-[#78221b] transition-colors hover:bg-[#f3e5d9] ${focoClasse}`}>
                                         Fechar detalhes
                                     </button>
 
@@ -1090,17 +1100,17 @@ export default function MapaOcorrencias() {
 
                         ) : (
 
-                            <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
+                            <div className="flex min-w-0 flex-1 flex-col items-center justify-center px-4 py-10 text-center sm:px-6 sm:py-12">
 
-                                <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#f3e5d9]">
+                                <div className="mb-5 flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-[#f3e5d9]">
 
-                                    <span className="material-icons text-4xl text-primaria" aria-hidden="true">
+                                    <span className="material-icons text-4xl text-[#78221b]" aria-hidden="true">
                                         map
                                     </span>
 
                                 </div>
 
-                                <h4 className="font-titulo text-lg font-semibold text-primaria">
+                                <h4 className="font-titulo text-lg font-semibold text-[#78221b]">
 
                                     {carregando
                                         ? 'Carregando ocorrências'
@@ -1114,7 +1124,7 @@ export default function MapaOcorrencias() {
 
                                 </h4>
 
-                                <p className="mt-3 max-w-xs text-sm leading-relaxed text-texto-suave">
+                                <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#51453e]">
 
                                     {carregando
                                         ? 'Aguarde enquanto consultamos as ocorrências registradas.'
@@ -1130,7 +1140,7 @@ export default function MapaOcorrencias() {
 
                                 {ocorrenciasFiltradas.length === 0 && ocorrencias.length > 0 && (
 
-                                    <button type="button" onClick={limparFiltros} className="mt-5 cursor-pointer rounded-full border border-primaria px-5 py-2.5 text-sm font-semibold text-primaria transition-colors hover:bg-[#f3e5d9]">
+                                    <button type="button" onClick={limparFiltros} className={`mt-5 cursor-pointer rounded-full border border-primaria px-5 py-2.5 text-sm font-semibold text-[#78221b] transition-colors hover:bg-[#f3e5d9] ${focoClasse}`}>
                                         Limpar filtros
                                     </button>
 
@@ -1148,43 +1158,43 @@ export default function MapaOcorrencias() {
 
                 {ocorrenciasFiltradas.length > 0 && (
 
-                    <section className="mt-7 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-6 shadow-sm">
+                    <section className="mt-7 w-full min-w-0 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-4 shadow-sm sm:p-6">
 
-                        <h3 className="font-titulo text-lg font-bold text-primaria">
+                        <h3 className="font-titulo text-lg font-bold text-[#78221b]">
                             Ocorrências Localizadas
                         </h3>
 
-                        <p className="mt-2 text-sm text-texto-suave">
+                        <p className="mt-2 text-sm leading-relaxed text-[#51453e]">
                             Selecione uma ocorrência para consultar seus detalhes no mapa.
                         </p>
 
-                        <div className="mt-5 grid max-h-96 gap-3 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="mt-5 grid max-h-96 min-w-0 grid-cols-1 gap-3 overflow-y-auto overscroll-contain p-1 sm:grid-cols-2 xl:grid-cols-3">
 
                             {ocorrenciasFiltradas.map(ocorrencia => (
 
-                                <button key={ocorrencia.id} type="button" onClick={() => selecionarOcorrencia(ocorrencia)} aria-pressed={ocorrenciaVisivel?.id === ocorrencia.id} className={`cursor-pointer rounded-xl border p-4 text-left transition-colors ${ocorrenciaVisivel?.id === ocorrencia.id ? 'border-primaria bg-[#f0dfd4]' : 'border-[#dfc2ae] bg-[#fffaf4] hover:bg-[#f3e5d9]'}`}>
+                                <button key={ocorrencia.id} type="button" onClick={() => selecionarOcorrencia(ocorrencia)} aria-pressed={ocorrenciaVisivel?.id === ocorrencia.id} className={`w-full min-w-0 cursor-pointer rounded-xl border p-4 text-left transition-colors ${focoClasse} ${ocorrenciaVisivel?.id === ocorrencia.id ? 'border-primaria bg-[#f0dfd4]' : 'border-[#dfc2ae] bg-[#fffaf4] hover:bg-[#f3e5d9]'}`}>
 
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex min-w-0 items-start gap-3">
 
-                                        <span className="material-icons text-2xl" style={{ color: CORES_PRIORIDADE[ocorrencia.prioridade] }} aria-hidden="true">
+                                        <span className="material-icons shrink-0 text-2xl" style={{ color: CORES_PRIORIDADE[ocorrencia.prioridade] }} aria-hidden="true">
                                             location_on
                                         </span>
 
                                         <div className="min-w-0 flex-1">
 
-                                            <p className="font-titulo text-sm font-bold text-primaria">
+                                            <p className="wrap-break-word font-titulo text-sm font-bold text-[#78221b]">
                                                 {ocorrencia.categoria}
                                             </p>
 
-                                            <p className="mt-1 text-xs text-texto-suave">
+                                            <p className="mt-1 wrap-break-word text-xs text-[#51453e]">
                                                 {ocorrencia.cidade}
                                             </p>
 
-                                            <p className="mt-2 line-clamp-2 text-xs text-texto">
+                                            <p className="mt-2 line-clamp-2 wrap-break-word text-xs text-texto">
                                                 {ocorrencia.descricao}
                                             </p>
 
-                                            <span className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${ESTILOS_PRIORIDADE[ocorrencia.prioridade]}`}>
+                                            <span className={`mt-3 inline-flex max-w-full rounded-full px-2.5 py-1 text-[10px] font-semibold ${ESTILOS_PRIORIDADE[ocorrencia.prioridade]}`}>
 
                                                 Prioridade {ocorrencia.prioridadeDisponivel
                                                     ? NOMES_PRIORIDADE[ocorrencia.prioridade]
@@ -1208,37 +1218,37 @@ export default function MapaOcorrencias() {
 
                 {/* INFORMAÇÕES ADICIONAIS */}
 
-                <section className="mt-7 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-6 shadow-sm sm:p-8">
+                <section className="mt-7 w-full min-w-0 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-4 shadow-sm sm:p-8">
 
-                    <div className="flex items-start gap-4">
+                    <div className="flex min-w-0 flex-col items-start gap-4 sm:flex-row">
 
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f3e5d9]">
 
-                            <span className="material-icons text-2xl text-primaria" aria-hidden="true">
+                            <span className="material-icons text-2xl text-[#78221b]" aria-hidden="true">
                                 info
                             </span>
 
                         </div>
 
-                        <div>
+                        <div className="min-w-0 flex-1">
 
-                            <h3 className="font-titulo text-lg font-bold text-primaria">
+                            <h3 className="font-titulo text-lg font-bold text-[#78221b]">
                                 Sobre o Mapa de Ocorrências
                             </h3>
 
-                            <p className="mt-2 text-sm leading-relaxed text-texto-suave">
+                            <p className="mt-2 text-sm leading-relaxed text-[#51453e]">
                                 O mapa permite visualizar a distribuição das ocorrências urbanas registradas no Polieus, contribuindo para o acompanhamento das demandas da população e para a transparência da gestão pública.
                             </p>
 
-                            <p className="mt-3 text-sm leading-relaxed text-texto-suave">
+                            <p className="mt-3 text-sm leading-relaxed text-[#51453e]">
                                 Os marcadores podem ser filtrados por categoria, prioridade ou localização. Ao selecionar uma ocorrência, suas informações são apresentadas no painel lateral.
                             </p>
 
-                            <p className="mt-3 text-sm leading-relaxed text-texto-suave">
+                            <p className="mt-3 text-sm leading-relaxed text-[#51453e]">
                                 As prioridades apresentadas são atribuídas pela equipe administrativa e consultadas diretamente no sistema.
                             </p>
 
-                            <p className="mt-3 text-xs leading-relaxed text-texto-suave">
+                            <p className="mt-3 text-xs leading-relaxed text-[#51453e]">
                                 As localizações são identificadas pelos CEPs disponíveis na base geográfica do sistema e representadas por coordenadas aproximadas dos municípios, não correspondendo necessariamente ao endereço exato da ocorrência.
                             </p>
 

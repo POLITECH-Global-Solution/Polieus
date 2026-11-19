@@ -102,7 +102,6 @@ function Icone({ nome, classe = '' }: {
 }
 
 function normalizarTexto(texto: string): string {
-
     return texto.normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .trim()
@@ -134,7 +133,6 @@ function normalizarStatus(status?: string): Status {
 }
 
 function corPrioridade(prioridade: Prioridade | null) {
-
     return prioridade
         ? coresPrioridade[prioridade]
         : '#8d8276';
@@ -200,9 +198,11 @@ function estaNoPeriodo(data: string, periodo: string) {
     if (!criacao) return false;
 
     const hoje = new Date();
+
     const inicio = new Date(hoje);
 
     inicio.setHours(0, 0, 0, 0);
+
     inicio.setDate(hoje.getDate() - Number(periodo) + 1);
 
     return criacao >= inicio && criacao <= hoje;
@@ -210,52 +210,197 @@ function estaNoPeriodo(data: string, periodo: string) {
 
 // LOCALIZAÇÃO APROXIMADA PELO CEP
 
-function obterLocalizacaoPorCep(cep: string): {
+type Localizacao = {
     cidade: string;
-    latitude: number | null;
-    longitude: number | null;
-} {
+    latitude: number;
+    longitude: number;
+};
 
-    const codigo = cep.replace(/\D/g, '');
+// ==================================================
+// COORDENADAS APROXIMADAS DOS MUNICÍPIOS
+// ==================================================
 
-    if (codigo.length !== 8) {
+const MUNICIPIOS: Record<string, [number, number]> = {
+    'São Paulo': [-23.5505, -46.6333],
+    'Guarulhos': [-23.4543, -46.5337],
+    'Campinas': [-22.9056, -47.0608],
+    'São Bernardo do Campo': [-23.6914, -46.5646],
+    'Santo André': [-23.6639, -46.5383],
+    'Osasco': [-23.5325, -46.7917],
+    'Sorocaba': [-23.5015, -47.4526],
+    'Ribeirão Preto': [-21.1775, -47.8103],
+    'São José dos Campos': [-23.1896, -45.8841],
+    'São José do Rio Preto': [-20.8113, -49.3758],
+    'Santos': [-23.9608, -46.3336],
+    'Mauá': [-23.6677, -46.4613],
+    'Diadema': [-23.6861, -46.6228],
+    'Jundiaí': [-23.1857, -46.8978],
+    'Piracicaba': [-22.7343, -47.6481],
+    'Bauru': [-22.3145, -49.0587],
+    'Itaquaquecetuba': [-23.4863, -46.3486],
+    'Mogi das Cruzes': [-23.5228, -46.1887],
+    'Franca': [-20.5390, -47.4010],
+    'Praia Grande': [-24.0058, -46.4028],
+    'Taubaté': [-23.0264, -45.5553],
+    'Limeira': [-22.5647, -47.4017],
+    'Suzano': [-23.5425, -46.3108],
+    'Taboão da Serra': [-23.6019, -46.7526],
+    'Sumaré': [-22.8219, -47.2669],
+    'Barueri': [-23.5057, -46.8790],
+    'Embu das Artes': [-23.6491, -46.8522],
+    'São Carlos': [-22.0174, -47.8909],
+    'Indaiatuba': [-23.0884, -47.2119],
+    'Cotia': [-23.6039, -46.9192],
+    'Americana': [-22.7374, -47.3331],
+    'Araraquara': [-21.7845, -48.1780],
+    'Jacareí': [-23.3053, -45.9658],
+    'Presidente Prudente': [-22.1207, -51.3925],
+    'Marília': [-22.2139, -49.9458],
+    'Rio Claro': [-22.4108, -47.5604],
+    'Carapicuíba': [-23.5235, -46.8407],
+    'São Vicente': [-23.9631, -46.3919],
+    'Guarujá': [-23.9939, -46.2564],
+    'Hortolândia': [-22.8583, -47.2200],
+    'Itapevi': [-23.5489, -46.9342],
+    'Atibaia': [-23.1171, -46.5563],
+    'Bragança Paulista': [-22.9527, -46.5419],
+    'Mogi Guaçu': [-22.3672, -46.9428],
+    'Botucatu': [-22.8858, -48.4450],
+    'Itu': [-23.2644, -47.2992],
+    'Salto': [-23.2019, -47.2936],
+    'Valinhos': [-22.9706, -46.9958],
+    'Vinhedo': [-23.0302, -46.9833],
+    'São Caetano do Sul': [-23.6231, -46.5511],
+    'Ribeirão Pires': [-23.7104, -46.4121],
+    'Rio Grande da Serra': [-23.7437, -46.3970],
+    'Ferraz de Vasconcelos': [-23.5408, -46.3710],
+    'Poá': [-23.5286, -46.3447],
+    'Arujá': [-23.3961, -46.3208],
+    'Caieiras': [-23.3644, -46.7406],
+    'Cajamar': [-23.3561, -46.8781],
+    'Franco da Rocha': [-23.3229, -46.7290],
+    'Francisco Morato': [-23.2817, -46.7453],
+    'Mairiporã': [-23.3186, -46.5883],
+    'Santana de Parnaíba': [-23.4442, -46.9178],
+    'Jandira': [-23.5275, -46.9022],
+    'Vargem Grande Paulista': [-23.6031, -47.0220],
+    'Itapecerica da Serra': [-23.7169, -46.8492],
+    'Embu-Guaçu': [-23.8322, -46.8114],
+    'Caraguatatuba': [-23.6204, -45.4131],
+    'Ubatuba': [-23.4332, -45.0834],
+    'São Sebastião': [-23.8067, -45.4025],
+    'Ilhabela': [-23.7781, -45.3581],
+    'Bertioga': [-23.8544, -46.1386],
+    'Cubatão': [-23.8950, -46.4253],
+    'Mongaguá': [-24.0931, -46.6208],
+    'Itanhaém': [-24.1833, -46.7889],
+    'Peruíbe': [-24.3200, -47.0003],
+    'Araçatuba': [-21.2076, -50.4401],
+    'Birigui': [-21.2886, -50.3403],
+    'Barretos': [-20.5572, -48.5678],
+    'Catanduva': [-21.1378, -48.9728],
+    'Ourinhos': [-22.9797, -49.8706],
+    'Assis': [-22.6617, -50.4122],
+    'Avaré': [-23.1067, -48.9250],
+    'Itapetininga': [-23.5886, -48.0531],
+    'Itapeva': [-23.9822, -48.8756],
+    'Registro': [-24.4972, -47.8449],
+    'Votorantim': [-23.5469, -47.4381],
+    'Tatuí': [-23.3556, -47.8569],
+    'Pindamonhangaba': [-22.9239, -45.4617],
+    'Guaratinguetá': [-22.8164, -45.1925],
+    'Lorena': [-22.7311, -45.1247],
+    'Aparecida': [-22.8469, -45.2297],
+};
 
-        return {
-            cidade: '',
-            latitude: null,
-            longitude: null,
-        };
-    }
+// ==================================================
+// FAIXAS DE CEP DOS MUNICÍPIOS
+// ==================================================
 
-    const prefixo = Number(codigo.substring(0, 5));
+const FAIXAS_CEP = [
+    { inicio: '01000', fim: '05999', cidade: 'São Paulo' },
+    { inicio: '06000', fim: '06299', cidade: 'Osasco' },
+    { inicio: '06500', fim: '06549', cidade: 'Santana de Parnaíba' },
+    { inicio: '06600', fim: '06649', cidade: 'Jandira' },
+    { inicio: '06650', fim: '06699', cidade: 'Itapevi' },
+    { inicio: '06750', fim: '06799', cidade: 'Taboão da Serra' },
+    { inicio: '06850', fim: '06889', cidade: 'Itapecerica da Serra' },
+    { inicio: '07000', fim: '07399', cidade: 'Guarulhos' },
+    { inicio: '07800', fim: '07899', cidade: 'Franco da Rocha' },
+    { inicio: '07900', fim: '07999', cidade: 'Francisco Morato' },
+    { inicio: '08000', fim: '08499', cidade: 'São Paulo' },
+    { inicio: '08500', fim: '08549', cidade: 'Ferraz de Vasconcelos' },
+    { inicio: '08550', fim: '08569', cidade: 'Poá' },
+    { inicio: '08570', fim: '08599', cidade: 'Itaquaquecetuba' },
+    { inicio: '08600', fim: '08699', cidade: 'Suzano' },
+    { inicio: '08700', fim: '08889', cidade: 'Mogi das Cruzes' },
+    { inicio: '09000', fim: '09299', cidade: 'Santo André' },
+    { inicio: '09300', fim: '09399', cidade: 'Mauá' },
+    { inicio: '09400', fim: '09449', cidade: 'Ribeirão Pires' },
+    { inicio: '09450', fim: '09499', cidade: 'Rio Grande da Serra' },
+    { inicio: '09500', fim: '09599', cidade: 'São Caetano do Sul' },
+    { inicio: '09600', fim: '09899', cidade: 'São Bernardo do Campo' },
+    { inicio: '09900', fim: '09999', cidade: 'Diadema' },
+    { inicio: '11300', fim: '11399', cidade: 'São Vicente' },
+    { inicio: '11500', fim: '11599', cidade: 'Cubatão' },
+    { inicio: '11700', fim: '11729', cidade: 'Praia Grande' },
+    { inicio: '11730', fim: '11730', cidade: 'Mongaguá' },
+    { inicio: '11740', fim: '11740', cidade: 'Itanhaém' },
+];
 
-    const regioes = [
-        {
-            inicio: 9400,
-            fim: 9499,
-            cidade: 'Ribeirão Pires',
-            latitude: -23.7119,
-            longitude: -46.4133,
-        },
-    ];
+function localizarPorCep(cep: string): Localizacao | null {
 
-    const regiao = regioes.find(
-        item => prefixo >= item.inicio && prefixo <= item.fim
+    const cepLimpo = (cep ?? '').replace(/\D/g, '');
+
+    if (cepLimpo.length !== 8) return null;
+
+    const prefixo = cepLimpo.slice(0, 5);
+
+    const municipio = FAIXAS_CEP.find(faixa =>
+        prefixo >= faixa.inicio && prefixo <= faixa.fim
     );
 
-    if (!regiao) {
+    if (!municipio) return null;
 
-        return {
-            cidade: '',
-            latitude: null,
-            longitude: null,
-        };
-    }
+    const coordenadas = MUNICIPIOS[municipio.cidade];
+
+    if (!coordenadas) return null;
 
     return {
-        cidade: regiao.cidade,
-        latitude: regiao.latitude,
-        longitude: regiao.longitude,
+        cidade: municipio.cidade,
+        latitude: coordenadas[0],
+        longitude: coordenadas[1],
+    };
+}
+
+// IDENTIFICAR MUNICÍPIO PELO ENDEREÇO OU CEP
+
+function localizarEndereco(endereco: string, cep: string): Localizacao | null {
+
+    const localizacaoCep = localizarPorCep(cep);
+
+    if (localizacaoCep) return localizacaoCep;
+
+    const partes = (endereco ?? '').split(',').map(parte => normalizarTexto(parte));
+
+    const municipiosEncontrados = Object.entries(MUNICIPIOS).filter(([cidade]) => {
+
+        const nome = normalizarTexto(cidade);
+
+        return partes.some(parte =>
+            parte === `${nome} - sp` ||
+            parte === `${nome} - sao paulo`
+        );
+    });
+
+    if (municipiosEncontrados.length !== 1) return null;
+
+    const [cidade, coordenadas] = municipiosEncontrados[0];
+
+    return {
+        cidade,
+        latitude: coordenadas[0],
+        longitude: coordenadas[1],
     };
 }
 
@@ -280,9 +425,7 @@ function criarIcone(prioridade: Prioridade | null, quantidade = 1) {
     if (quantidade > 1) {
 
         return L.divIcon({
-
             className: '',
-
             html: `
                 <div style="
                     width: 42px;
@@ -301,7 +444,6 @@ function criarIcone(prioridade: Prioridade | null, quantidade = 1) {
                     ${quantidade}
                 </div>
             `,
-
             iconSize: [42, 42],
             iconAnchor: [21, 21],
             popupAnchor: [0, -21],
@@ -309,9 +451,7 @@ function criarIcone(prioridade: Prioridade | null, quantidade = 1) {
     }
 
     return L.divIcon({
-
         className: '',
-
         html: `
             <div style="
                 width: 32px;
@@ -333,7 +473,6 @@ function criarIcone(prioridade: Prioridade | null, quantidade = 1) {
                 "></div>
             </div>
         `,
-
         iconSize: [32, 32],
         iconAnchor: [16, 32],
         popupAnchor: [0, -30],
@@ -371,9 +510,7 @@ function AjustarMapa({ coordenadas }: {
         }
 
         const atualizar = window.setTimeout(() => {
-
             mapa.invalidateSize();
-
         }, 150);
 
         return () => window.clearTimeout(atualizar);
@@ -390,6 +527,7 @@ function CentralizarOcorrencia({ ocorrencia }: {
     const mapa = useMap();
 
     const latitude = ocorrencia?.latitude;
+
     const longitude = ocorrencia?.longitude;
 
     useEffect(() => {
@@ -421,6 +559,7 @@ async function consultarOcorrencias(): Promise<Ocorrencia[]> {
     const registros = await listarOcorrencias();
 
     let analises: Analise[] = [];
+
     let analisesDisponiveis = true;
 
     try {
@@ -501,7 +640,8 @@ async function consultarOcorrencias(): Promise<Ocorrencia[]> {
                 }
             }
 
-            const localizacao = obterLocalizacaoPorCep(
+            const localizacao = localizarEndereco(
+                registro.endereco ?? '',
                 registro.cep ?? ''
             );
 
@@ -513,9 +653,9 @@ async function consultarOcorrencias(): Promise<Ocorrencia[]> {
                 endereco: registro.endereco || '',
                 numero: registro.departamento || '',
                 cep: registro.cep || '',
-                cidade: localizacao.cidade,
-                latitude: localizacao.latitude,
-                longitude: localizacao.longitude,
+                cidade: localizacao?.cidade ?? '',
+                latitude: localizacao?.latitude ?? null,
+                longitude: localizacao?.longitude ?? null,
                 status: normalizarStatus(historicoAtual?.status),
                 prioridade: normalizarPrioridade(analise?.prioridade),
                 dataCriacao: historicoInicial?.data || '',
@@ -537,20 +677,16 @@ export default function MapaOcorrenciasAdmin() {
 
     const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
     const [filtros, setFiltros] = useState<Filtros>(filtrosIniciais);
-
     const [carregando, setCarregando] = useState(true);
     const [salvando, setSalvando] = useState(false);
-
     const [erro, setErro] = useState('');
     const [mensagem, setMensagem] = useState('');
-
     const [tipoMensagem, setTipoMensagem] = useState<'sucesso' | 'erro'>('sucesso');
-
     const [selecionadaId, setSelecionadaId] = useState<number | null>(null);
-
     const [novaPrioridade, setNovaPrioridade] = useState<Prioridade | ''>('');
 
     const consultaAtual = useRef(0);
+
     const bloqueioSalvamento = useRef(false);
 
     // CARREGAMENTO
@@ -587,22 +723,27 @@ export default function MapaOcorrenciasAdmin() {
         } finally {
 
             if (consulta === consultaAtual.current) {
+
                 setCarregando(false);
             }
         }
 
     }, []);
 
-        useEffect(() => {
-            const iniciar = window.setTimeout(() => {
-                void carregarOcorrencias();
-            }, 0);
+    useEffect(() => {
 
-            return () => {
-                window.clearTimeout(iniciar);
-                consultaAtual.current += 1;
-            };
-        }, [carregarOcorrencias]);
+        const iniciar = window.setTimeout(() => {
+            void carregarOcorrencias();
+        }, 0);
+
+        return () => {
+
+            window.clearTimeout(iniciar);
+
+            consultaAtual.current += 1;
+        };
+
+    }, [carregarOcorrencias]);
 
     // CATEGORIAS E FILTROS
 
@@ -615,6 +756,7 @@ export default function MapaOcorrenciasAdmin() {
             const chave = normalizarTexto(item.categoria);
 
             if (!registros.has(chave)) {
+
                 registros.set(chave, item.categoria);
             }
         });
@@ -628,14 +770,11 @@ export default function MapaOcorrenciasAdmin() {
     const ocorrenciasFiltradas = useMemo(() => {
 
         return ocorrencias.filter(ocorrencia =>
-
             (!filtros.categoria ||
                 normalizarTexto(ocorrencia.categoria) ===
                 normalizarTexto(filtros.categoria)) &&
-
             (!filtros.status ||
                 ocorrencia.status === filtros.status) &&
-
             (!filtros.prioridade ||
                 (
                     filtros.prioridade === 'nao-definida'
@@ -644,7 +783,6 @@ export default function MapaOcorrenciasAdmin() {
                         : ocorrencia.prioridade === filtros.prioridade
                 )
             ) &&
-
             estaNoPeriodo(
                 ocorrencia.dataCriacao,
                 filtros.periodo
@@ -784,6 +922,7 @@ export default function MapaOcorrenciasAdmin() {
         }
 
         const id = selecionada.id;
+
         const prioridade = novaPrioridade;
 
         bloqueioSalvamento.current = true;
@@ -1103,7 +1242,6 @@ export default function MapaOcorrenciasAdmin() {
                                         grupo.length
                                     )} eventHandlers={{
                                         click: () => {
-
                                             if (grupo.length === 1) {
                                                 selecionarOcorrencia(grupo[0]);
                                             }
@@ -1136,14 +1274,8 @@ export default function MapaOcorrenciasAdmin() {
                                                                 {ocorrencia.categoria}
                                                             </p>
 
-                                                            <p className="text-xs text-texto-suave">
-
-                                                                {[
-                                                                    ocorrencia.endereco,
-                                                                    ocorrencia.numero,
-                                                                    ocorrencia.cidade,
-                                                                ].filter(Boolean).join(', ')}
-
+                                                            <p className="text-xs">
+                                                                {ocorrencia.cidade}
                                                             </p>
 
                                                             <div className="flex items-center gap-2 text-xs">
@@ -1158,14 +1290,10 @@ export default function MapaOcorrenciasAdmin() {
 
                                                             </div>
 
-                                                            <p className="text-xs">
-                                                                Status: {ocorrencia.status}
-                                                            </p>
-
-                                                            <button type="button" disabled={salvando} onClick={() => selecionarOcorrencia(ocorrencia)} className="w-full cursor-pointer rounded-lg bg-primaria px-3 py-2 text-xs font-semibold hover:bg-primaria-hover disabled:opacity-50">
+                                                            <button type="button" disabled={salvando} onClick={() => selecionarOcorrencia(ocorrencia)} className="mt-2 w-full cursor-pointer rounded-lg bg-primaria px-3 py-2 text-xs font-semibold hover:bg-primaria-hover disabled:opacity-50">
 
                                                                 <span className="text-white">
-                                                                    Visualizar detalhes
+                                                                    Ver detalhes
                                                                 </span>
 
                                                             </button>
@@ -1194,27 +1322,27 @@ export default function MapaOcorrenciasAdmin() {
 
                             {prioridades.map(prioridade => (
 
-                                <div key={prioridade} className="flex items-center gap-2">
+                                <span key={prioridade} className="flex items-center gap-2">
 
                                     <span className="h-3 w-3 rounded-full" style={{
                                         backgroundColor: corPrioridade(prioridade),
                                     }} />
 
-                                    <span>{prioridade}</span>
+                                    {prioridade}
 
-                                </div>
+                                </span>
 
                             ))}
 
-                            <div className="flex items-center gap-2">
+                            <span className="flex items-center gap-2">
 
                                 <span className="h-3 w-3 rounded-full bg-[#8d8276]" />
 
                                 Não definida ou indisponível
 
-                            </div>
+                            </span>
 
-                            <div className="flex items-center gap-2">
+                            <span className="flex items-center gap-2">
 
                                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primaria text-xs font-bold text-white">
                                     2+
@@ -1222,12 +1350,16 @@ export default function MapaOcorrenciasAdmin() {
 
                                 Ocorrências agrupadas
 
-                            </div>
+                            </span>
 
                         </div>
 
-                        <div className="border-t border-[#ead5c7] px-4 py-3 text-center text-xs text-texto-suave">
-                            Os marcadores representam localizações aproximadas por município, identificadas pelo CEP.
+                        <div className="border-t border-[#ead5c7] px-4 py-3 text-center">
+
+                            <p className="text-xs text-texto-suave">
+                                Os marcadores representam localizações aproximadas por município, identificadas pelo CEP.
+                            </p>
+
                         </div>
 
                     </section>
@@ -1238,9 +1370,9 @@ export default function MapaOcorrenciasAdmin() {
 
                         {/* INDICADORES */}
 
-                        <aside className={painelClasse}>
+                        <section className={painelClasse}>
 
-                            <h2 className="flex items-center gap-2 border-b border-[#ead5c7] pb-5 font-titulo text-xl font-bold text-[#75211b]">
+                            <h2 className="flex items-center gap-2 font-titulo text-xl font-bold text-[#75211b]">
 
                                 <Icone nome="location_on" classe="text-2xl" />
 
@@ -1248,97 +1380,95 @@ export default function MapaOcorrenciasAdmin() {
 
                             </h2>
 
-                            <div className="border-b border-[#ead5c7] py-4">
+                            <div className="my-5 border-y border-[#ead5c7] py-4">
 
-                                <strong className="font-titulo text-4xl font-bold text-[#75211b]">
+                                <p className="font-titulo text-4xl font-bold text-[#75211b]">
 
-                                    {carregando || erro
-                                        ? '—'
-                                        : indicadores.localizadas}
+                                    {indicadores.localizadas}
 
-                                </strong>
+                                </p>
 
                             </div>
 
-                            <div className="space-y-4 py-5">
+                            <div className="space-y-4">
 
-                                {[
-                                    {
-                                        titulo: 'Alta prioridade',
-                                        cor: '#b3261e',
-                                        icone: 'location_on',
-                                        valor: indicadores.alta,
-                                    },
-                                    {
-                                        titulo: 'Média prioridade',
-                                        cor: '#e99a3e',
-                                        icone: 'location_on',
-                                        valor: indicadores.media,
-                                    },
-                                    {
-                                        titulo: 'Baixa prioridade',
-                                        cor: '#4f7b43',
-                                        icone: 'location_on',
-                                        valor: indicadores.baixa,
-                                    },
-                                    {
-                                        titulo: 'Não classificadas',
-                                        cor: '#8d8276',
-                                        icone: 'location_on',
-                                        valor: indicadores.semPrioridade,
-                                    },
-                                    {
-                                        titulo: 'Sem localização',
-                                        cor: '#74645a',
-                                        icone: 'location_off',
-                                        valor: indicadores.semLocalizacao,
-                                    },
+                                <div className="flex items-center justify-between gap-3">
 
-                                ].map(indicador => (
+                                    <span className="flex items-center gap-2 text-sm">
 
-                                    <div key={indicador.titulo} className="flex items-center justify-between gap-3 text-sm">
+                                        <Icone nome="location_on" classe="text-2xl text-[#b3261e]" />
 
-                                        <div className="flex items-center gap-2">
+                                        Alta prioridade
 
-                                            <span className="material-icons text-2xl" style={{
-                                                color: indicador.cor,
-                                            }} aria-hidden="true">
+                                    </span>
 
-                                                {indicador.icone}
+                                    <strong className="text-sm">
+                                        {indicadores.alta}
+                                    </strong>
 
-                                            </span>
+                                </div>
 
-                                            <span>
-                                                {indicador.titulo}
-                                            </span>
+                                <div className="flex items-center justify-between gap-3">
 
-                                        </div>
+                                    <span className="flex items-center gap-2 text-sm">
 
-                                        <strong>
+                                        <Icone nome="location_on" classe="text-2xl text-[#e99a3e]" />
 
-                                            {carregando || erro
-                                                ? '—'
-                                                : indicador.valor}
+                                        Média prioridade
 
-                                        </strong>
+                                    </span>
 
-                                    </div>
+                                    <strong className="text-sm">
+                                        {indicadores.media}
+                                    </strong>
 
-                                ))}
+                                </div>
 
-                                {!carregando && !erro && indicadores.indisponiveis > 0 && (
+                                <div className="flex items-center justify-between gap-3">
 
-                                    <div className="flex items-center justify-between gap-3 text-sm">
+                                    <span className="flex items-center gap-2 text-sm">
 
-                                        <div className="flex items-center gap-2">
+                                        <Icone nome="location_on" classe="text-2xl text-[#4f7b43]" />
 
-                                            <Icone nome="info_outline" classe="text-[#8d8276]" />
+                                        Baixa prioridade
 
-                                            Prioridade indisponível
+                                    </span>
 
-                                        </div>
+                                    <strong className="text-sm">
+                                        {indicadores.baixa}
+                                    </strong>
 
-                                        <strong>
+                                </div>
+
+                                <div className="flex items-center justify-between gap-3">
+
+                                    <span className="flex items-center gap-2 text-sm">
+
+                                        <Icone nome="location_on" classe="text-2xl text-[#8d8276]" />
+
+                                        Não classificadas
+
+                                    </span>
+
+                                    <strong className="text-sm">
+                                        {indicadores.semPrioridade}
+                                    </strong>
+
+                                </div>
+
+                                {indicadores.indisponiveis > 0 && (
+
+                                    <div className="flex items-center justify-between gap-3">
+
+                                        <span className="flex items-center gap-2 text-sm">
+
+                                            <Icone nome="error_outline" classe="text-xl text-[#8d8276]" />
+
+                                            Prioridades indisponíveis
+
+                                        </span>
+
+                                        <strong className="text-sm">
                                             {indicadores.indisponiveis}
                                         </strong>
 
@@ -1346,31 +1476,41 @@ export default function MapaOcorrenciasAdmin() {
 
                                 )}
 
-                            </div>
+                                <div className="flex items-center justify-between gap-3">
 
-                            <div className="border-t border-[#ead5c7] pt-4">
+                                    <span className="flex items-center gap-2 text-sm">
 
-                                <div className="flex items-center justify-between text-sm font-semibold">
+                                        <Icone nome="location_off" classe="text-2xl text-[#74645a]" />
 
-                                    <span>Total de ocorrências</span>
-
-                                    <span>
-
-                                        {carregando || erro
-                                            ? '—'
-                                            : indicadores.total}
+                                        Sem localização
 
                                     </span>
 
+                                    <strong className="text-sm">
+                                        {indicadores.semLocalizacao}
+                                    </strong>
+
                                 </div>
 
-                                <p className="mt-2 text-xs leading-relaxed text-texto-suave">
+                            </div>
+
+                            <div className="mt-5 border-t border-[#ead5c7] pt-4">
+
+                                <div className="flex items-center justify-between gap-3 text-sm font-semibold">
+
+                                    <span>Total de ocorrências</span>
+
+                                    <span>{indicadores.total}</span>
+
+                                </div>
+
+                                <p className="mt-2 text-xs text-texto-suave">
                                     As prioridades incluem as ocorrências com e sem localização.
                                 </p>
 
                             </div>
 
-                        </aside>
+                        </section>
 
                         {/* DETALHES DA OCORRÊNCIA */}
 
@@ -1378,15 +1518,15 @@ export default function MapaOcorrenciasAdmin() {
 
                             {!selecionada ? (
 
-                                <div className="flex flex-col items-center py-5 text-center">
+                                <div className="flex flex-col items-center justify-center px-2 py-5 text-center">
 
-                                    <Icone nome="assignment" classe="text-3xl text-[#b88e7a]" />
+                                    <Icone nome="assignment" classe="text-4xl text-[#b88e7a]" />
 
-                                    <h2 className="mt-3 font-titulo text-lg font-bold text-primaria">
+                                    <h2 className="mt-4 font-titulo text-lg font-bold text-primaria">
                                         Detalhes da Ocorrência
                                     </h2>
 
-                                    <p className="mt-3 text-sm leading-relaxed text-texto-suave">
+                                    <p className="mt-4 text-sm leading-relaxed text-texto-suave">
                                         Selecione uma ocorrência no mapa ou na lista abaixo para gerenciar sua prioridade.
                                     </p>
 
@@ -1398,29 +1538,23 @@ export default function MapaOcorrenciasAdmin() {
 
                                     <div className="flex items-start justify-between gap-3 border-b border-[#ead5c7] pb-4">
 
-                                        <div>
+                                        <div className="min-w-0">
 
-                                            <h2 className="flex items-center gap-2 font-titulo text-lg font-bold text-primaria">
-
-                                                <Icone nome="assignment" />
-
+                                            <h2 className="font-titulo text-xl font-bold text-primaria">
                                                 Detalhes da Ocorrência
-
                                             </h2>
 
-                                            <p className="mt-2 text-sm font-semibold text-primaria">
+                                            <p className="mt-2 wrap-break-word text-sm font-semibold text-[#75211b]">
                                                 {selecionada.protocolo}
                                             </p>
 
                                         </div>
 
-                                        <button type="button" aria-label="Fechar detalhes" disabled={salvando} onClick={() => {
-
+                                        <button type="button" disabled={salvando} onClick={() => {
                                             setSelecionadaId(null);
                                             setNovaPrioridade('');
                                             setMensagem('');
-
-                                        }} className="cursor-pointer text-primaria disabled:opacity-50">
+                                        }} aria-label="Fechar detalhes" className="cursor-pointer rounded-full p-1 text-primaria hover:bg-[#f5e9e0] disabled:opacity-50">
 
                                             <Icone nome="close" />
 
@@ -1428,51 +1562,43 @@ export default function MapaOcorrenciasAdmin() {
 
                                     </div>
 
-                                    <div className="mt-5 space-y-4">
+                                    {/* INFORMAÇÕES DA OCORRÊNCIA */}
 
-                                        {/* CATEGORIA */}
+                                    <div className="mt-4 space-y-4">
 
                                         <div>
 
-                                            <p className="text-xs font-semibold text-primaria">
+                                            <p className="text-xs font-semibold text-texto-suave">
                                                 Categoria
                                             </p>
 
-                                            <p className="mt-1 text-sm">
+                                            <p className="mt-1 text-sm font-semibold">
                                                 {selecionada.categoria}
                                             </p>
 
                                         </div>
 
-                                        {/* DESCRIÇÃO */}
-
                                         <div>
 
-                                            <p className="text-xs font-semibold text-primaria">
+                                            <p className="text-xs font-semibold text-texto-suave">
                                                 Descrição
                                             </p>
 
-                                            <p className="mt-1 wrap-break-word text-sm">
+                                            <p className="mt-1 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed">
                                                 {selecionada.descricao || 'Descrição não informada'}
                                             </p>
 
                                         </div>
 
-                                        {/* LOCALIZAÇÃO */}
-
                                         <div>
 
-                                            <p className="text-xs font-semibold text-primaria">
-                                                Localização
+                                            <p className="text-xs font-semibold text-texto-suave">
+                                                Endereço
                                             </p>
 
-                                            <p className="mt-1 text-sm">
+                                            <p className="mt-1 wrap-break-word text-sm">
 
-                                                {[
-                                                    selecionada.endereco,
-                                                    selecionada.numero,
-                                                    selecionada.cidade,
-                                                ].filter(Boolean).join(', ') || 'Localização não informada'}
+                                                {[selecionada.endereco, selecionada.numero].filter(Boolean).join(', ') || 'Endereço não informado'}
 
                                             </p>
 
@@ -1480,14 +1606,16 @@ export default function MapaOcorrenciasAdmin() {
                                                 CEP: {selecionada.cep || 'Não informado'}
                                             </p>
 
-                                        </div>
+                                            <p className="mt-1 text-xs text-texto-suave">
+                                                Município: {selecionada.cidade || 'Não identificado'}
+                                            </p>
 
-                                        {/* DATA */}
+                                        </div>
 
                                         <div>
 
-                                            <p className="text-xs font-semibold text-primaria">
-                                                Data de registro
+                                            <p className="text-xs font-semibold text-texto-suave">
+                                                Data do registro
                                             </p>
 
                                             <p className="mt-1 text-sm">
@@ -1496,45 +1624,59 @@ export default function MapaOcorrenciasAdmin() {
 
                                         </div>
 
-                                        {/* STATUS */}
+                                        <div className="flex flex-wrap items-center justify-between gap-3">
 
-                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
 
-                                            <span className="text-xs font-semibold text-primaria">
-                                                Status atual
-                                            </span>
+                                                <p className="mb-2 text-xs font-semibold text-texto-suave">
+                                                    Status atual
+                                                </p>
 
-                                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${corStatus(selecionada.status)}`}>
-                                                {selecionada.status}
-                                            </span>
+                                                <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${corStatus(selecionada.status)}`}>
+                                                    {selecionada.status}
+                                                </span>
 
-                                        </div>
+                                            </div>
 
-                                        {/* PRIORIDADE ATUAL */}
+                                            <div>
 
-                                        <div className="flex items-center justify-between gap-3">
+                                                <p className="mb-2 text-xs font-semibold text-texto-suave">
+                                                    Prioridade atual
+                                                </p>
 
-                                            <span className="text-xs font-semibold text-primaria">
-                                                Prioridade atual
-                                            </span>
+                                                <span className="inline-flex items-center gap-2 text-xs font-semibold">
 
-                                            <div className="flex items-center gap-2 text-sm font-semibold">
+                                                    <span className="h-3 w-3 rounded-full" style={{
+                                                        backgroundColor: corPrioridade(selecionada.prioridade),
+                                                    }} />
 
-                                                <span className="h-3 w-3 rounded-full" style={{
-                                                    backgroundColor: corPrioridade(selecionada.prioridade),
-                                                }} />
+                                                    {selecionada.analiseDisponivel
+                                                        ? selecionada.prioridade ?? 'Não definida'
+                                                        : 'Indisponível'}
 
-                                                {selecionada.analiseDisponivel
-                                                    ? selecionada.prioridade ?? 'Não definida'
-                                                    : 'Indisponível'}
+                                                </span>
 
                                             </div>
 
                                         </div>
 
+                                        {!possuiLocalizacao(selecionada) && (
+
+                                            <div className="flex items-start gap-2 rounded-lg bg-[#f5e9e0] p-3">
+
+                                                <Icone nome="location_off" classe="text-xl text-[#74645a]" />
+
+                                                <p className="text-xs text-texto-suave">
+                                                    Não foi possível identificar o município desta ocorrência no mapa.
+                                                </p>
+
+                                            </div>
+
+                                        )}
+
                                     </div>
 
-                                    {/* ALTERAR PRIORIDADE */}
+                                    {/* CLASSIFICAÇÃO DA PRIORIDADE */}
 
                                     <section className="mt-5 border-t border-[#ead5c7] pt-5">
 
@@ -1542,7 +1684,7 @@ export default function MapaOcorrenciasAdmin() {
 
                                             <Icone nome="flag" classe="text-xl" />
 
-                                            Alterar Prioridade
+                                            Classificar Prioridade
 
                                         </h3>
 
@@ -1647,13 +1789,10 @@ export default function MapaOcorrenciasAdmin() {
                         </h2>
 
                         <button type="button" onClick={() => {
-
                             setSelecionadaId(null);
                             setNovaPrioridade('');
                             setMensagem('');
-
                             void carregarOcorrencias();
-
                         }} disabled={carregando || salvando} className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-primaria hover:underline disabled:opacity-50">
 
                             <Icone nome="refresh" classe={`text-xl ${carregando ? 'animate-spin' : ''}`} />

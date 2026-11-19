@@ -98,6 +98,7 @@ function Icone({ nome, classe = '' }: {
     nome: string;
     classe?: string;
 }) {
+
     return (
         <span className={`material-icons ${classe}`} aria-hidden="true">
             {nome}
@@ -111,13 +112,14 @@ function Prioridade({ prioridade, indisponivel = false }: {
 }) {
 
     return (
-        <span className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-xs font-semibold ${
+
+        <span className={`inline-flex max-w-full items-center justify-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-xs font-semibold ${
             prioridade && !indisponivel
                 ? estilosPrioridade[prioridade]
-                : 'bg-[#e8ded5] text-[#74645a]'
+                : 'bg-[#e8ded5] text-[#554238]'
         }`}>
 
-            <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+            <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-full ${
                 prioridade && !indisponivel
                     ? coresPrioridade[prioridade]
                     : 'bg-[#8d8276]'
@@ -553,27 +555,31 @@ export default function MinhasOcorrencias() {
         setTentativa(atual => atual + 1);
     }
 
+    const focoClasse = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaria';
+
+    const campoClasse = 'w-full min-w-0 max-w-full rounded-lg border border-[#dfc2ae] bg-[#fffaf4] px-3 py-3 text-sm text-texto outline-none transition-colors focus:border-primaria focus:ring-2 focus:ring-primaria/20';
+
     return (
 
-        <main className="min-h-screen w-full flex-1 bg-fundo font-corpo text-texto">
+        <main className="min-h-screen w-full min-w-0 flex-1 bg-fundo font-corpo text-texto">
 
             {/* CABEÇALHO DA PÁGINA */}
 
-            <header className="border-b border-[#d8b9a8] bg-[#fffaf4] px-5 py-5 sm:px-8 lg:px-10">
+            <header className="border-b border-[#d8b9a5] bg-[#fffaf4] py-5 pr-5 pl-20 sm:pr-8 sm:pl-20 lg:px-10">
 
                 <h1 className="font-titulo text-3xl font-bold text-[#78221b] sm:text-4xl">
                     Minhas Ocorrências
                 </h1>
 
-                <nav aria-label="Navegação estrutural" className="mt-2 flex items-center gap-2 text-sm">
+                <nav aria-label="Navegação estrutural" className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[#6b4438]">
 
-                    <Link to="/inicio" className="text-[#6b4438] transition-colors hover:text-primaria">
+                    <Link to="/inicio" className={`text-[#6b4438] transition-colors hover:text-primaria hover:underline ${focoClasse}`}>
                         Início
                     </Link>
 
-                    <Icone nome="chevron_right" classe="text-base text-[#78221b]" />
+                    <Icone nome="chevron_right" classe="text-base text-[#6b4438]" />
 
-                    <span className="font-semibold text-[#78221b]">
+                    <span aria-current="page" className="font-semibold text-[#78221b]">
                         Minhas Ocorrências
                     </span>
 
@@ -581,15 +587,15 @@ export default function MinhasOcorrencias() {
 
             </header>
 
-            <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-8 lg:px-10">
+            <div className="mx-auto w-full min-w-0 max-w-7xl px-4 py-8 sm:px-8 sm:py-10 lg:px-10">
 
                 {/* TÍTULO E DESCRIÇÃO */}
 
-                <section className="mb-8">
+                <section className="mb-8 min-w-0">
 
-                    <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex min-w-0 flex-col items-start justify-between gap-4 sm:flex-row sm:flex-wrap sm:items-center">
 
-                        <div>
+                        <div className="min-w-0 flex-1">
 
                             <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#a34a37]">
                                 Histórico de participação
@@ -599,17 +605,19 @@ export default function MinhasOcorrencias() {
                                 Minhas Ocorrências
                             </h2>
 
-                            <p className="mt-2 text-sm text-texto-suave sm:text-base">
+                            <p className="mt-2 text-sm leading-relaxed text-[#51453e] sm:text-base">
                                 Acompanhe o andamento das suas solicitações e consulte os registros realizados.
                             </p>
 
                         </div>
 
-                        <Link to="/registrar-ocorrencia" className="inline-flex items-center gap-2 rounded-full bg-primaria px-5 py-3 text-sm font-semibold transition-colors hover:bg-primaria-hover" style={{ color: '#ffffff' }}>
+                        <Link to="/registrar-ocorrencia" className={`inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-full bg-primaria px-5 py-3 text-center text-sm font-semibold transition-colors hover:bg-primaria-hover sm:w-auto ${focoClasse}`}>
 
-                            <Icone nome="add_circle" classe="text-xl" />
+                            <Icone nome="add_circle" classe="shrink-0 text-xl text-white" />
 
-                            Nova ocorrência
+                            <span className="text-white">
+                                Nova ocorrência
+                            </span>
 
                         </Link>
 
@@ -619,7 +627,7 @@ export default function MinhasOcorrencias() {
 
                         <div className="h-px flex-1 bg-[#b77965]" />
 
-                        <div className="h-2.5 w-2.5 rotate-45 bg-[#78221b]" />
+                        <div className="h-2.5 w-2.5 shrink-0 rotate-45 bg-[#78221b]" />
 
                         <div className="h-px flex-1 bg-[#d8b9a8]" />
 
@@ -629,19 +637,19 @@ export default function MinhasOcorrencias() {
 
                 {/* BUSCA E FILTROS */}
 
-                <section className="mb-7" aria-label="Busca e filtros de ocorrências">
+                <section className="mb-7 min-w-0" aria-label="Busca e filtros de ocorrências">
 
-                    <div className="flex flex-col gap-3 sm:flex-row">
+                    <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap">
 
-                        <div className="relative min-w-0 flex-1">
+                        <div className="relative w-full min-w-0 flex-1">
 
-                            <Icone nome="search" classe="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xl text-[#78221b]" />
+                            <Icone nome="search" classe="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-xl text-[#78221b]" />
 
-                            <input type="search" value={busca} onChange={event => atualizarBusca(event.target.value)} placeholder="Buscar por protocolo, categoria ou descrição..." aria-label="Buscar minhas ocorrências" className="w-full rounded-xl border border-[#dfc2ae] bg-[#fffaf4] py-3.5 pl-12 pr-4 text-sm text-texto shadow-sm outline-none transition-colors placeholder:text-[#8d8179] focus:border-primaria focus:ring-2 focus:ring-primaria/15" />
+                            <input type="search" value={busca} onChange={event => atualizarBusca(event.target.value)} placeholder="Buscar por protocolo, categoria ou descrição..." aria-label="Buscar minhas ocorrências" className="w-full min-w-0 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] py-3.5 pr-4 pl-12 text-sm text-texto shadow-sm outline-none transition-colors placeholder:text-[#807167] focus:border-primaria focus:ring-2 focus:ring-primaria/20" />
 
                         </div>
 
-                        <button type="button" onClick={() => setMostrarFiltros(atual => !atual)} aria-expanded={mostrarFiltros} aria-controls="painel-filtros-ocorrencias" className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-all ${
+                        <button type="button" onClick={() => setMostrarFiltros(atual => !atual)} aria-expanded={mostrarFiltros} aria-controls="painel-filtros-ocorrencias" className={`flex w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-all sm:w-auto ${focoClasse} ${
                             mostrarFiltros
                                 ? 'border-primaria bg-[#f0dfd4] text-[#78221b]'
                                 : 'border-[#dfc2ae] bg-[#fffaf4] text-[#78221b] hover:bg-[#f3e5d9]'
@@ -651,115 +659,109 @@ export default function MinhasOcorrencias() {
 
                             Filtros
 
-                            <Icone nome="expand_more" classe={`text-lg transition-transform duration-300 ${mostrarFiltros ? 'rotate-180' : ''}`} />
+                            <Icone nome="expand_more" classe={`text-lg transition-transform duration-300 motion-reduce:transition-none ${mostrarFiltros ? 'rotate-180' : ''}`} />
 
                         </button>
 
                         {/* ATUALIZAR DADOS */}
 
-                        <button type="button" onClick={tentarNovamente} disabled={carregando} aria-label="Atualizar ocorrências" title="Atualizar ocorrências" className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-3 text-sm font-semibold text-[#78221b] transition-colors hover:bg-[#f3e5d9] disabled:cursor-not-allowed disabled:opacity-50">
+                        <button type="button" onClick={tentarNovamente} disabled={carregando} aria-label="Atualizar ocorrências" title="Atualizar ocorrências" className={`flex w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-3 text-sm font-semibold text-[#78221b] transition-colors hover:bg-[#f3e5d9] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto ${focoClasse}`}>
 
-                            <Icone nome="refresh" classe={`text-xl ${carregando ? 'animate-spin' : ''}`} />
+                            <Icone nome="refresh" classe={`text-xl ${carregando ? 'animate-spin motion-reduce:animate-none' : ''}`} />
 
                         </button>
 
                     </div>
 
-                    {mostrarFiltros && (
+                    <div id="painel-filtros-ocorrencias" hidden={!mostrarFiltros}>
 
-                        <div id="painel-filtros-ocorrencias" className="mt-3 grid gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]">
+                        {mostrarFiltros && (
 
-                            {/* FILTRO STATUS */}
+                            <div className="mt-3 grid min-w-0 grid-cols-1 gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4 shadow-sm sm:grid-cols-2 sm:p-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
 
-                            <div>
+                                {/* FILTRO STATUS */}
 
-                                <label htmlFor="filtro-status" className="mb-2 block text-sm font-semibold text-[#78221b]">
-                                    Status
-                                </label>
+                                <div className="min-w-0">
 
-                                <select id="filtro-status" value={filtroStatus} onChange={event => atualizarStatus(event.target.value)} className="w-full rounded-lg border border-[#dfc2ae] bg-white px-3 py-3 text-sm text-texto outline-none focus:border-primaria">
+                                    <label htmlFor="filtro-status" className="mb-2 block text-sm font-semibold text-[#78221b]">
+                                        Status
+                                    </label>
 
-                                    <option value="Todos">Todos os status</option>
+                                    <select id="filtro-status" value={filtroStatus} onChange={event => atualizarStatus(event.target.value)} className={campoClasse}>
 
-                                    <option value="Pendente">Pendente</option>
+                                        <option value="Todos">Todos os status</option>
+                                        <option value="Pendente">Pendente</option>
+                                        <option value="Em análise">Em análise</option>
+                                        <option value="Em andamento">Em andamento</option>
+                                        <option value="Concluído">Concluído</option>
+                                        <option value="Não informado">Não informado</option>
 
-                                    <option value="Em análise">Em análise</option>
+                                    </select>
 
-                                    <option value="Em andamento">Em andamento</option>
+                                </div>
 
-                                    <option value="Concluído">Concluído</option>
+                                {/* FILTRO CATEGORIA */}
 
-                                    <option value="Não informado">Não informado</option>
+                                <div className="min-w-0">
 
-                                </select>
+                                    <label htmlFor="filtro-categoria" className="mb-2 block text-sm font-semibold text-[#78221b]">
+                                        Categoria
+                                    </label>
 
-                            </div>
+                                    <select id="filtro-categoria" value={filtroCategoria} onChange={event => atualizarCategoria(event.target.value)} className={campoClasse}>
 
-                            {/* FILTRO CATEGORIA */}
+                                        <option value="Todas">Todas as categorias</option>
 
-                            <div>
+                                        {categorias.map(categoria => (
 
-                                <label htmlFor="filtro-categoria" className="mb-2 block text-sm font-semibold text-[#78221b]">
-                                    Categoria
-                                </label>
+                                            <option key={categoria} value={categoria}>
+                                                {categoria}
+                                            </option>
 
-                                <select id="filtro-categoria" value={filtroCategoria} onChange={event => atualizarCategoria(event.target.value)} className="w-full rounded-lg border border-[#dfc2ae] bg-white px-3 py-3 text-sm text-texto outline-none focus:border-primaria">
+                                        ))}
 
-                                    <option value="Todas">Todas as categorias</option>
+                                    </select>
 
-                                    {categorias.map(categoria => (
+                                </div>
 
-                                        <option key={categoria} value={categoria}>
-                                            {categoria}
-                                        </option>
+                                {/* FILTRO PRIORIDADE */}
 
-                                    ))}
+                                <div className="min-w-0">
 
-                                </select>
+                                    <label htmlFor="filtro-prioridade" className="mb-2 block text-sm font-semibold text-[#78221b]">
+                                        Prioridade
+                                    </label>
 
-                            </div>
+                                    <select id="filtro-prioridade" value={filtroPrioridade} onChange={event => atualizarPrioridade(event.target.value)} className={campoClasse}>
 
-                            {/* FILTRO PRIORIDADE */}
+                                        <option value="Todas">Todas as prioridades</option>
+                                        <option value="Alta">Alta</option>
+                                        <option value="Média">Média</option>
+                                        <option value="Baixa">Baixa</option>
+                                        <option value="Não definida">Não definida</option>
+                                        <option value="Indisponível">Indisponível</option>
 
-                            <div>
+                                    </select>
 
-                                <label htmlFor="filtro-prioridade" className="mb-2 block text-sm font-semibold text-[#78221b]">
-                                    Prioridade
-                                </label>
+                                </div>
 
-                                <select id="filtro-prioridade" value={filtroPrioridade} onChange={event => atualizarPrioridade(event.target.value)} className="w-full rounded-lg border border-[#dfc2ae] bg-white px-3 py-3 text-sm text-texto outline-none focus:border-primaria">
+                                <div className="flex min-w-0 items-end">
 
-                                    <option value="Todas">Todas as prioridades</option>
+                                    <button type="button" onClick={limparFiltros} className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#b77965] px-4 py-3 text-sm font-semibold text-[#78221b] transition-colors hover:bg-[#f0dfd4] ${focoClasse}`}>
 
-                                    <option value="Alta">Alta</option>
+                                        <Icone nome="restart_alt" classe="shrink-0 text-lg" />
 
-                                    <option value="Média">Média</option>
+                                        Limpar filtros
 
-                                    <option value="Baixa">Baixa</option>
+                                    </button>
 
-                                    <option value="Não definida">Não definida</option>
-
-                                    <option value="Indisponível">Indisponível</option>
-
-                                </select>
-
-                            </div>
-
-                            <div className="flex items-end">
-
-                                <button type="button" onClick={limparFiltros} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#b77965] px-4 py-3 text-sm font-semibold text-[#78221b] transition-colors hover:bg-[#f0dfd4]">
-
-                                    <Icone nome="restart_alt" classe="text-lg" />
-
-                                    Limpar filtros
-
-                                </button>
+                                </div>
 
                             </div>
 
-                        </div>
+                        )}
 
-                    )}
+                    </div>
 
                 </section>
 
@@ -767,21 +769,19 @@ export default function MinhasOcorrencias() {
 
                 {!carregando && !erro && (possuiErroHistorico || possuiErroPrioridade) && (
 
-                    <div role="alert" className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dfc2ae] bg-[#fff7ee] p-4">
+                    <div role="alert" className="mb-5 flex min-w-0 flex-col items-start justify-between gap-3 rounded-xl border border-[#dfc2ae] bg-[#fff7ee] p-4 sm:flex-row sm:flex-wrap sm:items-center">
 
-                        <div className="flex flex-1 items-start gap-3">
+                        <div className="flex min-w-0 flex-1 items-start gap-3">
 
-                            <Icone nome="info" classe="text-xl text-primaria" />
+                            <Icone nome="info" classe="shrink-0 text-xl text-primaria" />
 
-                            <p className="text-sm leading-relaxed text-texto-suave">
-
+                            <p className="min-w-0 text-sm leading-relaxed text-[#51453e]">
                                 Algumas informações das suas ocorrências estão temporariamente indisponíveis.
-
                             </p>
 
                         </div>
 
-                        <button type="button" onClick={tentarNovamente} className="cursor-pointer text-sm font-semibold text-primaria hover:underline">
+                        <button type="button" onClick={tentarNovamente} className={`cursor-pointer text-sm font-semibold text-primaria hover:underline ${focoClasse}`}>
                             Tentar novamente
                         </button>
 
@@ -791,11 +791,11 @@ export default function MinhasOcorrencias() {
 
                 {/* HISTÓRICO DE OCORRÊNCIAS */}
 
-                <section aria-label="Histórico das minhas ocorrências" aria-busy={carregando}>
+                <section className="w-full min-w-0" aria-label="Histórico das minhas ocorrências" aria-busy={carregando}>
 
-                    <div className="overflow-hidden rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] shadow-sm">
+                    <div className="w-full min-w-0 overflow-hidden rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] shadow-sm">
 
-                        <div className="overflow-x-auto">
+                        <div role="region" aria-label="Tabela de ocorrências com rolagem horizontal" tabIndex={0} className="w-full max-w-full overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primaria">
 
                             <table className="w-full min-w-215 border-collapse text-left">
 
@@ -839,11 +839,11 @@ export default function MinhasOcorrencias() {
 
                                             <td className="px-4 py-5">
 
-                                                <div className="flex items-center gap-2 text-sm">
+                                                <div className="flex min-w-0 items-center gap-2 text-sm">
 
-                                                    <Icone nome={iconesCategoria[ocorrencia.categoria] || 'assignment'} classe="text-xl text-[#78221b]" />
+                                                    <Icone nome={iconesCategoria[ocorrencia.categoria] || 'assignment'} classe="shrink-0 text-xl text-[#78221b]" />
 
-                                                    <span>
+                                                    <span className="wrap-break-word">
 
                                                         {ocorrencia.categoria}
 
@@ -855,7 +855,7 @@ export default function MinhasOcorrencias() {
 
                                             {/* DESCRIÇÃO */}
 
-                                            <td className="max-w-70 px-4 py-5 text-sm leading-relaxed text-texto">
+                                            <td className="max-w-70 px-4 py-5 text-sm leading-relaxed text-[#51453e]">
 
                                                 <p className="line-clamp-3 wrap-break-word">
 
@@ -897,7 +897,7 @@ export default function MinhasOcorrencias() {
 
                                             <td className="px-4 py-5 text-center">
 
-                                                <button type="button" onClick={() => setOcorrenciaSelecionada(ocorrencia)} aria-label={`Visualizar ocorrência ${ocorrencia.protocolo}`} title="Ver detalhes" className="inline-flex h-10 w-12 cursor-pointer items-center justify-center rounded-full border border-[#dfc2ae] text-[#78221b] transition-all hover:border-primaria hover:bg-[#f0dfd4]">
+                                                <button type="button" onClick={() => setOcorrenciaSelecionada(ocorrencia)} aria-label={`Visualizar ocorrência ${ocorrencia.protocolo}`} title="Ver detalhes" className={`inline-flex h-11 w-12 cursor-pointer items-center justify-center rounded-full border border-[#dfc2ae] text-[#78221b] transition-all hover:border-primaria hover:bg-[#f0dfd4] ${focoClasse}`}>
 
                                                     <Icone nome="visibility" classe="text-xl" />
 
@@ -919,17 +919,17 @@ export default function MinhasOcorrencias() {
 
                         {carregando && (
 
-                            <div role="status" className="flex flex-col items-center justify-center px-5 py-16 text-center">
+                            <div role="status" className="flex min-w-0 flex-col items-center justify-center px-4 py-12 text-center sm:px-5 sm:py-16">
 
-                                <div className="mb-5 h-12 w-12 animate-spin rounded-full border-4 border-[#ead7c9] border-t-primaria" />
+                                <div aria-hidden="true" className="mb-5 h-12 w-12 animate-spin rounded-full border-4 border-[#ead7c9] border-t-primaria motion-reduce:animate-none" />
 
-                                <h3 className="font-titulo text-xl font-semibold text-primaria">
+                                <h3 className="font-titulo text-xl font-semibold text-[#78221b]">
 
                                     Carregando suas ocorrências
 
                                 </h3>
 
-                                <p className="mt-3 text-sm text-texto-suave">
+                                <p className="mt-3 text-sm text-[#51453e]">
 
                                     Aguarde enquanto recuperamos seus registros.
 
@@ -943,27 +943,29 @@ export default function MinhasOcorrencias() {
 
                         {!carregando && erro && (
 
-                            <div role="alert" className="flex flex-col items-center px-5 py-14 text-center">
+                            <div role="alert" className="flex min-w-0 flex-col items-center px-4 py-12 text-center sm:px-5 sm:py-14">
 
-                                <Icone nome="error_outline" classe="mb-4 text-6xl text-primaria" />
+                                <Icone nome="error_outline" classe="mb-4 text-5xl text-primaria sm:text-6xl" />
 
-                                <h3 className="font-titulo text-xl font-semibold text-primaria">
+                                <h3 className="font-titulo text-xl font-semibold text-[#78221b]">
 
                                     Não foi possível carregar as ocorrências
 
                                 </h3>
 
-                                <p className="mt-3 max-w-md text-sm text-texto-suave">
+                                <p className="mt-3 w-full max-w-md wrap-break-word text-sm text-[#51453e]">
 
                                     {erro}
 
                                 </p>
 
-                                <button type="button" onClick={tentarNovamente} className="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-full bg-primaria px-6 py-3 text-sm font-semibold transition-colors hover:bg-primaria-hover" style={{ color: '#ffffff' }}>
+                                <button type="button" onClick={tentarNovamente} className={`mt-6 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-primaria px-6 py-3 text-sm font-semibold transition-colors hover:bg-primaria-hover sm:w-auto ${focoClasse}`}>
 
-                                    <Icone nome="refresh" classe="text-xl" />
+                                    <Icone nome="refresh" classe="shrink-0 text-xl text-white" />
 
-                                    Tentar novamente
+                                    <span className="text-white">
+                                        Tentar novamente
+                                    </span>
 
                                 </button>
 
@@ -975,11 +977,11 @@ export default function MinhasOcorrencias() {
 
                         {!carregando && !erro && ocorrenciasFiltradas.length === 0 && (
 
-                            <div className="flex flex-col items-center px-5 py-14 text-center">
+                            <div role="status" className="flex min-w-0 flex-col items-center px-4 py-12 text-center sm:px-5 sm:py-14">
 
-                                <Icone nome="assignment" classe="mb-4 text-6xl text-primaria" />
+                                <Icone nome="assignment" classe="mb-4 text-5xl text-primaria sm:text-6xl" />
 
-                                <h3 className="font-titulo text-xl font-semibold text-primaria">
+                                <h3 className="font-titulo text-xl font-semibold text-[#78221b]">
 
                                     {ocorrencias.length === 0
                                         ? 'Nenhuma ocorrência registrada neste histórico'
@@ -987,7 +989,7 @@ export default function MinhasOcorrencias() {
 
                                 </h3>
 
-                                <p className="mt-3 max-w-md font-corpo text-sm text-texto-suave">
+                                <p className="mt-3 max-w-md font-corpo text-sm leading-relaxed text-[#51453e]">
 
                                     {ocorrencias.length === 0
                                         ? 'Registre sua primeira ocorrência e contribua para uma cidade mais organizada e participativa.'
@@ -997,17 +999,19 @@ export default function MinhasOcorrencias() {
 
                                 {ocorrencias.length === 0 ? (
 
-                                    <Link to="/registrar-ocorrencia" className="mt-6 inline-flex items-center gap-2 rounded-full bg-primaria px-6 py-3 font-corpo text-sm font-semibold transition-colors hover:bg-primaria-hover" style={{ color: '#ffffff' }}>
+                                    <Link to="/registrar-ocorrencia" className={`mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primaria px-6 py-3 font-corpo text-sm font-semibold transition-colors hover:bg-primaria-hover sm:w-auto ${focoClasse}`}>
 
-                                        <Icone nome="add_circle" classe="text-xl" />
+                                        <Icone nome="add_circle" classe="shrink-0 text-xl text-white" />
 
-                                        Registrar ocorrência
+                                        <span className="text-white">
+                                            Registrar ocorrência
+                                        </span>
 
                                     </Link>
 
                                 ) : (
 
-                                    <button type="button" onClick={limparFiltros} className="mt-6 cursor-pointer rounded-full border border-primaria px-6 py-3 font-corpo text-sm font-semibold text-primaria transition-colors hover:bg-secundaria">
+                                    <button type="button" onClick={limparFiltros} className={`mt-6 w-full cursor-pointer rounded-full border border-primaria px-6 py-3 font-corpo text-sm font-semibold text-primaria transition-colors hover:bg-secundaria sm:w-auto ${focoClasse}`}>
 
                                         Limpar filtros
 
@@ -1025,18 +1029,18 @@ export default function MinhasOcorrencias() {
 
                     {!carregando && !erro && ocorrenciasFiltradas.length > 0 && (
 
-                        <div className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
+                        <div className="mt-6 flex min-w-0 flex-col items-center justify-between gap-4 sm:flex-row sm:flex-wrap">
 
-                            <p className="text-sm text-texto-suave" role="status">
+                            <p className="text-center text-sm text-[#51453e] sm:text-left" role="status">
 
                                 Mostrando {inicio}–{fim} de{' '}
                                 {ocorrenciasFiltradas.length} ocorrências
 
                             </p>
 
-                            <nav className="flex flex-wrap items-center gap-2" aria-label="Paginação de ocorrências">
+                            <nav className="flex max-w-full flex-wrap items-center justify-center gap-2" aria-label="Paginação de ocorrências">
 
-                                <button type="button" onClick={() => setPaginaAtual(Math.max(1, pagina - 1))} disabled={pagina === 1} aria-label="Página anterior" className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-[#dfc2ae] text-[#78221b] transition-colors hover:bg-[#f0dfd4] disabled:cursor-not-allowed disabled:opacity-40">
+                                <button type="button" onClick={() => setPaginaAtual(Math.max(1, pagina - 1))} disabled={pagina === 1} aria-label="Página anterior" className={`flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#dfc2ae] text-[#78221b] transition-colors hover:bg-[#f0dfd4] disabled:cursor-not-allowed disabled:opacity-40 ${focoClasse}`}>
 
                                     <Icone nome="chevron_left" />
 
@@ -1044,19 +1048,21 @@ export default function MinhasOcorrencias() {
 
                                 {Array.from({ length: totalPaginas }, (_, indice) => indice + 1).map(numeroPagina => (
 
-                                    <button key={numeroPagina} type="button" onClick={() => setPaginaAtual(numeroPagina)} aria-label={`Ir para a página ${numeroPagina}`} aria-current={pagina === numeroPagina ? 'page' : undefined} className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border text-sm font-semibold transition-colors ${
+                                    <button key={numeroPagina} type="button" onClick={() => setPaginaAtual(numeroPagina)} aria-label={`Ir para a página ${numeroPagina}`} aria-current={pagina === numeroPagina ? 'page' : undefined} className={`flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border text-sm font-semibold transition-colors ${focoClasse} ${
                                         pagina === numeroPagina
                                             ? 'border-[#78221b] bg-[#78221b] text-white'
                                             : 'border-[#dfc2ae] bg-[#fffaf4] text-[#78221b] hover:bg-[#f0dfd4]'
                                     }`}>
 
-                                        {numeroPagina}
+                                        <span className={pagina === numeroPagina ? 'text-white' : 'text-[#78221b]'}>
+                                            {numeroPagina}
+                                        </span>
 
                                     </button>
 
                                 ))}
 
-                                <button type="button" onClick={() => setPaginaAtual(Math.min(totalPaginas, pagina + 1))} disabled={pagina === totalPaginas} aria-label="Próxima página" className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-[#dfc2ae] text-[#78221b] transition-colors hover:bg-[#f0dfd4] disabled:cursor-not-allowed disabled:opacity-40">
+                                <button type="button" onClick={() => setPaginaAtual(Math.min(totalPaginas, pagina + 1))} disabled={pagina === totalPaginas} aria-label="Próxima página" className={`flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-[#dfc2ae] text-[#78221b] transition-colors hover:bg-[#f0dfd4] disabled:cursor-not-allowed disabled:opacity-40 ${focoClasse}`}>
 
                                     <Icone nome="chevron_right" />
 
@@ -1076,21 +1082,22 @@ export default function MinhasOcorrencias() {
 
             {ocorrenciaSelecionada && (
 
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onMouseDown={event => {
+                <div className="fixed inset-0 z-1000 flex items-center justify-center bg-black/60 p-3 sm:p-4" onMouseDown={event => {
 
                     if (event.target === event.currentTarget) {
+
                         setOcorrenciaSelecionada(null);
                     }
 
                 }}>
 
-                    <section role="dialog" aria-modal="true" aria-labelledby="titulo-detalhes-ocorrencia" className="w-full max-w-xl overflow-hidden rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] shadow-2xl">
+                    <section role="dialog" aria-modal="true" aria-labelledby="titulo-detalhes-ocorrencia" className="flex max-h-[calc(100dvh-24px)] w-full min-w-0 max-w-xl flex-col overflow-hidden rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] shadow-2xl sm:max-h-[calc(100dvh-32px)]">
 
                         {/* CABEÇALHO DO MODAL */}
 
-                        <div className="flex items-start justify-between gap-4 bg-[#78221b] px-6 py-5">
+                        <div className="flex min-w-0 shrink-0 items-start justify-between gap-3 bg-[#78221b] px-4 py-4 sm:gap-4 sm:px-6 sm:py-5">
 
-                            <div>
+                            <div className="min-w-0">
 
                                 <p className="text-xs font-semibold uppercase tracking-wider text-[#f0cbb9]">
 
@@ -1098,27 +1105,29 @@ export default function MinhasOcorrencias() {
 
                                 </p>
 
-                                <h2 id="titulo-detalhes-ocorrencia" className="mt-1 font-titulo text-2xl font-bold text-white">
+                                <h2 id="titulo-detalhes-ocorrencia" className="mt-1 wrap-break-word font-titulo text-xl font-bold sm:text-2xl">
 
-                                    Ocorrência #{String(ocorrenciaSelecionada.id).padStart(6, '0')}
+                                    <span className="text-white">
+                                        Ocorrência #{String(ocorrenciaSelecionada.id).padStart(6, '0')}
+                                    </span>
 
                                 </h2>
 
                             </div>
 
-                            <button type="button" onClick={() => setOcorrenciaSelecionada(null)} aria-label="Fechar detalhes" autoFocus className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-white transition-colors hover:bg-white/15">
+                            <button type="button" onClick={() => setOcorrenciaSelecionada(null)} aria-label="Fechar detalhes" autoFocus className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
 
-                                <Icone nome="close" />
+                                <Icone nome="close" classe="text-white" />
 
                             </button>
 
                         </div>
 
-                        <div className="max-h-[70vh] space-y-5 overflow-y-auto p-6">
+                        <div className="min-h-0 min-w-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-4 sm:p-6">
 
                             {/* INFORMAÇÕES DO REGISTRO */}
 
-                            <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
 
                                 <span className="font-titulo text-lg font-semibold text-[#78221b]">
 
@@ -1134,17 +1143,17 @@ export default function MinhasOcorrencias() {
 
                             </div>
 
-                            <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
 
-                                <div>
+                                <div className="min-w-0">
 
-                                    <p className="text-xs font-semibold uppercase text-texto-suave">
+                                    <p className="text-xs font-semibold uppercase text-[#51453e]">
 
                                         Protocolo
 
                                     </p>
 
-                                    <p className="mt-1 text-sm font-semibold">
+                                    <p className="mt-1 wrap-break-word text-sm font-semibold">
 
                                         {ocorrenciaSelecionada.protocolo}
 
@@ -1152,9 +1161,9 @@ export default function MinhasOcorrencias() {
 
                                 </div>
 
-                                <div>
+                                <div className="min-w-0">
 
-                                    <p className="text-xs font-semibold uppercase text-texto-suave">
+                                    <p className="text-xs font-semibold uppercase text-[#51453e]">
 
                                         Data do registro
 
@@ -1168,15 +1177,15 @@ export default function MinhasOcorrencias() {
 
                                 </div>
 
-                                <div>
+                                <div className="min-w-0">
 
-                                    <p className="text-xs font-semibold uppercase text-texto-suave">
+                                    <p className="text-xs font-semibold uppercase text-[#51453e]">
 
                                         Categoria
 
                                     </p>
 
-                                    <p className="mt-1 text-sm">
+                                    <p className="mt-1 wrap-break-word text-sm">
 
                                         {ocorrenciaSelecionada.categoria}
 
@@ -1186,15 +1195,15 @@ export default function MinhasOcorrencias() {
 
                                 {/* NÚMERO DO ENDEREÇO */}
 
-                                <div>
+                                <div className="min-w-0">
 
-                                    <p className="text-xs font-semibold uppercase text-texto-suave">
+                                    <p className="text-xs font-semibold uppercase text-[#51453e]">
 
                                         Número
 
                                     </p>
 
-                                    <p className="mt-1 text-sm">
+                                    <p className="mt-1 wrap-break-word text-sm">
 
                                         {ocorrenciaSelecionada.departamento}
 
@@ -1204,9 +1213,9 @@ export default function MinhasOcorrencias() {
 
                                 {/* PRIORIDADE DA OCORRÊNCIA */}
 
-                                <div className="sm:col-span-2">
+                                <div className="min-w-0 sm:col-span-2">
 
-                                    <p className="mb-2 text-xs font-semibold uppercase text-texto-suave">
+                                    <p className="mb-2 text-xs font-semibold uppercase text-[#51453e]">
 
                                         Prioridade
 
@@ -1216,7 +1225,7 @@ export default function MinhasOcorrencias() {
 
                                     {!ocorrenciaSelecionada.erroPrioridade && (
 
-                                        <p className="mt-2 text-xs leading-relaxed text-texto-suave">
+                                        <p className="mt-2 text-xs leading-relaxed text-[#51453e]">
 
                                             {ocorrenciaSelecionada.prioridade
                                                 ? 'Classificação atribuída pela equipe responsável pelo atendimento.'
@@ -1232,15 +1241,15 @@ export default function MinhasOcorrencias() {
 
                             {/* DESCRIÇÃO */}
 
-                            <div className="border-t border-[#ead7c9] pt-4">
+                            <div className="min-w-0 border-t border-[#ead7c9] pt-4">
 
-                                <p className="text-xs font-semibold uppercase text-texto-suave">
+                                <p className="text-xs font-semibold uppercase text-[#51453e]">
 
                                     Descrição
 
                                 </p>
 
-                                <p className="mt-2 whitespace-pre-wrap wrap-break-word text-sm leading-relaxed">
+                                <p className="mt-2 wrap-break-word whitespace-pre-wrap text-sm leading-relaxed">
 
                                     {ocorrenciaSelecionada.descricao}
 
@@ -1250,23 +1259,27 @@ export default function MinhasOcorrencias() {
 
                             {/* LOCALIZAÇÃO */}
 
-                            <div className="border-t border-[#ead7c9] pt-4">
+                            <div className="min-w-0 border-t border-[#ead7c9] pt-4">
 
-                                <p className="text-xs font-semibold uppercase text-texto-suave">
+                                <p className="text-xs font-semibold uppercase text-[#51453e]">
 
                                     Localização
 
                                 </p>
 
-                                <p className="mt-2 flex items-start gap-2 text-sm">
+                                <p className="mt-2 flex min-w-0 items-start gap-2 text-sm">
 
-                                    <Icone nome="location_on" classe="text-lg text-[#78221b]" />
+                                    <Icone nome="location_on" classe="shrink-0 text-lg text-[#78221b]" />
 
-                                    {ocorrenciaSelecionada.endereco}
+                                    <span className="min-w-0 wrap-break-word">
+
+                                        {ocorrenciaSelecionada.endereco}
+
+                                    </span>
 
                                 </p>
 
-                                <p className="mt-2 pl-7 text-sm text-texto-suave">
+                                <p className="mt-2 wrap-break-word pl-7 text-sm text-[#51453e]">
 
                                     CEP: {ocorrenciaSelecionada.cep
                                         ? ocorrenciaSelecionada.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2')
@@ -1278,13 +1291,13 @@ export default function MinhasOcorrencias() {
 
                             {/* HISTÓRICO DE ACOMPANHAMENTO */}
 
-                            <section className="border-t border-[#ead7c9] pt-5">
+                            <section className="min-w-0 border-t border-[#ead7c9] pt-5">
 
-                                <div className="flex items-center gap-2">
+                                <div className="flex min-w-0 items-center gap-2">
 
-                                    <Icone nome="history" classe="text-2xl text-[#78221b]" />
+                                    <Icone nome="history" classe="shrink-0 text-2xl text-[#78221b]" />
 
-                                    <h3 className="font-titulo text-xl font-bold text-[#78221b]">
+                                    <h3 className="min-w-0 font-titulo text-lg font-bold text-[#78221b] sm:text-xl">
 
                                         Histórico de acompanhamento
 
@@ -1292,7 +1305,7 @@ export default function MinhasOcorrencias() {
 
                                 </div>
 
-                                <p className="mt-2 text-xs leading-relaxed text-texto-suave">
+                                <p className="mt-2 text-xs leading-relaxed text-[#51453e]">
 
                                     Acompanhe as atualizações registradas para esta ocorrência.
 
@@ -1302,17 +1315,17 @@ export default function MinhasOcorrencias() {
 
                                 {ocorrenciaSelecionada.erroHistorico ? (
 
-                                    <div className="mt-4 rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-4 text-center">
+                                    <div role="alert" className="mt-4 rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-4 text-center">
 
                                         <Icone nome="error_outline" classe="text-3xl text-primaria" />
 
-                                        <p className="mt-2 text-sm text-texto-suave">
+                                        <p className="mt-2 text-sm text-[#51453e]">
 
                                             Não foi possível consultar o histórico desta ocorrência.
 
                                         </p>
 
-                                        <button type="button" onClick={tentarNovamente} className="mt-3 cursor-pointer text-sm font-semibold text-primaria hover:underline">
+                                        <button type="button" onClick={tentarNovamente} className={`mt-3 cursor-pointer text-sm font-semibold text-primaria hover:underline ${focoClasse}`}>
 
                                             Tentar novamente
 
@@ -1324,11 +1337,11 @@ export default function MinhasOcorrencias() {
 
                                     /* HISTÓRICO VAZIO */
 
-                                    <div className="mt-4 rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-5 text-center">
+                                    <div className="mt-4 rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-4 text-center sm:p-5">
 
                                         <Icone nome="history" classe="text-3xl text-primaria" />
 
-                                        <p className="mt-2 text-sm text-texto-suave">
+                                        <p className="mt-2 text-sm text-[#51453e]">
 
                                             Nenhuma atualização disponível no histórico.
 
@@ -1340,7 +1353,7 @@ export default function MinhasOcorrencias() {
 
                                     /* LINHA DO TEMPO */
 
-                                    <div className="mt-5 rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-5">
+                                    <div className="mt-5 min-w-0 rounded-xl border border-[#dfc2ae] bg-[#f9f0e7] p-3 sm:p-5">
 
                                         <ol>
 
@@ -1352,13 +1365,13 @@ export default function MinhasOcorrencias() {
 
                                                 return (
 
-                                                    <li key={`${historico.idHistorico ?? 'historico'}-${indice}`} className="relative flex gap-4">
+                                                    <li key={`${historico.idHistorico ?? 'historico'}-${indice}`} className="relative flex min-w-0 gap-3 sm:gap-4">
 
                                                         {/* LINHA VERTICAL */}
 
                                                         {!ultimo && (
 
-                                                            <div className="absolute bottom-0 left-5 top-10 w-px -translate-x-1/2 bg-[#c9a28d]" aria-hidden="true" />
+                                                            <div className="absolute top-10 bottom-0 left-5 w-px -translate-x-1/2 bg-[#c9a28d]" aria-hidden="true" />
 
                                                         )}
 
@@ -1374,9 +1387,9 @@ export default function MinhasOcorrencias() {
 
                                                         <div className={`min-w-0 flex-1 ${ultimo ? '' : 'pb-6'}`}>
 
-                                                            <div className="flex flex-wrap items-center gap-2">
+                                                            <div className="flex min-w-0 flex-wrap items-center gap-2">
 
-                                                                <h4 className="text-sm font-bold text-[#78221b]">
+                                                                <h4 className="wrap-break-word text-sm font-bold text-[#78221b]">
 
                                                                     {status === 'Não informado'
                                                                         ? historico.status || 'Não informado'
@@ -1396,13 +1409,13 @@ export default function MinhasOcorrencias() {
 
                                                             </div>
 
-                                                            <p className="mt-1 text-xs text-texto-suave">
+                                                            <p className="mt-1 text-xs text-[#51453e]">
 
                                                                 {formatarData(historico.data)}
 
                                                             </p>
 
-                                                            <p className="mt-2 text-xs leading-relaxed text-texto-suave">
+                                                            <p className="mt-2 wrap-break-word text-xs leading-relaxed text-[#51453e]">
 
                                                                 Protocolo: {historico.protocolo || 'Não informado'}
 
@@ -1413,6 +1426,7 @@ export default function MinhasOcorrencias() {
                                                     </li>
 
                                                 );
+
                                             })}
 
                                         </ol>
@@ -1427,11 +1441,13 @@ export default function MinhasOcorrencias() {
 
                         {/* RODAPÉ DO MODAL */}
 
-                        <div className="flex justify-end border-t border-[#ead7c9] px-6 py-4">
+                        <div className="flex shrink-0 justify-end border-t border-[#ead7c9] bg-[#fffaf4] px-4 py-4 sm:px-6">
 
-                            <button type="button" onClick={() => setOcorrenciaSelecionada(null)} className="cursor-pointer rounded-full bg-primaria px-6 py-2.5 text-sm font-semibold transition-colors hover:bg-primaria-hover" style={{ color: '#ffffff' }}>
+                            <button type="button" onClick={() => setOcorrenciaSelecionada(null)} className={`w-full cursor-pointer rounded-full bg-primaria px-6 py-3 text-sm font-semibold transition-colors hover:bg-primaria-hover sm:w-auto ${focoClasse}`}>
 
-                                Fechar
+                                <span className="text-white">
+                                    Fechar
+                                </span>
 
                             </button>
 
