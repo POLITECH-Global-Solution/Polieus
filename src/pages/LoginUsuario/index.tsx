@@ -67,8 +67,9 @@ function validarTelefone(valor: string) {
 }
 
 function validarEmail(valor: string) {
-  return /^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$/.test(valor.trim());
+  return /^[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}$/.test(valor.trim());
 }
+
 
 function requisitosSenha(senha: string) {
   return [
