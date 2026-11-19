@@ -1,5 +1,4 @@
 import { apiRequest } from './api';
-
 export interface Administrador {
     idAdmin: number;
     nomeAdmin: string;
@@ -7,7 +6,6 @@ export interface Administrador {
     instituicao: string;
     cargo: string;
 }
-
 export interface DadosAdministrador {
     nomeAdmin: string;
     email: string;
@@ -16,7 +14,6 @@ export interface DadosAdministrador {
     cdConvite: string;
     senha: string;
 }
-
 export interface DadosLoginAdmin {
     email: string;
     senha: string;
@@ -26,13 +23,9 @@ const ENDPOINT = '/polieus/administrativo';
 
 export const CODIGO_CONVITE_ADMIN = '260921';
 
-// VALIDAR IDENTIFICAÇÃO
-
 function idValido(id: unknown): id is number {
     return typeof id === 'number' && Number.isInteger(id) && id > 0;
 }
-
-// REMOVER INFORMAÇÕES SENSÍVEIS
 
 function obterDadosAdministrador(admin: Administrador): Administrador {
     if (!admin || !idValido(admin.idAdmin)) {
@@ -49,7 +42,6 @@ function obterDadosAdministrador(admin: Administrador): Administrador {
 }
 
 // CADASTRAR ADMINISTRADOR
-
 export async function cadastrarAdministrador(dados: DadosAdministrador): Promise<void> {
     if (dados.cdConvite !== CODIGO_CONVITE_ADMIN) {
         throw new Error('Código de convite administrativo inválido.');
@@ -62,7 +54,6 @@ export async function cadastrarAdministrador(dados: DadosAdministrador): Promise
 }
 
 // LOGIN ADMINISTRATIVO
-
 export async function loginAdministrador(dados: DadosLoginAdmin): Promise<Administrador> {
     const administrador = await apiRequest<Administrador>(`${ENDPOINT}/login`, {
         method: 'POST',
@@ -73,7 +64,6 @@ export async function loginAdministrador(dados: DadosLoginAdmin): Promise<Admini
 }
 
 // LISTAR ADMINISTRADORES
-
 export async function listarAdministradores(): Promise<Administrador[]> {
     const administradores = await apiRequest<Administrador[]>(ENDPOINT);
 
@@ -85,7 +75,6 @@ export async function listarAdministradores(): Promise<Administrador[]> {
 }
 
 // BUSCAR ADMINISTRADOR POR ID
-
 export async function buscarAdministradorPorId(id: number): Promise<Administrador> {
     if (!idValido(id)) {
         throw new Error('Identificação do administrador inválida.');
@@ -97,7 +86,6 @@ export async function buscarAdministradorPorId(id: number): Promise<Administrado
 }
 
 // ATUALIZAR ADMINISTRADOR
-
 export async function atualizarAdministrador(id: number, dados: DadosAdministrador): Promise<Administrador> {
     if (!idValido(id)) {
         throw new Error('Identificação do administrador inválida.');
@@ -112,7 +100,6 @@ export async function atualizarAdministrador(id: number, dados: DadosAdministrad
 }
 
 // EXCLUIR ADMINISTRADOR
-
 export async function excluirAdministrador(id: number): Promise<void> {
     if (!idValido(id)) {
         throw new Error('Identificação do administrador inválida.');
@@ -124,7 +111,6 @@ export async function excluirAdministrador(id: number): Promise<void> {
 }
 
 // SALVAR SESSÃO ADMINISTRATIVA
-
 export function salvarSessaoAdministrador(administrador: Administrador): void {
     sessionStorage.setItem(
         'administrador',
@@ -133,7 +119,6 @@ export function salvarSessaoAdministrador(administrador: Administrador): void {
 }
 
 // RECUPERAR SESSÃO ADMINISTRATIVA
-
 export function obterAdministradorLogado(): Administrador | null {
     try {
         const dados = sessionStorage.getItem('administrador');
@@ -149,19 +134,14 @@ export function obterAdministradorLogado(): Administrador | null {
     }
 }
 
-// RECUPERAR ID DO ADMINISTRADOR
-
 export function obterAdministradorId(): number | null {
     return obterAdministradorLogado()?.idAdmin ?? null;
 }
 
 // VERIFICAR SESSÃO ADMINISTRATIVA
-
 export function administradorLogado(): boolean {
     return obterAdministradorId() !== null;
 }
-
-// LOGOUT ADMINISTRATIVO
 
 export function logoutAdministrador(): void {
     sessionStorage.removeItem('administrador');

@@ -9,8 +9,6 @@ export default function RotaProtegida() {
         location.pathname === '/admin' ||
         location.pathname.startsWith('/admin/');
 
-    // VERIFICAR SESSÃO DO CIDADÃO
-
     function verificarSessaoUsuario(): boolean {
         try {
             const dados = sessionStorage.getItem('usuario');
@@ -31,20 +29,17 @@ export default function RotaProtegida() {
     }
 
     // PROTEGER ROTAS ADMINISTRATIVAS
-
     if (administrador) {
         if (!administradorLogado()) {
             return <Navigate to="/login-admin" replace />;
         }
-
         return <Outlet />;
     }
 
     // PROTEGER ROTAS DO CIDADÃO
-
     if (!verificarSessaoUsuario()) {
         return <Navigate to="/login-usuario" replace />;
     }
-
+    
     return <Outlet />;
 }

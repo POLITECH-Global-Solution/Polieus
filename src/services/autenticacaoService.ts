@@ -1,7 +1,6 @@
 import { apiRequest } from './api';
 
 const ENDPOINT = '/polieus/autenticacao/usuario';
-
 export interface AutenticacaoUsuario {
     idAutenticacao: number | null;
     email: string;

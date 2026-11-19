@@ -3,7 +3,6 @@ export const API_URL = (
     'https://polieus.onrender.com'
 ).replace(/\/+$/, '');
 
-// CONFIGURAÇÕES DE CONEXÃO
 const MAX_TENTATIVAS = 5;
 const TEMPO_ESPERA = 3000;
 
@@ -11,12 +10,10 @@ const ERROS_TEMPORARIOS = [
     408, 429, 500, 502, 503, 504
 ];
 
-// AGUARDAR ANTES DE UMA NOVA TENTATIVA
 function aguardar(tempo: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, tempo));
 }
 
-// REQUISIÇÕES À API JAVA
 export async function apiRequest<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -35,14 +32,11 @@ export async function apiRequest<T>(
 
     const url = `${API_URL}/${endpoint.replace(/^\/+/, '')}`;
 
-    // REPETIR APENAS REQUISIÇÕES DE CONSULTA
     const tentativas = metodo === 'GET' ? MAX_TENTATIVAS : 1;
 
     for (let tentativa = 1; tentativa <= tentativas; tentativa++) {
-
         let response: Response;
 
-        // CONEXÃO COM A API JAVA
         try {
 
             response = await fetch(url, {

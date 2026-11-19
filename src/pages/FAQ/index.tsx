@@ -1,20 +1,19 @@
-
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useForm, useWatch } from 'react-hook-form';
-
 interface FaqItemData {
   id: number;
   categoria: 'cidadao' | 'administrador';
   pergunta: string;
   resposta: string;
 }
-
 interface FaqForm {
   busca: string;
 }
 
 type Filtro = 'todos' | 'cidadao' | 'administrador';
+
+// PERGUNTAS
 
 const faqData: FaqItemData[] = [
   {
@@ -131,6 +130,7 @@ const faqData: FaqItemData[] = [
   },
 ];
 
+// OPÇÃO DE BUSCA E FILTRO
 export default function FAQ() {
   const { register, control } = useForm<FaqForm>({
     defaultValues: {
@@ -181,14 +181,12 @@ export default function FAQ() {
           >
             Início
           </Link>
-
           <span
             className="material-icons text-base"
             aria-hidden="true"
           >
             chevron_right
           </span>
-
           <span
             aria-current="page"
             className="font-semibold text-[#78221b]"
@@ -203,7 +201,6 @@ export default function FAQ() {
           className="pointer-events-none absolute -right-25 top-24 size-80 rounded-full border border-[#dec6b3] opacity-35"
           aria-hidden="true"
         />
-
         <div
           className="pointer-events-none absolute -left-25 bottom-12 size-72 rounded-full border border-[#dec6b3] opacity-35"
           aria-hidden="true"
@@ -214,11 +211,9 @@ export default function FAQ() {
             <p className="mb-3 text-xs font-bold tracking-[0.2em] text-[#9a4937] uppercase">
               Central de ajuda
             </p>
-
             <h2 className="font-titulo text-3xl font-bold text-[#78221b] sm:text-4xl lg:text-5xl">
               Perguntas Frequentes
             </h2>
-
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-texto-suave sm:text-base">
               Encontre respostas para as dúvidas mais comuns sobre o
               Polieus, desde o registro de ocorrências até as
@@ -243,7 +238,6 @@ export default function FAQ() {
               >
                 search
               </span>
-
               <input
                 type="search"
                 placeholder="Busque por uma pergunta..."
@@ -326,7 +320,6 @@ export default function FAQ() {
                 >
                   menu_book
                 </span>
-
                 <h3 className="font-titulo text-xl font-bold text-[#78221b] sm:text-2xl">
                   {filtro === 'cidadao'
                     ? 'Dúvidas do Cidadão'
@@ -357,7 +350,6 @@ export default function FAQ() {
                   >
                     search_off
                   </span>
-
                   <p className="text-sm text-texto-suave sm:text-base">
                     Nenhuma pergunta encontrada para "{busca}".
                   </p>
@@ -394,7 +386,6 @@ export default function FAQ() {
                                 ? 'Área do Cidadão'
                                 : 'Área Administrativa'}
                             </span>
-
                             <h4
                               className={`font-corpo text-sm leading-6 font-semibold transition-colors sm:text-base ${
                                 isOpen
@@ -423,22 +414,21 @@ export default function FAQ() {
                         id={respostaId}
                         aria-hidden={!isOpen}
                         className={`grid transition-[grid-template-rows,opacity] duration-500 ease-in-out ${
-                            isOpen
+                          isOpen
                             ? 'grid-rows-[1fr] opacity-100'
                             : 'grid-rows-[0fr] opacity-0'
                         }`}
-                    >
-                      <div className="min-h-0 overflow-hidden">
-                        <div className="px-4 pb-5 sm:px-6">
-                          <div className="ml-10 border-t border-[#e5cbbb] pt-4 sm:ml-12">
-                            <p className="text-sm leading-7 text-[#51463e] sm:text-base">
-                              {item.resposta}
-                            </p>
+                      >
+                        <div className="min-h-0 overflow-hidden">
+                          <div className="px-4 pb-5 sm:px-6">
+                            <div className="ml-10 border-t border-[#e5cbbb] pt-4 sm:ml-12">
+                              <p className="text-sm leading-7 text-[#51463e] sm:text-base">
+                                {item.resposta}
+                              </p>
+                            </div>
                           </div>
-                         </div>
                         </div>
                       </div>
-
                     </article>
                   );
                 })

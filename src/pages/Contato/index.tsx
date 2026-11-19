@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import fundoContato from '../../img/fundo_contato.png';
-
 interface ContatoFormData {
   nome: string;
   email: string;
@@ -40,7 +39,7 @@ export default function Contato() {
 
   return (
     <main className="min-h-screen w-full bg-fundo font-corpo text-texto">
-      {/* Cabeçalho */}
+
       <header className="border-b border-[#dfc2ae] bg-[#fffaf5] py-5 pr-5 pl-20 sm:pr-8 sm:pl-20 lg:px-10">
         <h1 className="font-titulo text-3xl font-bold text-[#78221b] sm:text-4xl">
           Contato
@@ -56,14 +55,12 @@ export default function Contato() {
           >
             Início
           </Link>
-
           <span
             className="material-icons text-base text-[#78221b]"
             aria-hidden="true"
           >
             chevron_right
           </span>
-
           <span
             className="font-semibold text-[#78221b]"
             aria-current="page"
@@ -80,23 +77,21 @@ export default function Contato() {
           backgroundImage: `url(${fundoContato})`,
         }}
       >
-        {/* Camada para melhorar a leitura */}
         <div
           className="pointer-events-none absolute inset-0 bg-linear-to-r from-[#fff7ee]/95 via-[#fff7ee]/85 to-[#fff7ee]/35"
           aria-hidden="true"
         />
 
         <div className="relative mx-auto max-w-7xl px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
+
           {/* Título */}
           <div className="mb-9">
             <p className="mb-2 text-sm font-bold uppercase tracking-widest text-[#994937]">
               Estamos aqui para ajudar
             </p>
-
             <h2 className="font-titulo text-4xl font-bold text-[#78221b] sm:text-5xl">
               Fale Conosco
             </h2>
-
             <p className="mt-3 max-w-xl text-base leading-relaxed text-[#46352d]">
               Tem alguma dúvida, sugestão ou precisa de ajuda?
               Envie sua mensagem para a equipe do Polieus.
@@ -114,6 +109,7 @@ export default function Contato() {
           </div>
 
           <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1.65fr)_minmax(280px,1fr)]">
+
             {/* Formulário */}
             <section
               aria-labelledby="titulo-formulario"
@@ -126,7 +122,6 @@ export default function Contato() {
                 >
                   mail
                 </span>
-
                 <div>
                   <h3
                     id="titulo-formulario"
@@ -134,7 +129,6 @@ export default function Contato() {
                   >
                     Envie sua mensagem
                   </h3>
-
                   <p className="mt-1 text-sm text-texto-suave">
                     Preencha os campos abaixo para entrar em contato.
                   </p>
@@ -162,7 +156,6 @@ export default function Contato() {
                     >
                       person_outline
                     </span>
-
                     <input
                       id="contatoNome"
                       type="text"
@@ -230,7 +223,6 @@ export default function Contato() {
                     >
                       alternate_email
                     </span>
-
                     <input
                       id="contatoEmail"
                       type="email"
@@ -278,7 +270,6 @@ export default function Contato() {
                     >
                       subject
                     </span>
-
                     <select
                       id="contatoAssunto"
                       aria-invalid={!!errors.assunto}
@@ -293,31 +284,24 @@ export default function Contato() {
                       <option value="" disabled>
                         Selecione o assunto
                       </option>
-
                       <option value="duvida">
                         Dúvidas sobre a plataforma
                       </option>
-
                       <option value="ocorrencia">
                         Registro de ocorrências
                       </option>
-
                       <option value="acompanhamento">
                         Acompanhamento de solicitações
                       </option>
-
                       <option value="administrativo">
                         Área administrativa
                       </option>
-
                       <option value="problema-tecnico">
                         Problema técnico
                       </option>
-
                       <option value="sugestao">
                         Sugestões e melhorias
                       </option>
-
                       <option value="outros">
                         Outros assuntos
                       </option>
@@ -393,7 +377,6 @@ export default function Contato() {
                       ? 'Validando...'
                       : 'Enviar Mensagem'}
                   </span>
-
                   <span
                     className="material-icons text-xl"
                     aria-hidden="true"
@@ -417,6 +400,7 @@ export default function Contato() {
                 />
 
                 <div className="space-y-7">
+
                   {/* E-mail */}
                   <div className="flex items-start gap-4">
                     <span
@@ -425,12 +409,10 @@ export default function Contato() {
                     >
                       email
                     </span>
-
                     <div>
                       <h4 className="font-semibold text-[#78221b]">
                         E-mail
                       </h4>
-
                       <p className="mt-1 text-sm leading-relaxed text-texto-suave">
                         Utilize o formulário ao lado para
                         preencher sua mensagem à equipe.
@@ -446,12 +428,10 @@ export default function Contato() {
                     >
                       help_outline
                     </span>
-
                     <div>
                       <h4 className="font-semibold text-[#78221b]">
                         Central de Ajuda
                       </h4>
-
                       <p className="mt-1 text-sm leading-relaxed text-texto-suave">
                         Consulte respostas sobre a navegação
                         do cidadão e da área administrativa.
@@ -462,7 +442,6 @@ export default function Contato() {
                         className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primaria hover:underline"
                       >
                         Acessar FAQ
-
                         <span
                           className="material-icons text-base"
                           aria-hidden="true"
@@ -481,12 +460,10 @@ export default function Contato() {
                     >
                       groups
                     </span>
-
                     <div>
                       <h4 className="font-semibold text-[#78221b]">
                         Nossa Equipe
                       </h4>
-
                       <p className="mt-1 text-sm leading-relaxed text-texto-suave">
                         Conheça os integrantes responsáveis
                         pelo desenvolvimento do Polieus.
@@ -497,7 +474,6 @@ export default function Contato() {
                         className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-primaria hover:underline"
                       >
                         Conhecer integrantes
-
                         <span
                           className="material-icons text-base"
                           aria-hidden="true"
@@ -510,7 +486,6 @@ export default function Contato() {
                 </div>
               </section>
 
-              {/* Mensagem institucional */}
               <section className="rounded-2xl border border-[#dfc2ae] bg-[#fffaf5]/95 p-6 text-center shadow-md backdrop-blur-sm">
                 <span
                   className="material-icons text-4xl text-[#78221b]"
@@ -518,11 +493,9 @@ export default function Contato() {
                 >
                   account_balance
                 </span>
-
                 <h3 className="mt-3 font-titulo text-xl font-bold text-[#78221b]">
                   Sua voz transforma a cidade
                 </h3>
-
                 <p className="mt-3 text-sm leading-relaxed text-texto-suave">
                   O Polieus acredita que a participação cidadã
                   é essencial para construir uma gestão pública
