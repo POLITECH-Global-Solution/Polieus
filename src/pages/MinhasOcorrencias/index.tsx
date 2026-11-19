@@ -25,7 +25,7 @@ type StatusOcorrencia =
     | 'Pendente'
     | 'Em análise'
     | 'Em andamento'
-    | 'Resolvida'
+    | 'Concluído'
     | 'Não informado';
 
 type PrioridadeOcorrencia = 'Alta' | 'Média' | 'Baixa';
@@ -54,7 +54,7 @@ const estilosStatus: Record<StatusOcorrencia, string> = {
     Pendente: 'bg-[#e8ded5] text-[#554238]',
     'Em análise': 'bg-[#ffe0b2] text-[#9b510c]',
     'Em andamento': 'bg-[#f8c9bd] text-[#922c1d]',
-    Resolvida: 'bg-[#dfe8c5] text-[#3e6029]',
+    'Concluído': 'bg-[#dfe8c5] text-[#3e6029]',
     'Não informado': 'bg-[#e8ded5] text-[#554238]',
 };
 
@@ -62,7 +62,7 @@ const iconesStatus: Record<StatusOcorrencia, string> = {
     Pendente: 'schedule',
     'Em análise': 'search',
     'Em andamento': 'construction',
-    Resolvida: 'check_circle',
+    'Concluído': 'check_circle',
     'Não informado': 'info',
 };
 
@@ -155,7 +155,9 @@ function normalizarStatus(status?: string): StatusOcorrencia {
 
         case 'resolvida':
         case 'resolvido':
-            return 'Resolvida';
+        case 'concluida':
+        case 'concluido':
+            return 'Concluído';
 
         default:
             return 'Não informado';
@@ -487,7 +489,6 @@ export default function MinhasOcorrencias() {
         const fecharComEscape = (event: KeyboardEvent) => {
 
             if (event.key === 'Escape') {
-
                 setOcorrenciaSelecionada(null);
             }
         };
@@ -495,7 +496,6 @@ export default function MinhasOcorrencias() {
         document.addEventListener('keydown', fecharComEscape);
 
         return () => {
-
             document.removeEventListener('keydown', fecharComEscape);
         };
 
@@ -687,7 +687,7 @@ export default function MinhasOcorrencias() {
 
                                     <option value="Em andamento">Em andamento</option>
 
-                                    <option value="Resolvida">Resolvida</option>
+                                    <option value="Concluído">Concluído</option>
 
                                     <option value="Não informado">Não informado</option>
 
@@ -1079,7 +1079,6 @@ export default function MinhasOcorrencias() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onMouseDown={event => {
 
                     if (event.target === event.currentTarget) {
-
                         setOcorrenciaSelecionada(null);
                     }
 

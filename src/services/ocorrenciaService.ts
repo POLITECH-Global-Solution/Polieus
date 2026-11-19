@@ -25,16 +25,21 @@ function idValido(id: unknown): id is number {
 }
 
 function normalizarTexto(texto: string): string {
-    return texto.trim().toLowerCase();
+    return String(texto ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
 }
 
 function normalizarCep(cep: string): string {
-    return cep.replace(/\D/g, '');
+    return String(cep ?? '').replace(/\D/g, '');
 }
 
 function compararOcorrencia(ocorrencia: Ocorrencia, dados: DadosOcorrencia): boolean {
     return (
-        ocorrencia.idUsuario === dados.idUsuario &&
+        Number(ocorrencia.idUsuario) === dados.idUsuario &&
         normalizarTexto(ocorrencia.categoria) === normalizarTexto(dados.categoria) &&
         normalizarTexto(ocorrencia.descricao) === normalizarTexto(dados.descricao) &&
         normalizarTexto(ocorrencia.endereco) === normalizarTexto(dados.endereco) &&
@@ -49,6 +54,7 @@ function compararOcorrencia(ocorrencia: Ocorrencia, dados: DadosOcorrencia): boo
 
 // GET - Listar todas as ocorrências
 export async function listarOcorrencias(): Promise<Ocorrencia[]> {
+
     const ocorrencias = await apiRequest<Ocorrencia[]>(ENDPOINT);
 
     if (!Array.isArray(ocorrencias)) {
@@ -75,11 +81,11 @@ export async function cadastrarOcorrencia(dados: DadosOcorrencia): Promise<Ocorr
 
     const idsAnteriores = new Set(
         ocorrenciasAnteriores
-            .map(ocorrencia => ocorrencia.idOcorrencia)
+            .map(ocorrencia => Number(ocorrencia.idOcorrencia))
             .filter(idValido)
     );
 
-    // Enviar a nova ocorrência ao Java
+    // Enviar a ocorrência ao Java
     const ocorrencia = await apiRequest<Ocorrencia | undefined>(ENDPOINT, {
         method: 'POST',
         body: JSON.stringify(dados),
@@ -88,42 +94,43 @@ export async function cadastrarOcorrencia(dados: DadosOcorrencia): Promise<Ocorr
     // Caso o Java retorne a ocorrência cadastrada
     if (
         ocorrencia &&
-        idValido(ocorrencia.idOcorrencia) &&
-        ocorrencia.idUsuario === dados.idUsuario
+        idValido(Number(ocorrencia.idOcorrencia)) &&
+        Number(ocorrencia.idUsuario) === dados.idUsuario &&
+        !idsAnteriores.has(Number(ocorrencia.idOcorrencia))
     ) {
-        return ocorrencia;
+        return {
+            ...ocorrencia,
+            idOcorrencia: Number(ocorrencia.idOcorrencia),
+            idUsuario: Number(ocorrencia.idUsuario),
+        };
     }
 
     // Caso o Java retorne 201 sem conteúdo
-    // Consultar novamente sem repetir o POST
-    try {
+    const ocorrenciasAtuais = await listarMinhasOcorrencias(dados.idUsuario);
 
-        const ocorrenciasAtuais = await listarMinhasOcorrencias(dados.idUsuario);
+    const novasOcorrencias = ocorrenciasAtuais.filter(item =>
+        idValido(Number(item.idOcorrencia)) &&
+        !idsAnteriores.has(Number(item.idOcorrencia)) &&
+        compararOcorrencia(item, dados)
+    );
 
-        const novasOcorrencias = ocorrenciasAtuais.filter(item =>
-            idValido(item.idOcorrencia) &&
-            !idsAnteriores.has(item.idOcorrencia) &&
-            compararOcorrencia(item, dados)
-        );
-
-        // Retornar somente quando houver uma identificação inequívoca
-        if (novasOcorrencias.length === 1) {
-            return novasOcorrencias[0];
-        }
-
-    } catch (erro) {
-        console.error('Não foi possível identificar a ocorrência cadastrada:', erro);
+    // Recuperar o ID real da ocorrência cadastrada
+    if (novasOcorrencias.length === 1) {
+        return {
+            ...novasOcorrencias[0],
+            idOcorrencia: Number(novasOcorrencias[0].idOcorrencia),
+            idUsuario: Number(novasOcorrencias[0].idUsuario),
+        };
     }
 
-    // O POST foi bem-sucedido, mas não foi possível recuperar o ID
-    return {
-        ...dados,
-        idOcorrencia: null,
-    };
+    throw new Error(
+        'Não foi possível localizar a ocorrência cadastrada no servidor.'
+    );
 }
 
 // PUT - Atualizar ocorrência existente
 export function atualizarOcorrencia(id: number, dados: DadosOcorrencia): Promise<Ocorrencia> {
+
     return apiRequest<Ocorrencia>(`${ENDPOINT}/${id}`, {
         method: 'PUT',
         body: JSON.stringify({
@@ -135,6 +142,7 @@ export function atualizarOcorrencia(id: number, dados: DadosOcorrencia): Promise
 
 // DELETE - Excluir ocorrência
 export function excluirOcorrencia(id: number): Promise<void> {
+
     return apiRequest<void>(`${ENDPOINT}/${id}`, {
         method: 'DELETE',
     });
@@ -146,6 +154,7 @@ export function excluirOcorrencia(id: number): Promise<void> {
 
 // Recuperar o ID do usuário conectado
 export function obterUsuarioId(): number | null {
+
     try {
 
         const dados = sessionStorage.getItem('usuario');
@@ -184,9 +193,15 @@ export async function listarMinhasOcorrencias(idUsuario: number): Promise<Ocorre
         throw new Error('Resposta inválida ao consultar suas ocorrências.');
     }
 
-    return ocorrencias.filter(
-        ocorrencia => ocorrencia.idUsuario === idUsuario
-    );
+    return ocorrencias
+        .filter(ocorrencia => Number(ocorrencia.idUsuario) === idUsuario)
+        .map(ocorrencia => ({
+            ...ocorrencia,
+            idOcorrencia: ocorrencia.idOcorrencia === null
+                ? null
+                : Number(ocorrencia.idOcorrencia),
+            idUsuario: Number(ocorrencia.idUsuario),
+        }));
 }
 
 // Contabilizar ocorrências do cidadão

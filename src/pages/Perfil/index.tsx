@@ -95,7 +95,15 @@ export default function Perfil() {
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState('');
 
-    const [fotoPerfil, setFotoPerfil] = useState('');
+    const [fotoPerfil, setFotoPerfil] = useState(() => {
+    if (!sessao) return '';
+
+    try {
+        return localStorage.getItem(`polieus_foto_perfil_${sessao.idUsuario}`) || '';
+    } catch {
+        return '';
+    }
+});
     const [mensagemFoto, setMensagemFoto] = useState('');
     const [erroFoto, setErroFoto] = useState(false);
     const [processandoFoto, setProcessandoFoto] = useState(false);
@@ -204,19 +212,6 @@ export default function Perfil() {
         };
 
     }, [sessao, tentativaHistorico]);
-
-    // CARREGAR FOTO DE PERFIL
-    useEffect(() => {
-        if (!chaveFoto) return;
-
-        try {
-            setFotoPerfil(localStorage.getItem(chaveFoto) || '');
-
-        } catch {
-            setFotoPerfil('');
-        }
-
-    }, [chaveFoto]);
 
     const nomeExibicao = usuario?.nomeUsuario || sessao?.nomeUsuario || 'Meu Perfil';
     const emailExibicao = usuario?.email || sessao?.email || '';

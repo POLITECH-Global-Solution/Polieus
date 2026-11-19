@@ -2,16 +2,47 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import Mapa, { type OcorrenciaMapa, type PrioridadeOcorrencia } from '../../components/Mapa/Mapa';
-import { listarOcorrencias } from '../../services/ocorrenciaService';
-import { listarHistoricos, type Historico } from '../../services/historicoService';
 
-type FiltroPrioridade = 'todas' | PrioridadeOcorrencia;
+import { listarOcorrencias } from '../../services/ocorrenciaService';
+
+import {
+    listarHistoricos,
+    gerarProtocolo,
+    obterHistoricoInicial,
+    obterHistoricoAtual,
+    type Historico,
+} from '../../services/historicoService';
+
+import {
+    listarAnalises,
+    obterAnalisePorProtocolo,
+    normalizarPrioridade,
+    type Analise,
+} from '../../services/analiseService';
+
+// TIPAGENS
+
+type FiltroPrioridade = 'todas' | PrioridadeOcorrencia | 'indisponivel';
+
+type StatusOcorrencia =
+    | 'Pendente'
+    | 'Em análise'
+    | 'Em andamento'
+    | 'Concluído'
+    | 'Não informado';
 
 type Localizacao = {
     cidade: string;
     latitude: number;
     longitude: number;
 };
+
+interface OcorrenciaMapaCompleta extends OcorrenciaMapa {
+    protocolo: string;
+    prioridadeDisponivel: boolean;
+}
+
+// CONSTANTES
 
 const NOMES_PRIORIDADE: Record<PrioridadeOcorrencia, string> = {
     alta: 'Alta',
@@ -171,12 +202,67 @@ const FAIXAS_CEP = [
 // ==================================================
 
 function normalizarTexto(texto: string): string {
-    return (texto ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    return (texto ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+}
+
+// PADRONIZAR STATUS
+
+function normalizarStatus(status?: string): StatusOcorrencia {
+
+    const valor = normalizarTexto(status ?? '')
+        .replace(/_/g, ' ')
+        .trim();
+
+    switch (valor) {
+
+        case 'pendente':
+            return 'Pendente';
+
+        case 'em analise':
+            return 'Em análise';
+
+        case 'em andamento':
+            return 'Em andamento';
+
+        case 'resolvida':
+        case 'resolvido':
+        case 'concluida':
+        case 'concluido':
+            return 'Concluído';
+
+        default:
+            return 'Não informado';
+    }
+}
+
+// CONVERTER PRIORIDADE DO JAVA PARA O MAPA
+
+function converterPrioridadeMapa(prioridade?: string | null): PrioridadeOcorrencia {
+
+    switch (normalizarPrioridade(prioridade)) {
+
+        case 'Alta':
+            return 'alta';
+
+        case 'Média':
+            return 'media';
+
+        case 'Baixa':
+            return 'baixa';
+
+        default:
+            return 'nao-informada';
+    }
 }
 
 // IDENTIFICAR MUNICÍPIO PELO CEP
 
 function localizarPorCep(cep: string): Localizacao | null {
+
     const cepLimpo = (cep ?? '').replace(/\D/g, '');
 
     if (cepLimpo.length !== 8) return null;
@@ -203,6 +289,7 @@ function localizarPorCep(cep: string): Localizacao | null {
 // IDENTIFICAR MUNICÍPIO PELO ENDEREÇO OU CEP
 
 function localizarEndereco(endereco: string, cep: string): Localizacao | null {
+
     const localizacaoCep = localizarPorCep(cep);
 
     if (localizacaoCep) return localizacaoCep;
@@ -210,6 +297,7 @@ function localizarEndereco(endereco: string, cep: string): Localizacao | null {
     const partes = (endereco ?? '').split(',').map(parte => normalizarTexto(parte));
 
     const municipiosEncontrados = Object.entries(MUNICIPIOS).filter(([cidade]) => {
+
         const nome = normalizarTexto(cidade);
 
         return partes.some(parte =>
@@ -229,41 +317,13 @@ function localizarEndereco(endereco: string, cep: string): Localizacao | null {
     };
 }
 
-// CONVERTER DATA DO HISTÓRICO
-
-function converterData(data: string): number {
-    if (!data) return 0;
-
-    const partes = data.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
-
-    if (partes) {
-        const [, dia, mes, ano] = partes;
-
-        return new Date(Number(ano), Number(mes) - 1, Number(dia)).getTime();
-    }
-
-    const resultado = Date.parse(data);
-
-    return Number.isNaN(resultado) ? 0 : resultado;
-}
-
-// OBTER HISTÓRICO MAIS RECENTE
-
-function obterHistoricoAtual(historicos: Historico[], idOcorrencia: number): Historico | undefined {
-    return historicos
-        .filter(historico => Number(historico.idOcorrencia) === idOcorrencia)
-        .sort((a, b) =>
-            converterData(b.data) - converterData(a.data) ||
-            (b.idHistorico ?? 0) - (a.idHistorico ?? 0)
-        )[0];
-}
-
 // ==================================================
 // PÁGINA MAPA DE OCORRÊNCIAS
 // ==================================================
 
 export default function MapaOcorrencias() {
-    const [ocorrencias, setOcorrencias] = useState<OcorrenciaMapa[]>([]);
+
+    const [ocorrencias, setOcorrencias] = useState<OcorrenciaMapaCompleta[]>([]);
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState('');
     const [aviso, setAviso] = useState('');
@@ -275,16 +335,18 @@ export default function MapaOcorrencias() {
     const [filtroPrioridade, setFiltroPrioridade] = useState<FiltroPrioridade>('todas');
     const [filtroCategoria, setFiltroCategoria] = useState('todas');
 
-    const [ocorrenciaSelecionada, setOcorrenciaSelecionada] = useState<OcorrenciaMapa | null>(null);
+    const [ocorrenciaSelecionada, setOcorrenciaSelecionada] = useState<OcorrenciaMapaCompleta | null>(null);
 
     // ==================================================
     // INTEGRAÇÃO COM A API JAVA
     // ==================================================
 
     useEffect(() => {
+
         let ativo = true;
 
         async function carregarOcorrencias() {
+
             setCarregando(true);
             setErro('');
             setAviso('');
@@ -293,28 +355,92 @@ export default function MapaOcorrencias() {
             setOcorrenciaSelecionada(null);
 
             try {
+
+                // CONSULTAR OCORRÊNCIAS
+
                 const registros = await listarOcorrencias();
 
                 if (!ativo) return;
 
-                let historicos: Historico[] = [];
-
-                try {
-                    historicos = await listarHistoricos();
-
-                } catch {
-                    if (ativo) {
-                        setAviso('Não foi possível consultar o status das ocorrências.');
-                    }
+                if (!Array.isArray(registros)) {
+                    throw new Error('Resposta inválida ao consultar ocorrências.');
                 }
+
+                if (registros.length === 0) return;
+
+                // CONSULTAR HISTÓRICOS E ANÁLISES
+
+                const [resultadoHistoricos, resultadoAnalises] = await Promise.allSettled([
+                    listarHistoricos(),
+                    listarAnalises(),
+                ]);
 
                 if (!ativo) return;
 
-                const resultados: OcorrenciaMapa[] = [];
+                let historicos: Historico[] = [];
+                let analises: Analise[] = [];
+
+                let historicosDisponiveis = true;
+                let analisesDisponiveis = true;
+
+                const avisos: string[] = [];
+
+                // HISTÓRICOS
+
+                if (resultadoHistoricos.status === 'fulfilled' && Array.isArray(resultadoHistoricos.value)) {
+
+                    historicos = resultadoHistoricos.value;
+
+                } else {
+
+                    historicosDisponiveis = false;
+
+                    avisos.push('Não foi possível consultar o status das ocorrências.');
+
+                    console.error('Erro ao consultar históricos:', resultadoHistoricos);
+                }
+
+                // ANÁLISES E PRIORIDADES
+
+                if (resultadoAnalises.status === 'fulfilled' && Array.isArray(resultadoAnalises.value)) {
+
+                    analises = resultadoAnalises.value;
+
+                } else {
+
+                    analisesDisponiveis = false;
+
+                    avisos.push('Não foi possível consultar as prioridades das ocorrências.');
+
+                    console.error('Erro ao consultar análises:', resultadoAnalises);
+                }
+
+                const resultados: OcorrenciaMapaCompleta[] = [];
 
                 let naoLocalizadas = 0;
+                let prioridadesIndisponiveis = 0;
+
+                // ORGANIZAR HISTÓRICOS POR OCORRÊNCIA
+
+                const historicosPorOcorrencia = new Map<number, Historico[]>();
+
+                for (const historico of historicos) {
+
+                    const idOcorrencia = Number(historico.idOcorrencia);
+
+                    if (!Number.isInteger(idOcorrencia) || idOcorrencia <= 0) continue;
+
+                    const historicosExistentes = historicosPorOcorrencia.get(idOcorrencia) ?? [];
+
+                    historicosExistentes.push(historico);
+
+                    historicosPorOcorrencia.set(idOcorrencia, historicosExistentes);
+                }
+
+                // FORMATAR OCORRÊNCIAS PARA O MAPA
 
                 for (const item of registros) {
+
                     if (
                         typeof item.idOcorrencia !== 'number' ||
                         !Number.isInteger(item.idOcorrencia) ||
@@ -328,40 +454,98 @@ export default function MapaOcorrencias() {
                     const localizacao = localizarEndereco(item.endereco, item.cep);
 
                     if (!localizacao) {
+
                         naoLocalizadas++;
+
                         continue;
                     }
 
-                    const historico = obterHistoricoAtual(historicos, item.idOcorrencia);
+                    // HISTÓRICO DA OCORRÊNCIA
+
+                    const historicosOcorrencia = historicosPorOcorrencia.get(item.idOcorrencia) ?? [];
+
+                    const historicoInicial = obterHistoricoInicial(historicosOcorrencia);
+
+                    const historicoAtual = obterHistoricoAtual(historicosOcorrencia);
+
+                    // IDENTIFICAR PROTOCOLO ORIGINAL
+
+                    const protocolo = String(
+                        historicoInicial?.protocolo ||
+                        historicoAtual?.protocolo ||
+                        gerarProtocolo(item.idOcorrencia)
+                    );
+
+                    // CONSULTAR PRIORIDADE PELO PROTOCOLO
+
+                    let prioridade: PrioridadeOcorrencia = 'nao-informada';
+
+                    let prioridadeDisponivel = historicosDisponiveis && analisesDisponiveis;
+
+                    if (prioridadeDisponivel) {
+
+                        try {
+
+                            const analise = obterAnalisePorProtocolo(analises, protocolo);
+
+                            prioridade = converterPrioridadeMapa(analise?.prioridade);
+
+                        } catch (erro) {
+
+                            prioridadeDisponivel = false;
+
+                            console.error(`Erro ao consultar prioridade da ocorrência ${protocolo}:`, erro);
+                        }
+                    }
+
+                    if (!prioridadeDisponivel) {
+
+                        prioridadesIndisponiveis++;
+                    }
+
+                    // ADICIONAR OCORRÊNCIA AO MAPA
 
                     resultados.push({
                         id: item.idOcorrencia,
-                        categoria: item.categoria,
-                        descricao: item.descricao,
+                        protocolo,
+                        categoria: item.categoria ?? 'Outros',
+                        descricao: item.descricao ?? '',
                         endereco: [item.endereco, item.departamento].filter(Boolean).join(', '),
                         cidade: localizacao.cidade,
                         cep: item.cep,
-                        prioridade: 'nao-informada',
-                        status: historico?.status || 'Não informado',
+                        prioridade,
+                        prioridadeDisponivel,
+                        status: normalizarStatus(historicoAtual?.status),
                         latitude: localizacao.latitude,
                         longitude: localizacao.longitude,
                     });
                 }
 
+                if (prioridadesIndisponiveis > 0 && analisesDisponiveis && historicosDisponiveis) {
+
+                    avisos.push('Algumas prioridades não puderam ser identificadas.');
+                }
+
                 if (ativo) {
+
                     setOcorrencias(resultados);
                     setSemLocalizacao(naoLocalizadas);
+                    setAviso(avisos.join(' '));
                 }
 
             } catch (erro) {
+
                 console.error('Erro ao carregar ocorrências do mapa:', erro);
 
                 if (ativo) {
+
                     setErro('Não foi possível consultar as ocorrências. Tente novamente.');
                 }
 
             } finally {
+
                 if (ativo) {
+
                     setCarregando(false);
                 }
             }
@@ -370,6 +554,7 @@ export default function MapaOcorrencias() {
         void carregarOcorrencias();
 
         return () => {
+
             ativo = false;
         };
 
@@ -380,9 +565,11 @@ export default function MapaOcorrencias() {
     // ==================================================
 
     const categorias = useMemo(() => {
+
         return [...new Set(
             ocorrencias.map(ocorrencia => ocorrencia.categoria)
         )].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
     }, [ocorrencias]);
 
     // ==================================================
@@ -390,11 +577,14 @@ export default function MapaOcorrencias() {
     // ==================================================
 
     const ocorrenciasFiltradas = useMemo(() => {
+
         const termo = normalizarTexto(busca);
 
         return ocorrencias.filter(ocorrencia => {
+
             const correspondeBusca =
                 termo === '' ||
+                normalizarTexto(ocorrencia.protocolo).includes(termo) ||
                 normalizarTexto(ocorrencia.categoria).includes(termo) ||
                 normalizarTexto(ocorrencia.descricao).includes(termo) ||
                 normalizarTexto(ocorrencia.endereco).includes(termo) ||
@@ -403,7 +593,12 @@ export default function MapaOcorrencias() {
 
             const correspondePrioridade =
                 filtroPrioridade === 'todas' ||
-                ocorrencia.prioridade === filtroPrioridade;
+                (
+                    filtroPrioridade === 'indisponivel'
+                        ? !ocorrencia.prioridadeDisponivel
+                        : ocorrencia.prioridadeDisponivel &&
+                          ocorrencia.prioridade === filtroPrioridade
+                );
 
             const correspondeCategoria =
                 filtroCategoria === 'todas' ||
@@ -421,26 +616,33 @@ export default function MapaOcorrencias() {
             : null;
 
     function limparFiltros() {
+
         setBusca('');
         setFiltroPrioridade('todas');
         setFiltroCategoria('todas');
     }
 
     function selecionarOcorrencia(ocorrencia: OcorrenciaMapa) {
-        setOcorrenciaSelecionada(ocorrencia);
+
+        const ocorrenciaCompleta = ocorrencias.find(item => item.id === ocorrencia.id);
+
+        setOcorrenciaSelecionada(ocorrenciaCompleta ?? null);
     }
 
     return (
+
         <main className="min-h-screen w-full flex-1 bg-fundo font-corpo text-texto">
 
             {/* CABEÇALHO */}
 
             <header className="border-b border-[#d8b9a8] bg-[#fffaf4] px-5 py-5 sm:px-8 lg:px-10">
+
                 <h1 className="font-titulo text-3xl font-bold text-primaria sm:text-4xl">
                     Mapa de Ocorrências
                 </h1>
 
                 <nav aria-label="Navegação estrutural" className="mt-2 flex items-center gap-2 text-sm">
+
                     <Link to="/inicio" className="text-[#6b4438] transition-colors hover:text-primaria">
                         Início
                     </Link>
@@ -452,7 +654,9 @@ export default function MapaOcorrencias() {
                     <span className="font-semibold text-primaria">
                         Mapa de Ocorrências
                     </span>
+
                 </nav>
+
             </header>
 
             <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-8 lg:px-10">
@@ -460,6 +664,7 @@ export default function MapaOcorrencias() {
                 {/* APRESENTAÇÃO */}
 
                 <section className="mb-8">
+
                     <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#a34a37]">
                         Participação cidadã
                     </p>
@@ -473,26 +678,35 @@ export default function MapaOcorrencias() {
                     </p>
 
                     <div className="mt-6 flex max-w-xl items-center gap-4" aria-hidden="true">
+
                         <div className="h-px flex-1 bg-[#b77965]" />
+
                         <div className="h-2.5 w-2.5 rotate-45 bg-[#78221b]" />
+
                         <div className="h-px flex-1 bg-[#d8b9a8]" />
+
                     </div>
+
                 </section>
 
                 {/* BUSCA E FILTROS */}
 
                 <section className="mb-6" aria-label="Busca e filtros do mapa">
+
                     <div className="flex flex-col gap-3 sm:flex-row">
 
                         <div className="relative min-w-0 flex-1">
+
                             <span className="material-icons pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xl text-primaria" aria-hidden="true">
                                 search
                             </span>
 
                             <input type="search" value={busca} onChange={event => setBusca(event.target.value)} placeholder="Buscar por cidade, endereço ou categoria..." aria-label="Buscar ocorrências no mapa" className="w-full rounded-xl border border-[#dfc2ae] bg-[#fffaf4] py-3.5 pl-12 pr-4 text-sm text-texto shadow-sm outline-none transition-colors placeholder:text-[#8d8179] focus:border-primaria focus:ring-2 focus:ring-primaria/15" />
+
                         </div>
 
                         <button type="button" onClick={() => setMostrarFiltros(atual => !atual)} aria-expanded={mostrarFiltros} aria-controls="filtros-mapa" className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition-colors ${mostrarFiltros ? 'border-primaria bg-[#f0dfd4] text-primaria' : 'border-[#dfc2ae] bg-[#fffaf4] text-primaria hover:bg-[#f3e5d9]'}`}>
+
                             <span className="material-icons text-xl" aria-hidden="true">
                                 filter_alt
                             </span>
@@ -502,139 +716,202 @@ export default function MapaOcorrencias() {
                             <span className={`material-icons text-lg transition-transform duration-300 ${mostrarFiltros ? 'rotate-180' : ''}`} aria-hidden="true">
                                 expand_more
                             </span>
+
                         </button>
 
                         <button type="button" onClick={() => setTentativa(atual => atual + 1)} disabled={carregando} aria-label="Atualizar ocorrências" title="Atualizar ocorrências" className="flex cursor-pointer items-center justify-center rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-5 py-3 text-primaria transition-colors hover:bg-[#f3e5d9] disabled:cursor-not-allowed disabled:opacity-50">
+
                             <span className={`material-icons ${carregando ? 'animate-spin' : ''}`} aria-hidden="true">
                                 refresh
                             </span>
+
                         </button>
+
                     </div>
 
                     {mostrarFiltros && (
+
                         <div id="filtros-mapa" className="mt-3 grid gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]">
 
+                            {/* FILTRO DE PRIORIDADE */}
+
                             <div>
+
                                 <label htmlFor="filtro-prioridade-mapa" className="mb-2 block text-sm font-semibold text-primaria">
                                     Prioridade
                                 </label>
 
                                 <select id="filtro-prioridade-mapa" value={filtroPrioridade} onChange={event => setFiltroPrioridade(event.target.value as FiltroPrioridade)} className="w-full rounded-lg border border-[#dfc2ae] bg-white px-3 py-3 text-sm text-texto outline-none focus:border-primaria">
+
                                     <option value="todas">Todas as prioridades</option>
                                     <option value="alta">Alta</option>
                                     <option value="media">Média</option>
                                     <option value="baixa">Baixa</option>
                                     <option value="nao-informada">Não informada</option>
+                                    <option value="indisponivel">Indisponível</option>
+
                                 </select>
+
                             </div>
 
+                            {/* FILTRO DE CATEGORIA */}
+
                             <div>
+
                                 <label htmlFor="filtro-categoria-mapa" className="mb-2 block text-sm font-semibold text-primaria">
                                     Categoria
                                 </label>
 
                                 <select id="filtro-categoria-mapa" value={filtroCategoria} onChange={event => setFiltroCategoria(event.target.value)} className="w-full rounded-lg border border-[#dfc2ae] bg-white px-3 py-3 text-sm text-texto outline-none focus:border-primaria">
+
                                     <option value="todas">Todas as categorias</option>
 
                                     {categorias.map(categoria => (
+
                                         <option key={categoria} value={categoria}>
                                             {categoria}
                                         </option>
+
                                     ))}
+
                                 </select>
+
                             </div>
 
                             <div className="flex items-end">
+
                                 <button type="button" onClick={limparFiltros} className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-[#b77965] px-4 py-3 text-sm font-semibold text-primaria transition-colors hover:bg-[#f0dfd4]">
+
                                     <span className="material-icons text-lg" aria-hidden="true">
                                         restart_alt
                                     </span>
 
                                     Limpar filtros
+
                                 </button>
+
                             </div>
+
                         </div>
+
                     )}
+
                 </section>
 
                 {/* LEGENDA */}
 
                 <section className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-5 py-4 shadow-sm" aria-label="Legenda das prioridades">
+
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+
                         <span className="text-sm font-semibold text-primaria">
                             Prioridade:
                         </span>
 
                         {(['alta', 'media', 'baixa', 'nao-informada'] as const).map(prioridade => (
+
                             <div key={prioridade} className="flex items-center gap-2">
+
                                 <span className="h-3.5 w-3.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: CORES_PRIORIDADE[prioridade] }} />
 
                                 <span className="text-sm text-texto-suave">
-                                    {NOMES_PRIORIDADE[prioridade]}
+
+                                    {prioridade === 'nao-informada'
+                                        ? 'Não informada ou indisponível'
+                                        : NOMES_PRIORIDADE[prioridade]}
+
                                 </span>
+
                             </div>
+
                         ))}
+
                     </div>
 
                     <p className="text-sm font-semibold text-primaria" role="status">
+
                         {carregando
                             ? 'Carregando ocorrências...'
                             : erro
                                 ? 'Consulta indisponível'
                                 : `${ocorrenciasFiltradas.length} ${ocorrenciasFiltradas.length === 1 ? 'ocorrência localizada' : 'ocorrências localizadas'}`}
+
                     </p>
+
                 </section>
 
                 {/* ERRO NA API */}
 
                 {erro && (
+
                     <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-red-200 bg-red-50 p-4">
+
                         <div className="flex items-center gap-3 text-sm text-red-800">
+
                             <span className="material-icons" aria-hidden="true">
                                 error_outline
                             </span>
 
                             {erro}
+
                         </div>
 
-                        <button type="button" onClick={() => setTentativa(atual => atual + 1)} className="cursor-pointer rounded-lg bg-primaria px-4 py-2 text-sm font-semibold text-white">
-                            Tentar novamente
+                        <button type="button" onClick={() => setTentativa(atual => atual + 1)} className="cursor-pointer rounded-lg bg-primaria px-4 py-2 text-sm font-semibold transition-colors hover:bg-primaria-hover">
+
+                            <span className="text-white">
+                                Tentar novamente
+                            </span>
+
                         </button>
+
                     </div>
+
                 )}
 
                 {/* AVISOS */}
 
                 {aviso && (
+
                     <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4 text-sm text-texto-suave">
+
                         <div className="flex items-center gap-3">
+
                             <span className="material-icons text-primaria" aria-hidden="true">
                                 info
                             </span>
 
                             {aviso}
+
                         </div>
 
                         <button type="button" onClick={() => setTentativa(atual => atual + 1)} className="cursor-pointer font-semibold text-primaria hover:underline">
                             Tentar novamente
                         </button>
+
                     </div>
+
                 )}
 
                 {/* OCORRÊNCIAS SEM LOCALIZAÇÃO */}
 
                 {!carregando && !erro && semLocalizacao > 0 && (
+
                     <div role="status" className="mb-6 flex items-center gap-3 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4 text-sm text-texto-suave">
+
                         <span className="material-icons text-2xl text-primaria" aria-hidden="true">
                             location_off
                         </span>
 
                         <p>
+
                             {semLocalizacao} {semLocalizacao === 1
                                 ? 'ocorrência não possui um município identificado no mapa.'
                                 : 'ocorrências não possuem municípios identificados no mapa.'}
+
                         </p>
+
                     </div>
+
                 )}
 
                 {/* MAPA E PAINEL LATERAL */}
@@ -642,16 +919,23 @@ export default function MapaOcorrencias() {
                 <section className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]" aria-label="Visualização das ocorrências" aria-busy={carregando}>
 
                     <div className="min-w-0">
+
                         <Mapa ocorrencias={ocorrenciasFiltradas} ocorrenciaSelecionadaId={ocorrenciaVisivel?.id ?? null} aoSelecionarOcorrencia={selecionarOcorrencia} altura="600px" carregando={carregando} />
 
                         <p className="mt-3 text-xs text-texto-suave">
                             Os marcadores representam localizações aproximadas por município.
                         </p>
+
                     </div>
 
+                    {/* PAINEL DE DETALHES */}
+
                     <aside className="flex min-h-100 flex-col overflow-hidden rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] shadow-sm lg:min-h-150">
+
                         <div className="border-b border-[#dfc2ae] bg-[#f0dfd4] px-5 py-5">
+
                             <div className="flex items-center gap-3">
+
                                 <span className="material-icons text-2xl text-primaria" aria-hidden="true">
                                     location_on
                                 </span>
@@ -659,29 +943,53 @@ export default function MapaOcorrencias() {
                                 <h3 className="font-titulo text-lg font-bold text-primaria">
                                     Detalhes da Ocorrência
                                 </h3>
+
                             </div>
 
                             <p className="mt-2 text-xs text-texto-suave">
                                 Selecione um marcador para consultar as informações.
                             </p>
+
                         </div>
 
                         {ocorrenciaVisivel ? (
+
                             <div className="flex flex-1 flex-col gap-5 p-5">
 
                                 <div className="flex flex-wrap items-center justify-between gap-3">
+
                                     <h4 className="font-titulo text-lg font-bold text-primaria">
                                         {ocorrenciaVisivel.categoria}
                                     </h4>
 
                                     <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${ESTILOS_PRIORIDADE[ocorrenciaVisivel.prioridade]}`}>
-                                        Prioridade {NOMES_PRIORIDADE[ocorrenciaVisivel.prioridade]}
+
+                                        Prioridade {ocorrenciaVisivel.prioridadeDisponivel
+                                            ? NOMES_PRIORIDADE[ocorrenciaVisivel.prioridade]
+                                            : 'indisponível'}
+
                                     </span>
+
+                                </div>
+
+                                {/* PROTOCOLO */}
+
+                                <div>
+
+                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-texto-suave">
+                                        Protocolo
+                                    </p>
+
+                                    <p className="text-sm font-semibold text-primaria">
+                                        {ocorrenciaVisivel.protocolo}
+                                    </p>
+
                                 </div>
 
                                 {/* DESCRIÇÃO */}
 
-                                <div>
+                                <div className="border-t border-[#ead7c9] pt-4">
+
                                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-texto-suave">
                                         Descrição
                                     </p>
@@ -689,40 +997,53 @@ export default function MapaOcorrencias() {
                                     <p className="text-sm leading-relaxed text-texto">
                                         {ocorrenciaVisivel.descricao}
                                     </p>
+
                                 </div>
 
                                 {/* ENDEREÇO */}
 
                                 <div className="border-t border-[#ead7c9] pt-4">
+
                                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-texto-suave">
                                         Endereço
                                     </p>
 
                                     <div className="flex items-start gap-2">
+
                                         <span className="material-icons text-lg text-primaria" aria-hidden="true">
                                             place
                                         </span>
 
                                         <div className="text-sm leading-relaxed text-texto">
+
                                             <p>{ocorrenciaVisivel.endereco}</p>
 
                                             {ocorrenciaVisivel.cep && (
+
                                                 <p>
+
                                                     CEP: {ocorrenciaVisivel.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2')}
+
                                                 </p>
+
                                             )}
+
                                         </div>
+
                                     </div>
+
                                 </div>
 
                                 {/* CIDADE */}
 
                                 <div className="border-t border-[#ead7c9] pt-4">
+
                                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-texto-suave">
                                         Cidade
                                     </p>
 
                                     <div className="flex items-center gap-2">
+
                                         <span className="material-icons text-lg text-primaria" aria-hidden="true">
                                             location_city
                                         </span>
@@ -730,17 +1051,21 @@ export default function MapaOcorrencias() {
                                         <span className="text-sm text-texto">
                                             {ocorrenciaVisivel.cidade} - SP
                                         </span>
+
                                     </div>
+
                                 </div>
 
                                 {/* STATUS */}
 
                                 <div className="border-t border-[#ead7c9] pt-4">
+
                                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-texto-suave">
                                         Status
                                     </p>
 
                                     <div className="flex items-center gap-2">
+
                                         <span className="material-icons text-xl text-primaria" aria-hidden="true">
                                             info
                                         </span>
@@ -748,25 +1073,35 @@ export default function MapaOcorrencias() {
                                         <span className="text-sm font-semibold text-texto">
                                             {ocorrenciaVisivel.status}
                                         </span>
+
                                     </div>
+
                                 </div>
 
                                 <div className="mt-auto border-t border-[#ead7c9] pt-4">
+
                                     <button type="button" onClick={() => setOcorrenciaSelecionada(null)} className="w-full cursor-pointer rounded-xl border border-primaria px-4 py-3 text-sm font-semibold text-primaria transition-colors hover:bg-[#f3e5d9]">
                                         Fechar detalhes
                                     </button>
+
                                 </div>
+
                             </div>
 
                         ) : (
+
                             <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
+
                                 <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#f3e5d9]">
+
                                     <span className="material-icons text-4xl text-primaria" aria-hidden="true">
                                         map
                                     </span>
+
                                 </div>
 
                                 <h4 className="font-titulo text-lg font-semibold text-primaria">
+
                                     {carregando
                                         ? 'Carregando ocorrências'
                                         : erro
@@ -776,9 +1111,11 @@ export default function MapaOcorrencias() {
                                                 : ocorrenciasFiltradas.length === 0
                                                     ? 'Nenhum resultado encontrado'
                                                     : 'Selecione uma ocorrência'}
+
                                 </h4>
 
                                 <p className="mt-3 max-w-xs text-sm leading-relaxed text-texto-suave">
+
                                     {carregando
                                         ? 'Aguarde enquanto consultamos as ocorrências registradas.'
                                         : erro
@@ -788,22 +1125,31 @@ export default function MapaOcorrencias() {
                                                 : ocorrenciasFiltradas.length === 0
                                                     ? 'Não encontramos ocorrências com os filtros selecionados.'
                                                     : 'Clique em um dos marcadores do mapa para visualizar os detalhes da ocorrência.'}
+
                                 </p>
 
                                 {ocorrenciasFiltradas.length === 0 && ocorrencias.length > 0 && (
+
                                     <button type="button" onClick={limparFiltros} className="mt-5 cursor-pointer rounded-full border border-primaria px-5 py-2.5 text-sm font-semibold text-primaria transition-colors hover:bg-[#f3e5d9]">
                                         Limpar filtros
                                     </button>
+
                                 )}
+
                             </div>
+
                         )}
+
                     </aside>
+
                 </section>
 
                 {/* LISTA DE OCORRÊNCIAS LOCALIZADAS */}
 
                 {ocorrenciasFiltradas.length > 0 && (
+
                     <section className="mt-7 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-6 shadow-sm">
+
                         <h3 className="font-titulo text-lg font-bold text-primaria">
                             Ocorrências Localizadas
                         </h3>
@@ -813,14 +1159,19 @@ export default function MapaOcorrencias() {
                         </p>
 
                         <div className="mt-5 grid max-h-96 gap-3 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
+
                             {ocorrenciasFiltradas.map(ocorrencia => (
+
                                 <button key={ocorrencia.id} type="button" onClick={() => selecionarOcorrencia(ocorrencia)} aria-pressed={ocorrenciaVisivel?.id === ocorrencia.id} className={`cursor-pointer rounded-xl border p-4 text-left transition-colors ${ocorrenciaVisivel?.id === ocorrencia.id ? 'border-primaria bg-[#f0dfd4]' : 'border-[#dfc2ae] bg-[#fffaf4] hover:bg-[#f3e5d9]'}`}>
+
                                     <div className="flex items-center gap-3">
-                                        <span className="material-icons text-2xl text-primaria" aria-hidden="true">
+
+                                        <span className="material-icons text-2xl" style={{ color: CORES_PRIORIDADE[ocorrencia.prioridade] }} aria-hidden="true">
                                             location_on
                                         </span>
 
-                                        <div className="min-w-0">
+                                        <div className="min-w-0 flex-1">
+
                                             <p className="font-titulo text-sm font-bold text-primaria">
                                                 {ocorrencia.categoria}
                                             </p>
@@ -832,25 +1183,45 @@ export default function MapaOcorrencias() {
                                             <p className="mt-2 line-clamp-2 text-xs text-texto">
                                                 {ocorrencia.descricao}
                                             </p>
+
+                                            <span className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold ${ESTILOS_PRIORIDADE[ocorrencia.prioridade]}`}>
+
+                                                Prioridade {ocorrencia.prioridadeDisponivel
+                                                    ? NOMES_PRIORIDADE[ocorrencia.prioridade]
+                                                    : 'indisponível'}
+
+                                            </span>
+
                                         </div>
+
                                     </div>
+
                                 </button>
+
                             ))}
+
                         </div>
+
                     </section>
+
                 )}
 
                 {/* INFORMAÇÕES ADICIONAIS */}
 
                 <section className="mt-7 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-6 shadow-sm sm:p-8">
+
                     <div className="flex items-start gap-4">
+
                         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f3e5d9]">
+
                             <span className="material-icons text-2xl text-primaria" aria-hidden="true">
                                 info
                             </span>
+
                         </div>
 
                         <div>
+
                             <h3 className="font-titulo text-lg font-bold text-primaria">
                                 Sobre o Mapa de Ocorrências
                             </h3>
@@ -863,13 +1234,22 @@ export default function MapaOcorrencias() {
                                 Os marcadores podem ser filtrados por categoria, prioridade ou localização. Ao selecionar uma ocorrência, suas informações são apresentadas no painel lateral.
                             </p>
 
+                            <p className="mt-3 text-sm leading-relaxed text-texto-suave">
+                                As prioridades apresentadas são atribuídas pela equipe administrativa e consultadas diretamente no sistema.
+                            </p>
+
                             <p className="mt-3 text-xs leading-relaxed text-texto-suave">
                                 As localizações são identificadas pelos CEPs disponíveis na base geográfica do sistema e representadas por coordenadas aproximadas dos municípios, não correspondendo necessariamente ao endereço exato da ocorrência.
                             </p>
+
                         </div>
+
                     </div>
+
                 </section>
+
             </div>
+
         </main>
     );
 }

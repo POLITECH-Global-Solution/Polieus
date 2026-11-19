@@ -19,9 +19,11 @@ import {
     normalizarPrioridade,
 } from '../../services/analiseService';
 
+// TIPAGENS
 
 type Prioridade = 'Alta' | 'Média' | 'Baixa';
-type Status = 'Pendente' | 'Em análise' | 'Em andamento' | 'Resolvida' | 'Não informado';
+
+type Status = 'Pendente' | 'Em análise' | 'Em andamento' | 'Concluído' | 'Não informado';
 
 interface Ocorrencia {
     id: number;
@@ -57,7 +59,7 @@ const coresStatus: Record<Status, string> = {
     Pendente: 'bg-[#f5c5bc] text-[#7d211b]',
     'Em análise': 'bg-[#ffdda4] text-[#75420a]',
     'Em andamento': 'bg-[#d3e3ee] text-[#214e68]',
-    Resolvida: 'bg-[#d8e4c8] text-[#35562d]',
+    'Concluído': 'bg-[#d8e4c8] text-[#35562d]',
     'Não informado': 'bg-[#e5ded8] text-[#74645a]',
 };
 
@@ -65,7 +67,7 @@ const statusDisponiveis: { nome: Status; cor: string }[] = [
     { nome: 'Pendente', cor: '#b3261e' },
     { nome: 'Em análise', cor: '#e99a3e' },
     { nome: 'Em andamento', cor: '#668fa5' },
-    { nome: 'Resolvida', cor: '#4f7b43' },
+    { nome: 'Concluído', cor: '#4f7b43' },
     { nome: 'Não informado', cor: '#9c897c' },
 ];
 
@@ -90,6 +92,7 @@ function normalizarTexto(valor: string) {
 function normalizarStatus(valor?: string): Status {
 
     switch (normalizarTexto(valor ?? '')) {
+
         case 'pendente':
             return 'Pendente';
 
@@ -101,7 +104,9 @@ function normalizarStatus(valor?: string): Status {
 
         case 'resolvida':
         case 'resolvido':
-            return 'Resolvida';
+        case 'concluida':
+        case 'concluido':
+            return 'Concluído';
 
         default:
             return 'Não informado';
@@ -115,6 +120,7 @@ function converterData(valor?: string | null): Date | null {
     const partes = valor.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
 
     if (partes) {
+
         const dia = Number(partes[1]);
         const mes = Number(partes[2]);
         const ano = Number(partes[3]);
@@ -129,6 +135,7 @@ function converterData(valor?: string | null): Date | null {
     const partesISO = valor.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
     if (partesISO) {
+
         const ano = Number(partesISO[1]);
         const mes = Number(partesISO[2]);
         const dia = Number(partesISO[3]);
@@ -202,6 +209,7 @@ function criarIcone(prioridade: Prioridade | null, quantidade = 1) {
     const cor = prioridade ? coresPrioridade[prioridade] : '#9c897c';
 
     if (quantidade > 1) {
+
         return L.divIcon({
             className: '',
             html: `
@@ -280,8 +288,8 @@ function CartaoIndicador({ icone, valor, descricao, cor = 'bg-primaria' }: {
     descricao: string;
     cor?: string;
 }) {
-
     return (
+
         <div className="flex items-center gap-4 rounded-2xl border border-[#dfbba9] bg-[#fff9f4]/80 px-5 py-5 shadow-sm">
 
             <div className={`flex h-15 w-15 shrink-0 items-center justify-center rounded-full ${cor}`}>
@@ -289,11 +297,13 @@ function CartaoIndicador({ icone, valor, descricao, cor = 'bg-primaria' }: {
             </div>
 
             <div className="min-w-0">
+
                 <strong className="font-titulo text-3xl font-bold text-[#72211b]">
                     {valor === null ? '—' : numero(valor)}
                 </strong>
 
                 <p className="text-sm text-texto">{descricao}</p>
+
             </div>
 
         </div>
@@ -385,6 +395,7 @@ export default function AdminDashboard() {
                     );
 
                     const historicoInicial = obterHistoricoInicial(historicosOcorrencia);
+
                     const historicoAtual = obterHistoricoAtual(historicosOcorrencia);
 
                     const protocolo = historicoInicial?.protocolo ||
@@ -438,10 +449,12 @@ export default function AdminDashboard() {
                 ).length;
 
                 if (consultaHistoricos && semStatus > 0) {
+
                     avisos.push(`${numero(semStatus)} ocorrência(s) sem status informado.`);
                 }
 
                 if (consultaAnalises && consultaHistoricos && falhasPrioridade > 0) {
+
                     avisos.push(`${numero(falhasPrioridade)} ocorrência(s) com prioridade indisponível.`);
                 }
 
@@ -489,8 +502,8 @@ export default function AdminDashboard() {
 
         total: ocorrencias.length,
 
-        resolvidas: ocorrencias.filter(
-            o => o.status === 'Resolvida'
+        concluidas: ocorrencias.filter(
+            o => o.status === 'Concluído'
         ).length,
 
         analise: ocorrencias.filter(
@@ -521,9 +534,9 @@ export default function AdminDashboard() {
             o => o.prioridade === 'Baixa'
         ).length,
 
-        altaPrioridadeNaoResolvida: ocorrencias.filter(
+        altaPrioridadeNaoConcluida: ocorrencias.filter(
             o => o.prioridade === 'Alta' &&
-                o.status !== 'Resolvida' &&
+                o.status !== 'Concluído' &&
                 o.status !== 'Não informado'
         ).length,
 
@@ -552,7 +565,7 @@ export default function AdminDashboard() {
         indicadores.semStatus === 0 && indicadores.total > 0;
 
     const taxaResolucao = indicadores.total > 0
-        ? (indicadores.resolvidas / indicadores.total) * 100
+        ? (indicadores.concluidas / indicadores.total) * 100
         : 0;
 
     // OCORRÊNCIAS RECENTES
@@ -563,10 +576,10 @@ export default function AdminDashboard() {
             .sort((a, b) => {
 
                 const dataA = converterData(a.dataCriacao)?.getTime() ?? 0;
+
                 const dataB = converterData(b.dataCriacao)?.getTime() ?? 0;
 
                 return dataB - dataA || b.id - a.id;
-
             })
             .slice(0, 4);
 
@@ -608,6 +621,7 @@ export default function AdminDashboard() {
         ocorrenciasPeriodo.forEach(ocorrencia => {
 
             const nome = ocorrencia.categoria.trim() || 'Outros';
+
             const chave = normalizarTexto(nome);
 
             const existente = contagem.get(chave);
@@ -659,8 +673,10 @@ export default function AdminDashboard() {
 
         ocorrenciasMapa.forEach(ocorrencia => {
 
-            const latitude = ocorrencia.latitude!;
-            const longitude = ocorrencia.longitude!;
+            const latitude = ocorrencia.latitude;
+            const longitude = ocorrencia.longitude;
+
+            if (latitude === undefined || longitude === undefined) return;
 
             const chave = `${latitude},${longitude}`;
 
@@ -810,7 +826,9 @@ export default function AdminDashboard() {
                         </div>
 
                         <button type="button" onClick={atualizarDados} className="cursor-pointer rounded-lg bg-primaria px-4 py-2 text-xs font-semibold text-white">
-                            Tentar novamente
+
+                            <span className="text-white">Tentar novamente</span>
+
                         </button>
 
                     </div>
@@ -835,7 +853,7 @@ export default function AdminDashboard() {
 
                     <CartaoIndicador icone="campaign" valor={dadosDisponiveis ? indicadores.total : null} descricao="Ocorrências registradas" />
 
-                    <CartaoIndicador icone="check" valor={statusDisponivel ? indicadores.resolvidas : null} descricao="Resolvidas" cor="bg-green-700" />
+                    <CartaoIndicador icone="check" valor={statusDisponivel ? indicadores.concluidas : null} descricao="Concluídas" cor="bg-green-700" />
 
                     <CartaoIndicador icone="schedule" valor={statusDisponivel ? indicadores.analise : null} descricao="Em análise" />
 
@@ -852,13 +870,19 @@ export default function AdminDashboard() {
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ead3c5] pb-3">
 
                             <h2 className="flex items-center gap-2 font-titulo text-xl font-bold text-[#79221b]">
+
                                 <Icone nome="location_on" classe="text-3xl" />
+
                                 Mapa de Ocorrências
+
                             </h2>
 
                             <Link to="/admin/mapa-ocorrencias" className="flex items-center gap-1 text-sm font-semibold underline">
+
                                 <span className="text-primaria">Ver mapa completo</span>
+
                                 <Icone nome="arrow_forward" classe="text-lg text-primaria" />
+
                             </Link>
 
                         </div>
@@ -1003,8 +1027,11 @@ export default function AdminDashboard() {
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ead3c5] pb-3">
 
                             <h2 className="flex items-center gap-2 font-titulo text-xl font-bold text-[#79221b]">
+
                                 <Icone nome="bar_chart" classe="text-3xl" />
+
                                 Ocorrências por Categoria
+
                             </h2>
 
                             <select aria-label="Período do gráfico" value={periodo} onChange={evento => setPeriodo(evento.target.value)} className="rounded-lg border border-[#d8b9a7] bg-white/60 px-3 py-2 text-xs outline-none focus:border-primaria">
@@ -1079,13 +1106,19 @@ export default function AdminDashboard() {
                         <div className="flex items-center justify-between gap-3 border-b border-[#ead3c5] pb-3">
 
                             <h2 className="flex items-center gap-2 font-titulo text-xl font-bold text-[#79221b]">
+
                                 <Icone nome="format_list_bulleted" classe="text-3xl" />
+
                                 Ocorrências Recentes
+
                             </h2>
 
                             <Link to="/admin/gerenciar-ocorrencias" className="flex items-center gap-1 text-sm font-semibold underline">
+
                                 <span className="text-primaria">Ver todas</span>
+
                                 <Icone nome="arrow_forward" classe="text-lg text-primaria" />
+
                             </Link>
 
                         </div>
@@ -1113,10 +1146,15 @@ export default function AdminDashboard() {
                                         <tr>
 
                                             <th scope="col" className="rounded-l-lg px-2 py-3">Protocolo</th>
+
                                             <th scope="col" className="px-2 py-3">Categoria</th>
+
                                             <th scope="col" className="px-2 py-3">Localização</th>
+
                                             <th scope="col" className="px-2 py-3">Prioridade</th>
+
                                             <th scope="col" className="px-2 py-3">Status</th>
+
                                             <th scope="col" className="rounded-r-lg px-2 py-3">Ações</th>
 
                                         </tr>
@@ -1194,8 +1232,11 @@ export default function AdminDashboard() {
                     <section className="rounded-2xl border border-[#dfbba9] bg-[#fff9f4]/80 p-4 shadow-sm">
 
                         <h2 className="flex items-center gap-2 border-b border-[#ead3c5] pb-3 font-titulo text-xl font-bold text-[#79221b]">
+
                             <Icone nome="bolt" classe="text-3xl" />
+
                             Ações Rápidas
+
                         </h2>
 
                         <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -1267,8 +1308,11 @@ export default function AdminDashboard() {
                     <section className="rounded-2xl border border-[#dfbba9] bg-[#fff9f4]/80 p-5 shadow-sm">
 
                         <h2 className="flex items-center gap-2 border-b border-[#ead3c5] pb-3 font-titulo text-xl font-bold text-[#79221b]">
+
                             <Icone nome="insights" classe="text-3xl" />
+
                             Resumo dos Últimos 7 Dias
+
                         </h2>
 
                         <p className="mt-3 text-xs text-texto-suave">
@@ -1324,8 +1368,11 @@ export default function AdminDashboard() {
                     <section className="rounded-2xl border border-[#dfbba9] bg-[#fff9f4]/80 p-5 shadow-sm">
 
                         <h2 className="flex items-center gap-2 border-b border-[#ead3c5] pb-3 font-titulo text-xl font-bold text-[#79221b]">
+
                             <Icone nome="donut_large" classe="text-3xl" />
+
                             Distribuição por Status
+
                         </h2>
 
                         <div className="mt-6 space-y-5">
@@ -1365,7 +1412,6 @@ export default function AdminDashboard() {
 
                                     </div>
                                 );
-
                             })}
 
                         </div>
@@ -1383,8 +1429,11 @@ export default function AdminDashboard() {
                     <section className="rounded-2xl border border-[#dfbba9] bg-[#fff9f4]/80 p-5 shadow-sm">
 
                         <h2 className="flex items-center gap-2 font-titulo text-lg font-bold text-[#79221b]">
+
                             <Icone nome="task_alt" classe="text-2xl" />
+
                             Taxa de Resolução
+
                         </h2>
 
                         <div className="mt-6 flex items-center justify-center">
@@ -1402,7 +1451,7 @@ export default function AdminDashboard() {
                                     </strong>
 
                                     <span className="text-xs text-texto-suave">
-                                        Resolvidas
+                                        Concluídas
                                     </span>
 
                                 </div>
@@ -1414,7 +1463,7 @@ export default function AdminDashboard() {
                         <p className="mt-5 text-center text-sm text-texto-suave">
 
                             {statusDisponivel
-                                ? `${numero(indicadores.resolvidas)} de ${numero(indicadores.total)} ocorrências confirmadas como resolvidas.`
+                                ? `${numero(indicadores.concluidas)} de ${numero(indicadores.total)} ocorrências confirmadas como concluídas.`
                                 : 'Indicador indisponível.'}
 
                         </p>
@@ -1434,8 +1483,11 @@ export default function AdminDashboard() {
                     <section className="rounded-2xl border border-[#dfbba9] bg-[#fff9f4]/80 p-5 shadow-sm">
 
                         <h2 className="flex items-center gap-2 font-titulo text-lg font-bold text-[#79221b]">
+
                             <Icone nome="priority_high" classe="text-2xl" />
+
                             Painel de Atenção
+
                         </h2>
 
                         <div className="mt-5 space-y-3">
@@ -1443,13 +1495,15 @@ export default function AdminDashboard() {
                             <div className="flex items-center justify-between rounded-lg bg-[#f5e5d9] p-3">
 
                                 <span className="text-sm">
-                                    Alta prioridade não resolvida
+                                    Alta prioridade não concluída
                                 </span>
 
                                 <strong className="text-xl text-red-700">
+
                                     {prioridadeDisponivel
-                                        ? indicadores.altaPrioridadeNaoResolvida
+                                        ? indicadores.altaPrioridadeNaoConcluida
                                         : '—'}
+
                                 </strong>
 
                             </div>
@@ -1519,8 +1573,11 @@ export default function AdminDashboard() {
                     <section className="rounded-2xl border border-[#dfbba9] bg-[#fff9f4]/80 p-5 shadow-sm">
 
                         <h2 className="flex items-center gap-2 font-titulo text-lg font-bold text-[#79221b]">
+
                             <Icone nome="account_balance_wallet" classe="text-2xl" />
+
                             Orçamentos Institucionais
+
                         </h2>
 
                         <div className="mt-6 rounded-lg bg-[#f5e5d9] p-4">

@@ -24,7 +24,7 @@ import {
 
 // TIPAGENS
 
-type Status = 'Pendente' | 'Em análise' | 'Em andamento' | 'Resolvida' | 'Não informado';
+type Status = 'Pendente' | 'Em análise' | 'Em andamento' | 'Concluído' | 'Não informado';
 
 interface Ocorrencia {
     id: number;
@@ -72,7 +72,7 @@ const statusDisponiveis: Status[] = [
     'Pendente',
     'Em análise',
     'Em andamento',
-    'Resolvida',
+    'Concluído',
     'Não informado',
 ];
 
@@ -94,7 +94,6 @@ function Icone({ nome, classe = '' }: {
     nome: string;
     classe?: string;
 }) {
-
     return (
         <span className={`material-icons ${classe}`} aria-hidden="true">
             {nome}
@@ -125,7 +124,9 @@ function normalizarStatus(status?: string): Status {
 
         case 'resolvida':
         case 'resolvido':
-            return 'Resolvida';
+        case 'concluida':
+        case 'concluido':
+            return 'Concluído';
 
         default:
             return 'Não informado';
@@ -145,7 +146,7 @@ function corStatus(status: Status) {
         Pendente: 'bg-[#f8d8d0] text-[#84261f]',
         'Em análise': 'bg-[#ffe0a5] text-[#704312]',
         'Em andamento': 'bg-[#d7e6f1] text-[#28546d]',
-        Resolvida: 'bg-[#dce9d1] text-[#41642d]',
+        'Concluído': 'bg-[#dce9d1] text-[#41642d]',
         'Não informado': 'bg-[#e5ded8] text-[#74645a]',
     };
 
@@ -202,7 +203,6 @@ function estaNoPeriodo(data: string, periodo: string) {
     const inicio = new Date(hoje);
 
     inicio.setHours(0, 0, 0, 0);
-
     inicio.setDate(hoje.getDate() - Number(periodo) + 1);
 
     return criacao >= inicio && criacao <= hoje;
@@ -593,15 +593,16 @@ export default function MapaOcorrenciasAdmin() {
 
     }, []);
 
-    useEffect(() => {
+        useEffect(() => {
+            const iniciar = window.setTimeout(() => {
+                void carregarOcorrencias();
+            }, 0);
 
-        void carregarOcorrencias();
-
-        return () => {
-            consultaAtual.current += 1;
-        };
-
-    }, [carregarOcorrencias]);
+            return () => {
+                window.clearTimeout(iniciar);
+                consultaAtual.current += 1;
+            };
+        }, [carregarOcorrencias]);
 
     // CATEGORIAS E FILTROS
 
@@ -764,13 +765,8 @@ export default function MapaOcorrenciasAdmin() {
     const podeClassificar = selecionada !== null &&
         selecionada.historicoDisponivel &&
         selecionada.analiseDisponivel &&
-        (
-            selecionada.possuiAnalise ||
-            (
-                selecionada.status !== 'Não informado' &&
-                !!selecionada.dataCriacao
-            )
-        ) &&
+        selecionada.status !== 'Não informado' &&
+        !!converterData(selecionada.dataCriacao) &&
         !carregando &&
         !salvando &&
         !erro;
@@ -1021,11 +1017,8 @@ export default function MapaOcorrenciasAdmin() {
                             <select id="mapa-periodo" value={filtros.periodo} onChange={evento => atualizarFiltro('periodo', evento.target.value)} disabled={salvando} className={campoClasse}>
 
                                 <option value="">Todo o período</option>
-
                                 <option value="7">Últimos 7 dias</option>
-
                                 <option value="30">Últimos 30 dias</option>
-
                                 <option value="90">Últimos 90 dias</option>
 
                             </select>
@@ -1612,14 +1605,14 @@ export default function MapaOcorrenciasAdmin() {
                                         {!podeClassificar && !carregando && !salvando && (
 
                                             <p className="mt-3 text-xs text-primaria">
-                                                É necessário consultar os dados da análise e possuir um histórico válido para realizar a classificação inicial.
+                                                É necessário consultar os dados da análise e possuir um histórico com data e status válidos para alterar a prioridade.
                                             </p>
 
                                         )}
 
                                         {mensagem && (
 
-                                            <p role="status" className={`mt-3 rounded-lg p-3 text-xs font-semibold ${tipoMensagem === 'sucesso' ? 'bg-[#e5efdc] text-[#41642d]' : 'bg-red-50 text-red-700]'}`}>
+                                            <p role="status" className={`mt-3 rounded-lg p-3 text-xs font-semibold ${tipoMensagem === 'sucesso' ? 'bg-[#e5efdc] text-[#41642d]' : 'bg-red-50 text-red-700'}`}>
 
                                                 {mensagem}
 
@@ -1714,7 +1707,9 @@ export default function MapaOcorrenciasAdmin() {
                                     </span>
 
                                     <span className={`rounded-full px-2 py-1 text-xs ${corStatus(ocorrencia.status)}`}>
+
                                         {ocorrencia.status}
+
                                     </span>
 
                                 </div>

@@ -1,10 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+
 import { listarOcorrencias, listarMinhasOcorrencias, obterUsuarioId, type Ocorrencia } from '../../services/ocorrenciaService';
 import { listarHistoricos, listarHistoricosPorOcorrencia, type Historico } from '../../services/historicoService';
 import fundoInicio from '../../img/fundo_inicio.png';
-
 const logoPolieus = '/favicons/logo_polieus3.png';
+
+type Status = 'Pendente' | 'Em análise' | 'Em andamento' | 'Concluído' | 'Não informado';
 
 type Regiao = {
     nome: string;
@@ -32,7 +34,7 @@ type OcorrenciaRecente = {
     descricao: string;
     protocolo: string;
     data: string;
-    status: string;
+    status: Status;
     ordem: number;
 };
 
@@ -47,7 +49,7 @@ const REGIOES: Regiao[] = [
 
 const INDICADORES = [
     { icone: 'groups', nome: 'Ocorrências registradas', chave: 'total' },
-    { icone: 'task_alt', nome: 'Resolvidas', chave: 'resolvidas' },
+    { icone: 'task_alt', nome: 'Concluídas', chave: 'resolvidas' },
     { icone: 'schedule', nome: 'Em análise', chave: 'analise' },
     { icone: 'report_problem', nome: 'Pendentes', chave: 'pendentes' },
 ] as const;
@@ -133,12 +135,12 @@ const CATEGORIAS = [
     },
 ];
 
-const CORES_STATUS: Record<string, string> = {
-    'pendente': 'bg-[#e8ded5] text-[#554238]',
-    'em analise': 'bg-[#ffe0b2] text-[#9b510c]',
-    'em andamento': 'bg-[#f8c9bd] text-[#922c1d]',
-    'resolvida': 'bg-[#dfe8c5] text-[#3e6029]',
-    'resolvido': 'bg-[#dfe8c5] text-[#3e6029]',
+const CORES_STATUS: Record<Status, string> = {
+    'Pendente': 'bg-[#e8ded5] text-[#554238]',
+    'Em análise': 'bg-[#ffe0b2] text-[#9b510c]',
+    'Em andamento': 'bg-[#f8c9bd] text-[#922c1d]',
+    'Concluído': 'bg-[#dfe8c5] text-[#3e6029]',
+    'Não informado': 'bg-[#e8ded5] text-[#554238]',
 };
 
 const ICONES_CATEGORIA: Record<string, string> = {
@@ -165,6 +167,28 @@ function normalizarTexto(texto: string): string {
     return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
+function normalizarStatus(valor?: string | null): Status {
+    switch (normalizarTexto(valor ?? '')) {
+        case 'pendente':
+            return 'Pendente';
+
+        case 'em analise':
+            return 'Em análise';
+
+        case 'em andamento':
+            return 'Em andamento';
+
+        case 'resolvida':
+        case 'resolvido':
+        case 'concluida':
+        case 'concluido':
+            return 'Concluído';
+
+        default:
+            return 'Não informado';
+    }
+}
+
 function converterData(data: string): number {
     if (!data) return 0;
 
@@ -172,6 +196,7 @@ function converterData(data: string): number {
 
     if (partes) {
         const [, dia, mes, ano] = partes;
+
         return new Date(Number(ano), Number(mes) - 1, Number(dia)).getTime();
     }
 
@@ -229,17 +254,17 @@ function calcularIndicadores(ocorrencias: Ocorrencia[], historicos: Historico[])
 
         if (!atual) continue;
 
-        const status = normalizarTexto(atual.status);
+        const status = normalizarStatus(atual.status);
 
-        if (status === 'resolvida' || status === 'resolvido') {
+        if (status === 'Concluído') {
             resultado.resolvidas = (resultado.resolvidas ?? 0) + 1;
         }
 
-        if (status === 'em analise') {
+        if (status === 'Em análise') {
             resultado.analise = (resultado.analise ?? 0) + 1;
         }
 
-        if (status === 'pendente') {
+        if (status === 'Pendente') {
             resultado.pendentes = (resultado.pendentes ?? 0) + 1;
         }
     }
@@ -271,7 +296,6 @@ function BotaoPrincipal({ to, children, icone = 'arrow_forward' }: { to: string;
 function TituloSecao({ detalhe, titulo, descricao }: { detalhe: string; titulo: string; descricao?: string }) {
     return (
         <div className="mb-7">
-
             <p className="mb-2 text-xs font-bold uppercase tracking-widest text-primaria">
                 {detalhe}
             </p>
@@ -285,7 +309,6 @@ function TituloSecao({ detalhe, titulo, descricao }: { detalhe: string; titulo: 
                     {descricao}
                 </p>
             )}
-
         </div>
     );
 }
@@ -341,6 +364,7 @@ function MapaEstadoSP() {
                 </div>
 
                 {/* LEGENDA */}
+
                 <div className="border-t border-[#d6aa90] pt-4 sm:border-l sm:border-t-0 sm:py-4 sm:pl-5">
 
                     <h3 className="mb-4 font-titulo text-sm font-bold text-primaria">
@@ -399,14 +423,17 @@ export default function Inicio() {
     // ==================================================
 
     useEffect(() => {
+
         let ativo = true;
 
         async function carregarIndicadores() {
+
             setCarregandoIndicadores(true);
             setErroIndicadores('');
             setIndicadores(null);
 
             try {
+
                 const ocorrencias = await listarOcorrencias();
 
                 if (!Array.isArray(ocorrencias)) {
@@ -423,6 +450,7 @@ export default function Inicio() {
                 });
 
                 try {
+
                     const historicos = await listarHistoricos();
 
                     if (!Array.isArray(historicos)) {
@@ -434,6 +462,7 @@ export default function Inicio() {
                     }
 
                 } catch (erro) {
+
                     console.error('Erro ao consultar históricos:', erro);
 
                     if (ativo) {
@@ -442,6 +471,7 @@ export default function Inicio() {
                 }
 
             } catch (erro) {
+
                 console.error('Erro ao carregar indicadores:', erro);
 
                 if (ativo) {
@@ -449,7 +479,9 @@ export default function Inicio() {
                 }
 
             } finally {
+
                 if (ativo) setCarregandoIndicadores(false);
+
             }
         }
 
@@ -466,15 +498,18 @@ export default function Inicio() {
     // ==================================================
 
     useEffect(() => {
+
         let ativo = true;
 
         async function carregarOcorrenciasRecentes() {
+
             setCarregandoOcorrencias(true);
             setErroOcorrencias('');
             setAvisoHistoricos('');
             setOcorrenciasRecentes([]);
 
             try {
+
                 const idUsuario = obterUsuarioId();
 
                 if (!idUsuario) {
@@ -500,11 +535,14 @@ export default function Inicio() {
                 }
 
                 const registros = await Promise.all(
+
                     registrosValidos.map(async ocorrencia => {
+
                         let historicos: Historico[] = [];
                         let erroHistorico = false;
 
                         try {
+
                             const resposta = await listarHistoricosPorOcorrencia(ocorrencia.idOcorrencia);
 
                             if (!Array.isArray(resposta)) {
@@ -516,7 +554,9 @@ export default function Inicio() {
                             );
 
                         } catch {
+
                             erroHistorico = true;
+
                         }
 
                         const ordenados = ordenarHistoricos(historicos);
@@ -525,13 +565,14 @@ export default function Inicio() {
 
                         return {
                             erroHistorico,
+
                             ocorrencia: {
                                 id: ocorrencia.idOcorrencia,
                                 categoria: ocorrencia.categoria,
                                 descricao: ocorrencia.descricao,
                                 protocolo: atual?.protocolo || 'Não informado',
                                 data: primeiro?.data || '',
-                                status: atual?.status || 'Não informado',
+                                status: normalizarStatus(atual?.status),
                                 ordem: converterData(primeiro?.data || ''),
                             },
                         };
@@ -544,6 +585,7 @@ export default function Inicio() {
                     .slice(0, 3);
 
                 if (ativo) {
+
                     setOcorrenciasRecentes(recentes);
 
                     if (registros.some(registro => registro.erroHistorico)) {
@@ -552,6 +594,7 @@ export default function Inicio() {
                 }
 
             } catch (erro) {
+
                 console.error('Erro ao consultar ocorrências recentes:', erro);
 
                 if (ativo) {
@@ -559,7 +602,9 @@ export default function Inicio() {
                 }
 
             } finally {
+
                 if (ativo) setCarregandoOcorrencias(false);
+
             }
         }
 
@@ -572,9 +617,11 @@ export default function Inicio() {
     }, [tentativaOcorrencias]);
 
     return (
+
         <main className="min-h-screen w-full min-w-0 flex-1 bg-fundo font-corpo text-texto">
 
             {/* BANNER PRINCIPAL */}
+
             <section className="relative isolate overflow-hidden bg-[#f8eee4]">
 
                 <div className="absolute inset-0 -z-20 bg-cover bg-center" style={{ backgroundImage: `url(${fundoInicio})` }} aria-hidden="true" />
@@ -584,6 +631,7 @@ export default function Inicio() {
                 <div className="mx-auto grid min-h-130 max-w-7xl items-center gap-10 px-6 py-14 lg:grid-cols-[260px_minmax(0,1fr)] lg:px-10 lg:py-20">
 
                     {/* LOGO */}
+
                     <div className="flex items-center justify-center">
 
                         <img src={logoPolieus} alt="Logotipo Polieus" className="w-56 max-w-full object-contain drop-shadow-md sm:w-64 lg:w-72" />
@@ -639,11 +687,13 @@ export default function Inicio() {
             <div className="mx-auto max-w-7xl space-y-14 px-4 py-9 sm:px-8 lg:px-10">
 
                 {/* INDICADORES REAIS DA API */}
+
                 <section aria-label="Indicadores da plataforma" aria-busy={carregandoIndicadores}>
 
                     <div className="grid overflow-hidden rounded-2xl border border-[#e3c5af] bg-[#f0dfd0] shadow-sm sm:grid-cols-2 xl:grid-cols-4">
 
                         {INDICADORES.map(item => (
+
                             <div key={item.nome} className="flex items-center gap-4 border-b border-[#dfbfa8] px-5 py-6 sm:border-r xl:border-b-0">
 
                                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#fff8f1] text-primaria">
@@ -665,9 +715,7 @@ export default function Inicio() {
                                     ) : (
 
                                         <p className="font-titulo text-3xl font-bold text-primaria">
-
                                             {indicadores?.[item.chave]?.toLocaleString('pt-BR') ?? '—'}
-
                                         </p>
 
                                     )}
@@ -679,6 +727,7 @@ export default function Inicio() {
                                 </div>
 
                             </div>
+
                         ))}
 
                     </div>
@@ -714,9 +763,11 @@ export default function Inicio() {
                 </section>
 
                 {/* OCORRÊNCIAS E MAPA */}
+
                 <section className="grid items-stretch gap-7 xl:grid-cols-2">
 
                     {/* ÚLTIMAS OCORRÊNCIAS */}
+
                     <div className="flex flex-col">
 
                         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -829,7 +880,7 @@ export default function Inicio() {
                                                             {ocorrencia.categoria}
                                                         </h3>
 
-                                                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${CORES_STATUS[normalizarTexto(ocorrencia.status)] || 'bg-[#e8ded5] text-[#554238]'}`}>
+                                                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${CORES_STATUS[ocorrencia.status]}`}>
 
                                                             {ocorrencia.status}
 
@@ -874,11 +925,15 @@ export default function Inicio() {
                                     {avisoHistoricos && (
 
                                         <div role="alert" className="mx-5 mt-4 rounded-lg bg-[#f4e8dd] p-3 text-xs text-texto-suave">
+
                                             {avisoHistoricos}
 
                                             <button type="button" onClick={() => setTentativaOcorrencias(atual => atual + 1)} className="ml-2 cursor-pointer font-semibold text-primaria hover:underline">
+
                                                 Tentar novamente
+
                                             </button>
+
                                         </div>
 
                                     )}
@@ -904,6 +959,7 @@ export default function Inicio() {
                     </div>
 
                     {/* MAPA REGIONAL */}
+
                     <div className="flex flex-col rounded-2xl border border-[#e3c5af] bg-[#f0dfd0] p-6 shadow-sm">
 
                         <p className="mb-2 text-xs font-bold uppercase tracking-widest text-primaria">
@@ -937,6 +993,7 @@ export default function Inicio() {
                 </section>
 
                 {/* FUNCIONALIDADES */}
+
                 <section>
 
                     <TituloSecao detalhe="Tudo em um só lugar" titulo="O que você pode fazer no Polieus?" descricao="Conheça as funcionalidades desenvolvidas para facilitar a participação cidadã e o acompanhamento das demandas urbanas." />
@@ -978,6 +1035,7 @@ export default function Inicio() {
                 </section>
 
                 {/* COMO FUNCIONA */}
+
                 <section className="rounded-2xl border border-[#e3c5af] bg-[#f0dfd0] p-6 shadow-sm sm:p-8">
 
                     <TituloSecao detalhe="Simples e acessível" titulo="Como funciona o Polieus?" descricao="Um processo organizado para que cada cidadão possa comunicar situações e acompanhar suas solicitações." />
@@ -1019,6 +1077,7 @@ export default function Inicio() {
                 </section>
 
                 {/* CATEGORIAS */}
+
                 <section>
 
                     <TituloSecao detalhe="Demandas urbanas" titulo="Categorias de Ocorrências" descricao="Os registros são organizados por categorias para facilitar a identificação dos diferentes problemas urbanos." />
@@ -1052,6 +1111,7 @@ export default function Inicio() {
                 </section>
 
                 {/* NOSSO PROPÓSITO */}
+
                 <section className="grid overflow-hidden rounded-2xl border border-[#dfbfa8] bg-[#f1dfd0] shadow-sm lg:grid-cols-2">
 
                     <div className="p-7 sm:p-10">
@@ -1131,6 +1191,7 @@ export default function Inicio() {
                 </section>
 
                 {/* CHAMADA FINAL */}
+
                 <section className="rounded-2xl bg-[#76241e] px-6 py-12 text-center shadow-lg sm:px-10">
 
                     <div className="mb-4 flex justify-center text-white">
@@ -1140,11 +1201,15 @@ export default function Inicio() {
                     </div>
 
                     <h2 className="font-titulo text-2xl font-bold sm:text-3xl" style={{ color: '#ffffff' }}>
+
                         Faça parte da transformação.
+
                     </h2>
 
                     <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 sm:text-base" style={{ color: '#ffffff' }}>
+
                         Sua participação é essencial para a construção de cidades mais justas, transparentes e conectadas. Conheça as ferramentas do Polieus e contribua para essa transformação.
+
                     </p>
 
                     <div className="mt-8 flex flex-wrap items-center justify-center gap-4">

@@ -4,19 +4,27 @@ import { Link } from 'react-router-dom';
 import { listarOcorrencias, type Ocorrencia } from '../../services/ocorrenciaService';
 import { listarHistoricos, type Historico } from '../../services/historicoService';
 
+
 type Periodo = '3' | '6' | '12';
 type Aba = 'indicadores' | 'orcamento';
 
+type StatusOcorrencia =
+    | 'Pendente'
+    | 'Em análise'
+    | 'Em andamento'
+    | 'Concluído'
+    | 'Não informado';
+
 interface OcorrenciaTransparencia extends Ocorrencia {
-    status?: string;
+    status?: StatusOcorrencia;
     data?: string;
-    dataResolucao?: string;
+    dataConclusao?: string;
 }
 
 interface DadosMensais {
     mes: string;
     registradas: number;
-    resolvidas: number;
+    concluidas: number;
 }
 
 interface Categoria {
@@ -36,6 +44,8 @@ interface Intervencao {
     descricao: string;
 }
 
+// CONSTANTES
+
 const CORES_CATEGORIAS = [
     '#638c98',
     '#b3261e',
@@ -47,14 +57,10 @@ const CORES_CATEGORIAS = [
     '#84756a',
 ];
 
-const STATUS_RESOLVIDOS = ['resolvida', 'resolvido'];
-
-const STATUS_NAO_RESOLVIDOS = [
-    'pendente',
-    'em analise',
-    'em andamento',
-    'nao resolvida',
-    'nao resolvido',
+const STATUS_NAO_CONCLUIDOS: StatusOcorrencia[] = [
+    'Pendente',
+    'Em análise',
+    'Em andamento',
 ];
 
 const intervencoes: Intervencao[] = [
@@ -121,6 +127,7 @@ const formatarMoeda = (valor: number) =>
     }).format(valor);
 
 function normalizarTexto(valor?: string) {
+
     return (valor ?? '')
         .trim()
         .normalize('NFD')
@@ -128,7 +135,40 @@ function normalizarTexto(valor?: string) {
         .toLowerCase();
 }
 
+// PADRONIZAÇÃO DOS STATUS
+
+function normalizarStatus(status?: string): StatusOcorrencia {
+
+    const valor = normalizarTexto(status)
+        .replace(/_/g, ' ')
+        .trim();
+
+    switch (valor) {
+
+        case 'pendente':
+            return 'Pendente';
+
+        case 'em analise':
+            return 'Em análise';
+
+        case 'em andamento':
+            return 'Em andamento';
+
+        case 'resolvida':
+        case 'resolvido':
+        case 'concluida':
+        case 'concluido':
+            return 'Concluído';
+
+        default:
+            return 'Não informado';
+    }
+}
+
+// CONVERTER DATA
+
 function converterData(valor?: string): Date | null {
+
     if (!valor) return null;
 
     const brasileira = valor.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
@@ -151,6 +191,8 @@ function converterData(valor?: string): Date | null {
     return data;
 }
 
+// INTEGRAÇÃO DOS HISTÓRICOS
+
 function integrarHistoricos(
     ocorrencias: Ocorrencia[],
     historicos: Historico[]
@@ -159,6 +201,7 @@ function integrarHistoricos(
     const agrupamento = new Map<number, Historico[]>();
 
     historicos.forEach(historico => {
+
         const id = Number(historico.idOcorrencia);
 
         if (!Number.isInteger(id) || id <= 0) return;
@@ -173,18 +216,31 @@ function integrarHistoricos(
     return ocorrencias.map(ocorrencia => {
 
         if (ocorrencia.idOcorrencia === null) {
-            return { ...ocorrencia };
+
+            return {
+                ...ocorrencia,
+                status: 'Não informado',
+            };
         }
 
         const registros = agrupamento.get(ocorrencia.idOcorrencia) ?? [];
 
         if (registros.length === 0) {
-            return { ...ocorrencia };
+
+            return {
+                ...ocorrencia,
+                status: 'Não informado',
+            };
         }
 
-        // Não determinar a ordem cronológica quando existem datas inválidas.
+        // NÃO DETERMINAR A ORDEM QUANDO EXISTEM DATAS INVÁLIDAS
+
         if (registros.some(item => converterData(item.data) === null)) {
-            return { ...ocorrencia };
+
+            return {
+                ...ocorrencia,
+                status: 'Não informado',
+            };
         }
 
         const ordenados = [...registros].sort((a, b) => {
@@ -199,28 +255,32 @@ function integrarHistoricos(
         const primeiroHistorico = ordenados[0];
         const ultimoHistorico = ordenados[ordenados.length - 1];
 
-        let dataResolucao: string | undefined;
+        const statusAtual = normalizarStatus(ultimoHistorico.status);
 
-        // Identifica a data da transição mais recente para o status resolvido.
-        if (STATUS_RESOLVIDOS.includes(normalizarTexto(ultimoHistorico.status))) {
+        let dataConclusao: string | undefined;
+
+        // IDENTIFICAR A DATA DA ÚLTIMA TRANSIÇÃO PARA CONCLUÍDO
+
+        if (statusAtual === 'Concluído') {
 
             for (let indice = ordenados.length - 1; indice >= 0; indice--) {
 
                 const registro = ordenados[indice];
 
-                if (!STATUS_RESOLVIDOS.includes(normalizarTexto(registro.status))) {
+                if (normalizarStatus(registro.status) !== 'Concluído') {
+
                     break;
                 }
 
-                dataResolucao = registro.data;
+                dataConclusao = registro.data;
             }
         }
 
         return {
             ...ocorrencia,
-            status: ultimoHistorico.status,
+            status: statusAtual,
             data: primeiroHistorico.data,
-            dataResolucao,
+            dataConclusao,
         };
     });
 }
@@ -230,12 +290,19 @@ function integrarHistoricos(
 // ==================================================
 
 function DivisorGrego() {
+
     return (
+
         <div className="mt-6 flex max-w-xl items-center gap-4" aria-hidden="true">
+
             <div className="h-px flex-1 bg-[#b77965]" />
+
             <div className="h-2.5 w-2.5 rotate-45 bg-[#78221b]" />
+
             <div className="h-px flex-1 bg-[#d8b9a8]" />
+
         </div>
+
     );
 }
 
@@ -247,7 +314,9 @@ function EstadoGrafico({ mensagem, icone = 'bar_chart' }: {
     mensagem: string;
     icone?: string;
 }) {
+
     return (
+
         <div className="flex min-h-60 flex-col items-center justify-center px-5 py-8 text-center">
 
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f3e5d9]">
@@ -263,6 +332,7 @@ function EstadoGrafico({ mensagem, icone = 'bar_chart' }: {
             </p>
 
         </div>
+
     );
 }
 
@@ -277,6 +347,7 @@ function GraficoCategorias({ categorias }: { categorias: Categoria[] }) {
     );
 
     if (total === 0) {
+
         return <EstadoGrafico mensagem="Nenhuma ocorrência disponível para apresentar a distribuição por categoria." icone="donut_large" />;
     }
 
@@ -293,6 +364,7 @@ function GraficoCategorias({ categorias }: { categorias: Categoria[] }) {
     });
 
     return (
+
         <div className="flex flex-col items-center gap-8 sm:flex-row">
 
             <div className="relative h-48 w-48 shrink-0 rounded-full" style={{ background: `conic-gradient(${partes.join(', ')})` }} role="img" aria-label="Distribuição de ocorrências por categoria">
@@ -322,6 +394,7 @@ function GraficoCategorias({ categorias }: { categorias: Categoria[] }) {
                     });
 
                     return (
+
                         <div key={categoria.nome} className="flex items-center justify-between gap-4">
 
                             <div className="flex items-center gap-2">
@@ -339,12 +412,14 @@ function GraficoCategorias({ categorias }: { categorias: Categoria[] }) {
                             </span>
 
                         </div>
+
                     );
                 })}
 
             </div>
 
         </div>
+
     );
 }
 
@@ -352,12 +427,13 @@ function GraficoCategorias({ categorias }: { categorias: Categoria[] }) {
 // GRÁFICO DE EVOLUÇÃO
 // ==================================================
 
-function GraficoEvolucao({ dados, exibirResolvidas }: {
+function GraficoEvolucao({ dados, exibirConcluidas }: {
     dados: DadosMensais[];
-    exibirResolvidas: boolean;
+    exibirConcluidas: boolean;
 }) {
 
     if (dados.length === 0) {
+
         return <EstadoGrafico mensagem="A evolução mensal estará disponível quando os históricos das ocorrências possuírem datas válidas." icone="show_chart" />;
     }
 
@@ -376,23 +452,26 @@ function GraficoEvolucao({ dados, exibirResolvidas }: {
         1,
         ...dados.flatMap(item => [
             item.registradas,
-            exibirResolvidas ? item.resolvidas : 0,
+            exibirConcluidas ? item.concluidas : 0,
         ])
     );
 
     const limite = Math.ceil(maiorValor / 4) * 4;
 
     function coordenadaX(indice: number) {
+
         return margemEsquerda +
             (indice / Math.max(dados.length - 1, 1)) * larguraUtil;
     }
 
     function coordenadaY(valor: number) {
+
         return margemSuperior + alturaUtil -
             (valor / limite) * alturaUtil;
     }
 
-    function gerarPontos(campo: 'registradas' | 'resolvidas') {
+    function gerarPontos(campo: 'registradas' | 'concluidas') {
+
         return dados.map((item, indice) =>
             `${coordenadaX(indice)},${coordenadaY(item[campo])}`
         ).join(' ');
@@ -401,6 +480,7 @@ function GraficoEvolucao({ dados, exibirResolvidas }: {
     const marcacoes = [0, 0.25, 0.5, 0.75, 1];
 
     return (
+
         <div>
 
             <div className="mb-5 flex flex-wrap gap-5 text-xs">
@@ -413,13 +493,13 @@ function GraficoEvolucao({ dados, exibirResolvidas }: {
 
                 </div>
 
-                {exibirResolvidas && (
+                {exibirConcluidas && (
 
                     <div className="flex items-center gap-2">
 
                         <span className="h-2.5 w-2.5 rounded-full bg-[#d7a17e]" />
 
-                        <span>Resolvidas</span>
+                        <span>Concluídas</span>
 
                     </div>
 
@@ -437,6 +517,7 @@ function GraficoEvolucao({ dados, exibirResolvidas }: {
                         const y = coordenadaY(valor);
 
                         return (
+
                             <g key={marcacao}>
 
                                 <line x1={margemEsquerda} x2={largura - margemDireita} y1={y} y2={y} stroke="#ead8ca" strokeDasharray="4 5" />
@@ -446,14 +527,15 @@ function GraficoEvolucao({ dados, exibirResolvidas }: {
                                 </text>
 
                             </g>
+
                         );
                     })}
 
                     <polyline points={gerarPontos('registradas')} fill="none" stroke="#b3261e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
-                    {exibirResolvidas && (
+                    {exibirConcluidas && (
 
-                        <polyline points={gerarPontos('resolvidas')} fill="none" stroke="#d7a17e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                        <polyline points={gerarPontos('concluidas')} fill="none" stroke="#d7a17e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
                     )}
 
@@ -469,12 +551,12 @@ function GraficoEvolucao({ dados, exibirResolvidas }: {
 
                             </circle>
 
-                            {exibirResolvidas && (
+                            {exibirConcluidas && (
 
-                                <circle cx={coordenadaX(indice)} cy={coordenadaY(item.resolvidas)} r="4" fill="#d7a17e">
+                                <circle cx={coordenadaX(indice)} cy={coordenadaY(item.concluidas)} r="4" fill="#d7a17e">
 
                                     <title>
-                                        {`${item.mes}: ${item.resolvidas} resolvidas`}
+                                        {`${item.mes}: ${item.concluidas} concluídas`}
                                     </title>
 
                                 </circle>
@@ -494,18 +576,19 @@ function GraficoEvolucao({ dados, exibirResolvidas }: {
             </div>
 
             <p className="mt-3 text-xs leading-relaxed text-texto-suave">
-                A evolução considera as datas dos primeiros históricos disponíveis e das ocorrências atualmente resolvidas.
+                A evolução considera as datas dos primeiros históricos disponíveis e das ocorrências atualmente concluídas.
             </p>
 
-            {!exibirResolvidas && (
+            {!exibirConcluidas && (
 
                 <p className="mt-3 text-xs text-texto-suave">
-                    A evolução das resoluções depende da disponibilidade das respectivas datas.
+                    A evolução das conclusões depende da disponibilidade das respectivas datas.
                 </p>
 
             )}
 
         </div>
+
     );
 }
 
@@ -570,6 +653,7 @@ function EstimativaOrcamentaria() {
     ];
 
     return (
+
         <section className="relative space-y-6" aria-label="Estimativa orçamentária">
 
             <div className="rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm sm:p-8">
@@ -785,6 +869,7 @@ function EstimativaOrcamentaria() {
             </div>
 
         </section>
+
     );
 }
 
@@ -796,6 +881,7 @@ export default function Transparencia() {
 
     const [periodo, setPeriodo] = useState<Periodo>('6');
     const [abaAtiva, setAbaAtiva] = useState<Aba>('indicadores');
+    const [hoje] = useState(() => new Date());
 
     const [ocorrencias, setOcorrencias] = useState<OcorrenciaTransparencia[]>([]);
     const [carregando, setCarregando] = useState(true);
@@ -823,18 +909,38 @@ export default function Transparencia() {
 
                 if (!ativo) return;
 
+                if (!Array.isArray(registros)) {
+
+                    throw new Error('Resposta inválida ao consultar ocorrências.');
+                }
+
+                if (registros.length === 0) {
+
+                    setOcorrencias([]);
+
+                    return;
+                }
+
                 let historicos: Historico[] = [];
 
                 try {
 
                     historicos = await listarHistoricos();
 
+                    if (!Array.isArray(historicos)) {
+
+                        historicos = [];
+
+                        throw new Error('Resposta inválida ao consultar históricos.');
+                    }
+
                 } catch (erroHistorico) {
 
                     console.error('Erro ao consultar históricos:', erroHistorico);
 
                     if (ativo) {
-                        setAviso('Não foi possível consultar os históricos. Os indicadores de resolução e evolução podem estar indisponíveis.');
+
+                        setAviso('Não foi possível consultar os históricos. Os indicadores de conclusão e evolução podem estar indisponíveis.');
                     }
                 }
 
@@ -852,6 +958,7 @@ export default function Transparencia() {
                 console.error('Erro ao carregar transparência:', erro);
 
                 if (ativo) {
+
                     setOcorrencias([]);
                     setErro('Não foi possível consultar os indicadores da plataforma.');
                 }
@@ -859,15 +966,16 @@ export default function Transparencia() {
             } finally {
 
                 if (ativo) {
+
                     setCarregando(false);
                 }
-
             }
         }
 
         void carregarDados();
 
         return () => {
+
             ativo = false;
         };
 
@@ -881,22 +989,22 @@ export default function Transparencia() {
 
     const statusDisponiveis = total > 0 && ocorrencias.every(item => {
 
-        const status = normalizarTexto(item.status);
+        const status = normalizarStatus(item.status);
 
-        return STATUS_RESOLVIDOS.includes(status) ||
-            STATUS_NAO_RESOLVIDOS.includes(status);
+        return status === 'Concluído' ||
+            STATUS_NAO_CONCLUIDOS.includes(status);
     });
 
-    const totalResolvidas = ocorrencias.filter(item =>
-        STATUS_RESOLVIDOS.includes(normalizarTexto(item.status))
+    const totalConcluidas = ocorrencias.filter(item =>
+        normalizarStatus(item.status) === 'Concluído'
     ).length;
 
-    const totalNaoResolvidas = ocorrencias.filter(item =>
-        STATUS_NAO_RESOLVIDOS.includes(normalizarTexto(item.status))
+    const totalNaoConcluidas = ocorrencias.filter(item =>
+        STATUS_NAO_CONCLUIDOS.includes(normalizarStatus(item.status))
     ).length;
 
-    const taxaResolucao = total > 0
-        ? Math.round((totalResolvidas / total) * 100)
+    const taxaConclusao = total > 0
+        ? Math.round((totalConcluidas / total) * 100)
         : 0;
 
     const dadosDisponiveis = !carregando && !erro;
@@ -910,23 +1018,23 @@ export default function Transparencia() {
             cor: '#87221b',
         },
         {
-            titulo: 'Resolvidas',
+            titulo: 'Concluídas',
             valor: dadosDisponiveis && (statusDisponiveis || total === 0)
-                ? totalResolvidas.toLocaleString('pt-BR') : '—',
+                ? totalConcluidas.toLocaleString('pt-BR') : '—',
             icone: 'check_circle',
             cor: '#82945a',
         },
         {
-            titulo: 'Não resolvidas',
+            titulo: 'Não concluídas',
             valor: dadosDisponiveis && (statusDisponiveis || total === 0)
-                ? totalNaoResolvidas.toLocaleString('pt-BR') : '—',
+                ? totalNaoConcluidas.toLocaleString('pt-BR') : '—',
             icone: 'schedule',
             cor: '#a33a26',
         },
         {
-            titulo: 'Taxa de resolução',
+            titulo: 'Taxa de conclusão',
             valor: dadosDisponiveis && statusDisponiveis
-                ? `${taxaResolucao}%` : '—',
+                ? `${taxaConclusao}%` : '—',
             icone: 'timer',
             cor: '#87221b',
         },
@@ -975,12 +1083,12 @@ export default function Transparencia() {
     const datasDisponiveis = ocorrencias.length > 0 &&
         ocorrencias.every(item => converterData(item.data) !== null);
 
-    const datasResolucaoDisponiveis = statusDisponiveis &&
+    const datasConclusaoDisponiveis = statusDisponiveis &&
         ocorrencias
             .filter(item =>
-                STATUS_RESOLVIDOS.includes(normalizarTexto(item.status))
+                normalizarStatus(item.status) === 'Concluído'
             )
-            .every(item => converterData(item.dataResolucao) !== null);
+            .every(item => converterData(item.dataConclusao) !== null);
 
     // ==================================================
     // EVOLUÇÃO MENSAL
@@ -990,7 +1098,6 @@ export default function Transparencia() {
 
         if (!datasDisponiveis) return [];
 
-        const hoje = new Date();
         const quantidadeMeses = Number(periodo);
 
         return Array.from({ length: quantidadeMeses }, (_, indice) => {
@@ -1022,22 +1129,24 @@ export default function Transparencia() {
                     mesmoMes(item.data)
                 ).length,
 
-                resolvidas: datasResolucaoDisponiveis
+                concluidas: datasConclusaoDisponiveis
                     ? ocorrencias.filter(item =>
-                        STATUS_RESOLVIDOS.includes(normalizarTexto(item.status)) &&
-                        mesmoMes(item.dataResolucao)
+                        normalizarStatus(item.status) === 'Concluído' &&
+                        mesmoMes(item.dataConclusao)
                     ).length
                     : 0,
             };
 
         });
 
-    }, [periodo, ocorrencias, datasDisponiveis, datasResolucaoDisponiveis]);
+    }, [periodo, ocorrencias, datasDisponiveis, datasConclusaoDisponiveis, hoje]);
 
     return (
+
         <main className="min-h-screen w-full flex-1 bg-fundo font-corpo text-texto">
 
             {/* CABEÇALHO */}
+
             <header className="border-b border-[#d8b9a8] bg-[#fffaf4] px-5 py-5 sm:px-8 lg:px-10">
 
                 <h1 className="font-titulo text-3xl font-bold text-primaria sm:text-4xl">
@@ -1069,6 +1178,7 @@ export default function Transparencia() {
                 <div aria-hidden="true" className="pointer-events-none absolute -right-14 top-22 h-56 w-56 rounded-full border border-[#dfc2ae] opacity-30" />
 
                 {/* APRESENTAÇÃO */}
+
                 <section className="relative mb-8">
 
                     <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[#a34a37]">
@@ -1088,6 +1198,7 @@ export default function Transparencia() {
                 </section>
 
                 {/* ABAS */}
+
                 <div className="relative mb-8 flex flex-wrap gap-3" aria-label="Seções de transparência">
 
                     <button type="button" aria-pressed={abaAtiva === 'indicadores'} onClick={() => setAbaAtiva('indicadores')} className={`flex cursor-pointer items-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold transition-all duration-300 ${
@@ -1096,11 +1207,13 @@ export default function Transparencia() {
                             : 'border-[#dfc2ae] bg-[#fffaf4] text-primaria hover:bg-[#f3e5d9]'
                     }`}>
 
-                        <span className="material-icons text-xl" aria-hidden="true">
+                        <span className={`material-icons text-xl ${abaAtiva === 'indicadores' ? 'text-white' : 'text-primaria'}`} aria-hidden="true">
                             bar_chart
                         </span>
 
-                        Indicadores Gerais
+                        <span className={abaAtiva === 'indicadores' ? 'text-white' : 'text-primaria'}>
+                            Indicadores Gerais
+                        </span>
 
                     </button>
 
@@ -1110,17 +1223,20 @@ export default function Transparencia() {
                             : 'border-[#dfc2ae] bg-[#fffaf4] text-primaria hover:bg-[#f3e5d9]'
                     }`}>
 
-                        <span className="material-icons text-xl" aria-hidden="true">
+                        <span className={`material-icons text-xl ${abaAtiva === 'orcamento' ? 'text-white' : 'text-primaria'}`} aria-hidden="true">
                             account_balance
                         </span>
 
-                        Estimativa Orçamentária
+                        <span className={abaAtiva === 'orcamento' ? 'text-white' : 'text-primaria'}>
+                            Estimativa Orçamentária
+                        </span>
 
                     </button>
 
                 </div>
 
                 {/* INDICADORES GERAIS */}
+
                 {abaAtiva === 'indicadores' && (
 
                     <section aria-label="Indicadores gerais" aria-busy={carregando}>
@@ -1156,6 +1272,7 @@ export default function Transparencia() {
                         </div>
 
                         {/* CARREGAMENTO */}
+
                         {carregando && (
 
                             <div role="status" className="mb-6 flex items-center gap-3 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4 text-sm text-texto-suave">
@@ -1169,6 +1286,7 @@ export default function Transparencia() {
                         )}
 
                         {/* ERRO */}
+
                         {erro && (
 
                             <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-red-200 bg-red-50 p-4">
@@ -1183,8 +1301,12 @@ export default function Transparencia() {
 
                                 </div>
 
-                                <button type="button" onClick={() => setTentativa(atual => atual + 1)} className="cursor-pointer rounded-lg bg-primaria px-4 py-2 text-sm font-semibold text-white">
-                                    Tentar novamente
+                                <button type="button" onClick={() => setTentativa(atual => atual + 1)} className="cursor-pointer rounded-lg bg-primaria px-4 py-2 text-sm font-semibold">
+
+                                    <span className="text-white">
+                                        Tentar novamente
+                                    </span>
+
                                 </button>
 
                             </div>
@@ -1192,6 +1314,7 @@ export default function Transparencia() {
                         )}
 
                         {/* AVISO SOBRE HISTÓRICOS */}
+
                         {!carregando && aviso && (
 
                             <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4">
@@ -1217,6 +1340,7 @@ export default function Transparencia() {
                         )}
 
                         {/* CARDS */}
+
                         <section className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores gerais">
 
                             {indicadores.map(indicador => (
@@ -1258,7 +1382,7 @@ export default function Transparencia() {
                                 </span>
 
                                 <p className="text-sm leading-relaxed text-texto-suave">
-                                    Os indicadores de resolução serão apresentados quando os status de todas as ocorrências estiverem disponíveis.
+                                    Os indicadores de conclusão serão apresentados quando os status de todas as ocorrências estiverem disponíveis.
                                 </p>
 
                             </div>
@@ -1266,6 +1390,7 @@ export default function Transparencia() {
                         )}
 
                         {/* GRÁFICOS */}
+
                         <section className="grid items-stretch gap-6 xl:grid-cols-2" aria-label="Gráficos de transparência">
 
                             <article className="rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm sm:p-7">
@@ -1342,7 +1467,7 @@ export default function Transparencia() {
 
                                 ) : (
 
-                                    <GraficoEvolucao dados={dadosFiltrados} exibirResolvidas={datasResolucaoDisponiveis} />
+                                    <GraficoEvolucao dados={dadosFiltrados} exibirConcluidas={datasConclusaoDisponiveis} />
 
                                 )}
 
@@ -1351,6 +1476,7 @@ export default function Transparencia() {
                         </section>
 
                         {/* INFORMAÇÕES ADICIONAIS */}
+
                         <section className="mt-7 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-6 shadow-sm sm:p-8">
 
                             <div className="flex items-start gap-4">
@@ -1370,7 +1496,7 @@ export default function Transparencia() {
                                     </h3>
 
                                     <p className="mt-2 text-sm leading-relaxed text-texto-suave">
-                                        Esta página reúne indicadores sobre as ocorrências registradas na plataforma, permitindo acompanhar categorias, volumes de solicitações e índices de resolução.
+                                        Esta página reúne indicadores sobre as ocorrências registradas na plataforma, permitindo acompanhar categorias, volumes de solicitações e índices de conclusão.
                                     </p>
 
                                     <p className="mt-3 text-sm leading-relaxed text-texto-suave">
@@ -1396,6 +1522,7 @@ export default function Transparencia() {
                 )}
 
                 {/* ESTIMATIVA ORÇAMENTÁRIA */}
+
                 {abaAtiva === 'orcamento' && (
 
                     <section aria-label="Estimativa orçamentária">
@@ -1425,5 +1552,6 @@ export default function Transparencia() {
             </div>
 
         </main>
+
     );
 }

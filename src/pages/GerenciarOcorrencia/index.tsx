@@ -24,7 +24,7 @@ import {
 
 // TIPAGENS
 
-type StatusOcorrencia = 'Pendente' | 'Em análise' | 'Em andamento' | 'Resolvida' | 'Não informado';
+type StatusOcorrencia = 'Pendente' | 'Em análise' | 'Em andamento' | 'Concluído' | 'Não informado';
 
 type PrioridadeOcorrencia = 'Alta' | 'Média' | 'Baixa';
 
@@ -75,7 +75,7 @@ const statusDisponiveis: StatusOcorrencia[] = [
     'Pendente',
     'Em análise',
     'Em andamento',
-    'Resolvida',
+    'Concluído',
 ];
 
 const prioridades: PrioridadeOcorrencia[] = [
@@ -111,7 +111,6 @@ function normalizarTexto(texto: string) {
 }
 
 function normalizarStatus(valor?: string): StatusOcorrencia {
-
     switch (normalizarTexto(valor ?? '')) {
         case 'pendente':
             return 'Pendente';
@@ -124,7 +123,9 @@ function normalizarStatus(valor?: string): StatusOcorrencia {
 
         case 'resolvida':
         case 'resolvido':
-            return 'Resolvida';
+        case 'concluida':
+        case 'concluido':
+            return 'Concluído';
 
         default:
             return 'Não informado';
@@ -132,7 +133,6 @@ function normalizarStatus(valor?: string): StatusOcorrencia {
 }
 
 function iconeCategoria(categoria: string) {
-
     const icones: Record<string, string> = {
         iluminacao: 'lightbulb_outline',
         'iluminacao publica': 'lightbulb_outline',
@@ -155,13 +155,11 @@ function iconeCategoria(categoria: string) {
 }
 
 function converterData(data: string): Date | null {
-
     if (!data) return null;
 
     const partes = data.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
 
     if (partes) {
-
         const dia = Number(partes[1]);
         const mes = Number(partes[2]);
         const ano = Number(partes[3]);
@@ -178,7 +176,6 @@ function converterData(data: string): Date | null {
     const partesISO = data.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
     if (partesISO) {
-
         const ano = Number(partesISO[1]);
         const mes = Number(partesISO[2]);
         const dia = Number(partesISO[3]);
@@ -198,18 +195,16 @@ function converterData(data: string): Date | null {
 }
 
 function formatarData(data: string) {
-
     return converterData(data)?.toLocaleDateString('pt-BR')
         ?? 'Data indisponível';
 }
 
 function corStatus(status: StatusOcorrencia) {
-
     const cores: Record<StatusOcorrencia, string> = {
         Pendente: 'bg-[#f8d8d0] text-[#84261f]',
         'Em análise': 'bg-[#ffe0a5] text-[#704312]',
         'Em andamento': 'bg-[#d7e6f1] text-[#28546d]',
-        Resolvida: 'bg-[#dce9d1] text-[#41642d]',
+        'Concluído': 'bg-[#dce9d1] text-[#41642d]',
         'Não informado': 'bg-[#e5ded8] text-[#74645a]',
     };
 
@@ -217,7 +212,6 @@ function corStatus(status: StatusOcorrencia) {
 }
 
 function corPrioridade(prioridade: PrioridadeOcorrencia | null) {
-
     if (prioridade === 'Alta') return 'bg-[#b3261e]';
 
     if (prioridade === 'Média') return 'bg-[#e99a3e]';
@@ -228,7 +222,6 @@ function corPrioridade(prioridade: PrioridadeOcorrencia | null) {
 }
 
 function textoPrioridade(ocorrencia: Ocorrencia): string {
-
     if (!ocorrencia.analiseDisponivel) {
         return 'Indisponível';
     }
@@ -237,7 +230,6 @@ function textoPrioridade(ocorrencia: Ocorrencia): string {
 }
 
 function estaNoPeriodo(data: string, periodo: string, referencia: number) {
-
     if (!periodo) return true;
 
     const criacao = converterData(data);
@@ -262,16 +254,13 @@ function Indicador({ icone, titulo, valor, cor }: {
     valor: number | null;
     cor?: string;
 }) {
-
     return (
         <article className="flex items-center gap-4 rounded-xl border border-[#e2c5b5] bg-[#fffaf6]/90 px-5 py-4 shadow-sm">
-
             <div className={`flex h-13 w-13 shrink-0 items-center justify-center rounded-full ${cor ?? 'bg-primaria'} text-white`}>
                 <Icone nome={icone} classe="text-3xl" />
             </div>
 
             <div>
-
                 <p className="font-titulo text-3xl font-bold text-[#75211b]">
                     {valor === null ? '—' : valor.toLocaleString('pt-BR')}
                 </p>
@@ -279,9 +268,7 @@ function Indicador({ icone, titulo, valor, cor }: {
                 <p className="text-sm text-texto-suave">
                     {titulo}
                 </p>
-
             </div>
-
         </article>
     );
 }
@@ -329,7 +316,6 @@ export default function GerenciarOcorrencias() {
         setAviso('');
 
         try {
-
             const registros = await listarOcorrencias();
 
             if (consulta !== consultaAtual.current) return null;
@@ -338,11 +324,8 @@ export default function GerenciarOcorrencias() {
             let analisesDisponiveis = true;
 
             try {
-
                 analises = await listarAnalises();
-
             } catch (erro) {
-
                 analisesDisponiveis = false;
 
                 console.error('Erro ao consultar análises:', erro);
@@ -351,7 +334,6 @@ export default function GerenciarOcorrencias() {
             if (consulta !== consultaAtual.current) return null;
 
             const ocorrenciasFormatadas = await Promise.all(
-
                 registros.map(async (registro): Promise<Ocorrencia | null> => {
 
                     const id = registro.idOcorrencia;
@@ -365,13 +347,10 @@ export default function GerenciarOcorrencias() {
                     let historicoDisponivel = true;
 
                     try {
-
                         historicosOcorrencia = ordenarHistoricos(
                             await listarHistoricosPorOcorrencia(id)
                         );
-
                     } catch (erro) {
-
                         historicoDisponivel = false;
 
                         console.error(`Erro ao consultar histórico da ocorrência ${id}:`, erro);
@@ -390,13 +369,9 @@ export default function GerenciarOcorrencias() {
                     let analiseDisponivel = analisesDisponiveis && historicoDisponivel;
 
                     if (analiseDisponivel) {
-
                         try {
-
                             analise = obterAnalisePorProtocolo(analises, protocolo);
-
                         } catch (erro) {
-
                             analiseDisponivel = false;
 
                             console.error(`Erro ao consultar análise de ${protocolo}:`, erro);
@@ -421,10 +396,9 @@ export default function GerenciarOcorrencias() {
 
                         historico: historicosOcorrencia.map((historico, indice) => ({
                             data: historico.data,
-
                             descricao: indice === 0
-                                ? `Histórico registrado com status: ${historico.status}.`
-                                : `Status atualizado para "${historico.status}".`,
+                                ? `Histórico registrado com status: ${normalizarStatus(historico.status)}.`
+                                : `Status atualizado para "${normalizarStatus(historico.status)}".`,
                         })),
                     };
                 })
@@ -489,15 +463,16 @@ export default function GerenciarOcorrencias() {
 
     }, []);
 
-    useEffect(() => {
+        useEffect(() => {
+            const iniciar = window.setTimeout(() => {
+                void carregarOcorrencias();
+            }, 0);
 
-        void carregarOcorrencias();
-
-        return () => {
-            consultaAtual.current += 1;
-        };
-
-    }, [carregarOcorrencias]);
+            return () => {
+                window.clearTimeout(iniciar);
+                consultaAtual.current += 1;
+            };
+        }, [carregarOcorrencias]);
 
     // CATEGORIAS
 
@@ -506,7 +481,6 @@ export default function GerenciarOcorrencias() {
         const registros = new Map<string, string>();
 
         ocorrencias.forEach(ocorrencia => {
-
             const chave = normalizarTexto(ocorrencia.categoria);
 
             if (!registros.has(chave)) {
@@ -526,8 +500,8 @@ export default function GerenciarOcorrencias() {
 
         total: ocorrencias.length,
 
-        resolvidas: ocorrencias.filter(
-            item => item.status === 'Resolvida'
+        concluidas: ocorrencias.filter(
+            item => item.status === 'Concluído'
         ).length,
 
         analise: ocorrencias.filter(
@@ -560,7 +534,6 @@ export default function GerenciarOcorrencias() {
             ].filter(Boolean).join(' '));
 
             return (
-
                 (!busca || texto.includes(busca)) &&
 
                 (!filtrosAplicados.categoria ||
@@ -650,16 +623,10 @@ export default function GerenciarOcorrencias() {
 
     const bloquearPrioridade = bloquearAtualizacao ||
         !selecionada?.analiseDisponivel ||
-        (
-            !selecionada?.possuiAnalise &&
-            (
-                !selecionada?.dataCriacao ||
-                selecionada?.status === 'Não informado'
-            )
-        );
+        !selecionada?.dataCriacao ||
+        selecionada?.status === 'Não informado';
 
     const atualizarFiltro = (campo: keyof Filtros, valor: string) => {
-
         setFiltros(anterior => ({
             ...anterior,
             [campo]: valor,
@@ -716,7 +683,7 @@ export default function GerenciarOcorrencias() {
             return;
         }
 
-        if (status === 'Não informado') {
+        if (!statusDisponiveis.includes(status)) {
 
             setTipoMensagem('erro');
             setMensagem('Selecione um status válido.');
@@ -780,8 +747,8 @@ export default function GerenciarOcorrencias() {
                 setTipoMensagem('sucesso');
 
                 setMensagem(
-                    status === 'Resolvida'
-                        ? 'Ocorrência resolvida com sucesso.'
+                    status === 'Concluído'
+                        ? 'Ocorrência concluída com sucesso.'
                         : 'Status atualizado com sucesso.'
                 );
 
@@ -983,7 +950,7 @@ export default function GerenciarOcorrencias() {
 
                         <Indicador icone="description" titulo="Total de ocorrências" valor={dadosDisponiveis ? indicadores.total : null} />
 
-                        <Indicador icone="check_circle" titulo="Resolvidas" valor={dadosDisponiveis ? indicadores.resolvidas : null} cor="bg-[#507443]" />
+                        <Indicador icone="check_circle" titulo="Concluídas" valor={dadosDisponiveis ? indicadores.concluidas : null} cor="bg-[#507443]" />
 
                         <Indicador icone="schedule" titulo="Em análise" valor={dadosDisponiveis ? indicadores.analise : null} />
 
@@ -1022,11 +989,8 @@ export default function GerenciarOcorrencias() {
                     </div>
 
                     <form onSubmit={evento => {
-
                         evento.preventDefault();
-
                         aplicarFiltros();
-
                     }} className="grid gap-4 md:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_1fr_1.2fr_auto]">
 
                         {/* BUSCA */}
@@ -1149,9 +1113,9 @@ export default function GerenciarOcorrencias() {
 
                         <button type="submit" disabled={salvando} className={`${botaoPrimario} self-end`}>
 
-                            <Icone nome="filter_alt" classe="text-xl" />
+                            <Icone nome="filter_alt" classe="text-xl text-white" />
 
-                            Filtrar
+                            <span className="text-white">Filtrar</span>
 
                         </button>
 
@@ -1168,7 +1132,9 @@ export default function GerenciarOcorrencias() {
                         <span>{erro}</span>
 
                         <button type="button" onClick={atualizarLista} disabled={salvando || carregando} className={botaoClasse}>
+
                             Tentar novamente
+
                         </button>
 
                     </div>
@@ -1212,10 +1178,8 @@ export default function GerenciarOcorrencias() {
                                 </label>
 
                                 <select id="ordenacao" value={ordenacao} onChange={evento => {
-
                                     setOrdenacao(evento.target.value);
                                     setPagina(1);
-
                                 }} className="rounded-lg border border-[#dec3b2] bg-[#fffaf6] px-2 py-2 text-xs outline-none focus:border-primaria">
 
                                     <option value="recentes">
@@ -1305,13 +1269,17 @@ export default function GerenciarOcorrencias() {
                                             <td className="px-2 py-3">
 
                                                 <span className={`inline-block rounded-full px-2 py-1 text-center text-xs font-medium ${corStatus(ocorrencia.status)}`}>
+
                                                     {ocorrencia.status}
+
                                                 </span>
 
                                             </td>
 
                                             <td className="px-2 py-3">
+
                                                 {formatarData(ocorrencia.dataCriacao)}
+
                                             </td>
 
                                             <td className="px-2 py-3 text-center">
@@ -1341,11 +1309,15 @@ export default function GerenciarOcorrencias() {
                                     <Icone nome="inbox" classe="text-5xl text-[#b88e7a]" />
 
                                     <h3 className="mt-3 font-titulo text-lg font-bold text-[#78221b]">
+
                                         Nenhuma ocorrência encontrada
+
                                     </h3>
 
                                     <p className="mt-2 max-w-md text-sm leading-relaxed text-texto-suave">
+
                                         Ainda não existem ocorrências disponíveis ou nenhuma corresponde aos filtros selecionados.
+
                                     </p>
 
                                 </div>
@@ -1361,11 +1333,15 @@ export default function GerenciarOcorrencias() {
                                     <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#e2c5b5] border-t-primaria" />
 
                                     <p className="text-sm font-semibold text-primaria">
+
                                         Carregando ocorrências...
+
                                     </p>
 
                                     <p className="max-w-sm text-xs leading-relaxed text-texto-suave">
+
                                         Conectando ao servidor. A primeira consulta pode levar alguns instantes.
+
                                     </p>
 
                                 </div>
@@ -1375,7 +1351,9 @@ export default function GerenciarOcorrencias() {
                             {erro && !carregando && (
 
                                 <p className="py-12 text-center text-sm text-texto-suave">
+
                                     Não foi possível carregar os registros.
+
                                 </p>
 
                             )}
@@ -1398,7 +1376,9 @@ export default function GerenciarOcorrencias() {
 
                                     <button key={numeroPagina} type="button" onClick={() => setPagina(numeroPagina)} aria-label={`Página ${numeroPagina}`} aria-current={paginaAtual === numeroPagina ? 'page' : undefined} className={`h-10 min-w-10 cursor-pointer rounded-lg border px-2 text-sm font-semibold ${paginaAtual === numeroPagina ? 'border-primaria bg-primaria text-white' : 'border-[#dec3b2] text-[#78221b] hover:bg-[#f5e9e0]'}`}>
 
-                                        {numeroPagina}
+                                        <span className={paginaAtual === numeroPagina ? 'text-white' : 'text-primaria'}>
+                                            {numeroPagina}
+                                        </span>
 
                                     </button>
 
@@ -1427,11 +1407,15 @@ export default function GerenciarOcorrencias() {
                                 <Icone nome="assignment" classe="text-5xl text-[#b88e7a]" />
 
                                 <h2 className="mt-4 font-titulo text-xl font-bold text-[#78221b]">
+
                                     Detalhes da Ocorrência
+
                                 </h2>
 
                                 <p className="mt-3 max-w-sm text-sm leading-relaxed text-texto-suave">
+
                                     Selecione uma ocorrência na tabela para visualizar suas informações e acompanhar o andamento.
+
                                 </p>
 
                             </div>
@@ -1519,7 +1503,9 @@ export default function GerenciarOcorrencias() {
                                     </h3>
 
                                     <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-texto">
+
                                         {selecionada.descricao || 'Descrição não informada.'}
+
                                     </p>
 
                                 </section>
@@ -1543,7 +1529,9 @@ export default function GerenciarOcorrencias() {
                                         {selecionada.cep && (
 
                                             <span className="block">
+
                                                 CEP: {selecionada.cep}
+
                                             </span>
 
                                         )}
@@ -1565,14 +1553,16 @@ export default function GerenciarOcorrencias() {
                                     </h3>
 
                                     <p className="mt-2 rounded-lg border border-dashed border-[#dec3b2] p-3 text-xs text-texto-suave">
+
                                         Anexos indisponíveis na integração atual.
+
                                     </p>
 
                                 </section>
 
                                 {/* HISTÓRICO */}
 
-                                <section className="mt-5 border-t border-[#ead5c7] pt-5">
+                                <section className="mt-5 border-t border-[#e5cdbd] pt-4">
 
                                     <h3 className="flex items-center gap-2 font-titulo text-lg font-bold text-[#78221b]">
 
@@ -1584,32 +1574,40 @@ export default function GerenciarOcorrencias() {
 
                                     {!selecionada.historicoDisponivel ? (
 
-                                        <p className="mt-3 text-xs text-texto-suave">
-                                            Não foi possível consultar o histórico.
+                                        <p className="mt-3 text-sm text-texto-suave">
+
+                                            Não foi possível consultar o histórico da ocorrência.
+
                                         </p>
 
                                     ) : selecionada.historico.length === 0 ? (
 
-                                        <p className="mt-3 text-xs text-texto-suave">
+                                        <p className="mt-3 text-sm text-texto-suave">
+
                                             Nenhum histórico registrado.
+
                                         </p>
 
                                     ) : (
 
                                         <div className="mt-4 space-y-4">
 
-                                            {[...selecionada.historico].reverse().map((historico, indice) => (
+                                            {selecionada.historico.map((historico, indice) => (
 
-                                                <div key={`${historico.data}-${indice}`} className="relative ml-1 border-l-2 border-[#dec3b2] pl-5">
+                                                <div key={`${historico.data}-${indice}`} className="relative ml-2 border-l-2 border-[#dfc2ae] pl-5 pb-3">
 
-                                                    <span className="absolute -left-1.5 top-1 h-2.5 w-2.5 rounded-full bg-primaria" />
+                                                    <span className="absolute -left-1.5 top-1 h-3 w-3 rounded-full bg-primaria" />
 
                                                     <p className="text-xs font-semibold text-primaria">
+
                                                         {formatarData(historico.data)}
+
                                                     </p>
 
-                                                    <p className="mt-1 text-sm leading-relaxed">
+                                                    <p className="mt-1 text-sm text-texto">
+
                                                         {historico.descricao}
+
                                                     </p>
 
                                                 </div>
@@ -1622,70 +1620,83 @@ export default function GerenciarOcorrencias() {
 
                                 </section>
 
-                                {/* ATUALIZAR STATUS */}
+                                {/* ALTERAR STATUS */}
 
-                                <section className="mt-5 border-t border-[#ead5c7] pt-5">
+                                <section className="mt-5 border-t border-[#e5cdbd] pt-4">
 
                                     <h3 className="flex items-center gap-2 font-titulo text-lg font-bold text-[#78221b]">
 
-                                        <Icone nome="edit_note" classe="text-xl" />
+                                        <Icone nome="published_with_changes" classe="text-xl" />
 
-                                        Atualizar Status
+                                        Alterar Status
 
                                     </h3>
 
-                                    <div className="mt-4 flex items-center justify-between gap-3">
+                                    <div className="mt-3 flex items-center justify-between gap-3">
 
-                                        <span className="text-xs font-semibold text-primaria">
-                                            Status atual
+                                        <span className="text-sm text-texto-suave">
+
+                                            Status atual:
+
                                         </span>
 
                                         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${corStatus(selecionada.status)}`}>
+
                                             {selecionada.status}
+
                                         </span>
 
                                     </div>
 
-                                    <label htmlFor="novo-status" className="mt-4 mb-2 block text-xs font-semibold text-primaria">
-                                        Novo status
+                                    <label htmlFor="novo-status" className="mt-4 mb-2 block text-xs font-semibold text-[#78221b]">
+
+                                        Selecione o novo status
+
                                     </label>
 
-                                    <select id="novo-status" value={novoStatus} onChange={evento => {
-
-                                        setNovoStatus(evento.target.value as StatusOcorrencia);
-                                        setMensagem('');
-
-                                    }} disabled={bloquearAtualizacao} className={campoClasse}>
+                                    <select id="novo-status" value={novoStatus} disabled={bloquearAtualizacao} onChange={evento => setNovoStatus(evento.target.value as StatusOcorrencia)} className={campoClasse}>
 
                                         <option value="Não informado" disabled>
+
                                             Selecione um status
+
                                         </option>
 
                                         {statusDisponiveis.map(status => (
 
                                             <option key={status} value={status}>
+
                                                 {status}
+
                                             </option>
 
                                         ))}
 
                                     </select>
 
-                                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
 
                                         <button type="button" onClick={() => void salvarStatus(novoStatus)} disabled={bloquearAtualizacao || novoStatus === 'Não informado' || novoStatus === selecionada.status} className={botaoPrimario}>
 
-                                            <Icone nome="save" classe="text-xl" />
+                                            <Icone nome="save" classe="text-xl text-white" />
 
-                                            Atualizar Status
+                                            <span className="text-white">
+
+                                                Salvar status
+
+                                            </span>
 
                                         </button>
 
-                                        <button type="button" onClick={() => void salvarStatus('Resolvida')} disabled={bloquearAtualizacao || selecionada.status === 'Resolvida'} className="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#507443] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#416236] disabled:cursor-not-allowed disabled:opacity-50">
+                                        <button type="button" onClick={() => void salvarStatus('Concluído')} disabled={bloquearAtualizacao || selecionada.status === 'Concluído'} className="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#507443] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#41642d] disabled:cursor-not-allowed disabled:opacity-50">
 
-                                            <Icone nome="check_circle" classe="text-xl" />
+                                            <Icone nome="check_circle" classe="text-xl text-white" />
 
-                                            Resolver Ocorrência
+                                            <span className="text-white">
+
+                                                Concluir ocorrência
+
+                                            </span>
 
                                         </button>
 
@@ -1695,7 +1706,7 @@ export default function GerenciarOcorrencias() {
 
                                 {/* ALTERAR PRIORIDADE */}
 
-                                <section className="mt-5 border-t border-[#ead5c7] pt-5">
+                                <section className="mt-5 border-t border-[#e5cdbd] pt-4">
 
                                     <h3 className="flex items-center gap-2 font-titulo text-lg font-bold text-[#78221b]">
 
@@ -1705,48 +1716,31 @@ export default function GerenciarOcorrencias() {
 
                                     </h3>
 
-                                    <p className="mt-2 text-xs leading-relaxed text-texto-suave">
+                                    <p className="mt-2 text-sm text-texto-suave">
+
                                         Classifique a ocorrência de acordo com sua urgência.
+
                                     </p>
 
-                                    <div className="mt-4 flex items-center justify-between gap-3">
-
-                                        <span className="text-xs font-semibold text-primaria">
-                                            Prioridade atual
-                                        </span>
-
-                                        <span className="flex items-center gap-2 text-sm font-semibold">
-
-                                            <span className={`h-3 w-3 rounded-full ${corPrioridade(selecionada.prioridade)}`} />
-
-                                            {textoPrioridade(selecionada)}
-
-                                        </span>
-
-                                    </div>
-
-                                    <div className="mt-4 space-y-2">
+                                    <div className="mt-4 space-y-3">
 
                                         {prioridades.map(prioridade => (
 
-                                            <label key={prioridade} className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${novaPrioridade === prioridade ? 'border-primaria bg-[#f5e9e0]' : 'border-[#ead5c7] hover:bg-[#fbf1e9]'} ${bloquearPrioridade ? 'opacity-60' : ''}`}>
+                                            <label key={prioridade} className={`flex items-center gap-3 rounded-lg border p-3 transition-colors ${bloquearPrioridade ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${novaPrioridade === prioridade ? 'border-primaria bg-[#f5e9e0]' : 'border-[#dec3b2] hover:bg-[#fbf1e9]'}`}>
 
-                                                <input type="radio" name="prioridade-ocorrencia" value={prioridade} checked={novaPrioridade === prioridade} onChange={() => {
-
-                                                    setNovaPrioridade(prioridade);
-                                                    setMensagem('');
-
-                                                }} disabled={bloquearPrioridade} className="h-4 w-4 accent-primaria" />
+                                                <input type="radio" name="prioridade-ocorrencia" value={prioridade} checked={novaPrioridade === prioridade} disabled={bloquearPrioridade} onChange={() => setNovaPrioridade(prioridade)} className="h-4 w-4 shrink-0 accent-primaria" />
 
                                                 <span className={`h-3 w-3 shrink-0 rounded-full ${corPrioridade(prioridade)}`} />
 
                                                 <div>
 
-                                                    <p className="text-sm font-semibold">
+                                                    <p className="text-sm font-bold text-[#78221b]">
+
                                                         {prioridade}
+
                                                     </p>
 
-                                                    <p className="mt-0.5 text-xs text-texto-suave">
+                                                    <p className="mt-1 text-xs text-texto-suave">
 
                                                         {prioridade === 'Alta'
                                                             ? 'Necessita de atenção urgente.'
@@ -1766,16 +1760,22 @@ export default function GerenciarOcorrencias() {
 
                                     <button type="button" onClick={() => void salvarPrioridade()} disabled={bloquearPrioridade || !novaPrioridade || novaPrioridade === selecionada.prioridade} className={`${botaoPrimario} mt-4 w-full`}>
 
-                                        <Icone nome="save" classe="text-xl" />
+                                        <Icone nome="save" classe="text-xl text-white" />
 
-                                        Salvar prioridade
+                                        <span className="text-white">
+
+                                            Salvar prioridade
+
+                                        </span>
 
                                     </button>
 
                                     {bloquearPrioridade && !carregando && !salvando && (
 
                                         <p className="mt-3 text-xs text-texto-suave">
+
                                             É necessário possuir um histórico válido e consultar os dados da análise para classificar a ocorrência.
+
                                         </p>
 
                                     )}
@@ -1821,9 +1821,7 @@ export default function GerenciarOcorrencias() {
                     <p>
 
                         {dadosDisponiveis
-
                             ? `Exibindo ${ocorrenciasFiltradas.length === 0 ? 0 : (paginaAtual - 1) * itensPorPagina + 1} a ${Math.min(paginaAtual * itensPorPagina, ocorrenciasFiltradas.length)} de ${ocorrenciasFiltradas.length} ocorrências`
-
                             : 'Registros temporariamente indisponíveis'}
 
                     </p>
