@@ -31,15 +31,22 @@ interface Categoria {
     cor: string;
 }
 
-interface Intervencao {
-    id: string;
+interface ItemOrcamento {
     nome: string;
-    unidade: string;
-    materiais: number;
-    maoDeObra: number;
-    equipamentos: number;
-    adicionais: number;
+    categoria: 'Material' | 'Mão de obra' | 'Serviço' | 'Outros';
+    quantidade: number;
+    valorUnitario: number;
+}
+
+interface Orcamento {
+    idOcorrencia: number;
+    protocolo: string;
+    categoria: string;
+    titulo: string;
+    localizacao: string;
     descricao: string;
+    observacoes: string;
+    itens: ItemOrcamento[];
 }
 
 // CONSTANTES
@@ -61,56 +68,125 @@ const STATUS_NAO_CONCLUIDOS: StatusOcorrencia[] = [
     'Em andamento',
 ];
 
-const intervencoes: Intervencao[] = [
+// ORÇAMENTOS DEMONSTRATIVOS
+
+const orcamentos: Orcamento[] = [
     {
-        id: 'calcada',
-        nome: 'Reparo de calçada',
-        unidade: 'm²',
-        materiais: 120,
-        maoDeObra: 80,
-        equipamentos: 30,
-        adicionais: 20,
-        descricao: 'Recuperação de calçadas danificadas.',
+        idOcorrencia: 16,
+        protocolo: 'POL-000016',
+        categoria: 'Estrada',
+        titulo: 'Recuperação de via pública',
+        localizacao: 'Rua Domingos Santi, 10',
+        descricao: 'Estimativa para recuperação e manutenção do pavimento da via pública.',
+        observacoes: 'A proposta de intervenção contempla a recuperação do pavimento, a preparação da superfície e a sinalização temporária da área, visando melhorar as condições de circulação e segurança.',
+        itens: [
+            {
+                nome: 'Massa asfáltica',
+                categoria: 'Material',
+                quantidade: 4,
+                valorUnitario: 500,
+            },
+            {
+                nome: 'Materiais complementares',
+                categoria: 'Material',
+                quantidade: 1,
+                valorUnitario: 400,
+            },
+            {
+                nome: 'Equipe de manutenção',
+                categoria: 'Mão de obra',
+                quantidade: 4,
+                valorUnitario: 400,
+            },
+            {
+                nome: 'Serviço de compactação',
+                categoria: 'Serviço',
+                quantidade: 1,
+                valorUnitario: 650,
+            },
+            {
+                nome: 'Sinalização temporária',
+                categoria: 'Outros',
+                quantidade: 1,
+                valorUnitario: 200,
+            },
+        ],
     },
     {
-        id: 'iluminacao',
-        nome: 'Manutenção de iluminação pública',
-        unidade: 'ponto de iluminação',
-        materiais: 350,
-        maoDeObra: 180,
-        equipamentos: 120,
-        adicionais: 50,
-        descricao: 'Substituição ou manutenção de componentes de iluminação.',
+        idOcorrencia: 15,
+        protocolo: 'POL-000015',
+        categoria: 'Limpeza urbana',
+        titulo: 'Limpeza e desobstrução urbana',
+        localizacao: 'Rua Coronel Oliveira Lima, 250',
+        descricao: 'Estimativa para remoção de resíduos e limpeza da área afetada.',
+        observacoes: 'A proposta de intervenção contempla a retirada dos resíduos acumulados, a limpeza do local e a destinação adequada dos materiais recolhidos, contribuindo para a conservação do espaço público.',
+        itens: [
+            {
+                nome: 'Materiais e insumos de limpeza',
+                categoria: 'Material',
+                quantidade: 1,
+                valorUnitario: 200,
+            },
+            {
+                nome: 'Equipe de limpeza urbana',
+                categoria: 'Mão de obra',
+                quantidade: 3,
+                valorUnitario: 150,
+            },
+            {
+                nome: 'Transporte e recolhimento de resíduos',
+                categoria: 'Serviço',
+                quantidade: 1,
+                valorUnitario: 250,
+            },
+            {
+                nome: 'Despesas operacionais',
+                categoria: 'Outros',
+                quantidade: 1,
+                valorUnitario: 80,
+            },
+        ],
     },
     {
-        id: 'buraco',
-        nome: 'Reparo de buracos na via',
-        unidade: 'm²',
-        materiais: 160,
-        maoDeObra: 95,
-        equipamentos: 65,
-        adicionais: 30,
-        descricao: 'Recuperação pontual do pavimento urbano.',
-    },
-    {
-        id: 'saneamento',
-        nome: 'Manutenção de tubulação',
-        unidade: 'metro linear',
-        materiais: 280,
-        maoDeObra: 190,
-        equipamentos: 110,
-        adicionais: 70,
-        descricao: 'Manutenção de trechos de tubulações urbanas.',
-    },
-    {
-        id: 'sinalizacao',
-        nome: 'Manutenção de sinalização',
-        unidade: 'unidade',
-        materiais: 240,
-        maoDeObra: 130,
-        equipamentos: 60,
-        adicionais: 20,
-        descricao: 'Instalação ou recuperação de sinalização viária.',
+        idOcorrencia: 10,
+        protocolo: 'POL-000010',
+        categoria: 'Iluminação',
+        titulo: 'Manutenção da iluminação pública',
+        localizacao: 'Rua Santos do Monte, 250',
+        descricao: 'Estimativa para manutenção dos componentes de iluminação pública.',
+        observacoes: 'A proposta de intervenção contempla a inspeção do ponto de iluminação, a substituição dos componentes necessários e a realização de testes de funcionamento, visando melhorar a visibilidade e a segurança da região.',
+        itens: [
+            {
+                nome: 'Luminária LED',
+                categoria: 'Material',
+                quantidade: 1,
+                valorUnitario: 350,
+            },
+            {
+                nome: 'Componentes elétricos',
+                categoria: 'Material',
+                quantidade: 1,
+                valorUnitario: 100,
+            },
+            {
+                nome: 'Equipe de manutenção elétrica',
+                categoria: 'Mão de obra',
+                quantidade: 2,
+                valorUnitario: 150,
+            },
+            {
+                nome: 'Serviço de instalação e inspeção',
+                categoria: 'Serviço',
+                quantidade: 1,
+                valorUnitario: 150,
+            },
+            {
+                nome: 'Despesas operacionais',
+                categoria: 'Outros',
+                quantidade: 1,
+                valorUnitario: 50,
+            },
+        ],
     },
 ];
 
@@ -446,20 +522,14 @@ function GraficoEvolucao({ dados, exibirConcluidas }: {
             <div className="mb-5 flex flex-wrap gap-x-5 gap-y-3 text-xs text-[#51453e]">
 
                 <div className="flex items-center gap-2">
-
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-primaria" aria-hidden="true" />
-
                     <span>Primeiros registros</span>
-
                 </div>
 
                 {exibirConcluidas && (
                     <div className="flex items-center gap-2">
-
                         <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#d7a17e]" aria-hidden="true" />
-
                         <span>Concluídas</span>
-
                     </div>
                 )}
 
@@ -494,23 +564,20 @@ function GraficoEvolucao({ dados, exibirConcluidas }: {
                     )}
 
                     {dados.map((item, indice) => (
+
                         <g key={`${item.mes}-${indice}`}>
 
                             <circle cx={coordenadaX(indice)} cy={coordenadaY(item.registradas)} r="4" fill="#b3261e">
-
                                 <title>
                                     {`${item.mes}: ${item.registradas} primeiros registros`}
                                 </title>
-
                             </circle>
 
                             {exibirConcluidas && (
                                 <circle cx={coordenadaX(indice)} cy={coordenadaY(item.concluidas)} r="4" fill="#d7a17e">
-
                                     <title>
                                         {`${item.mes}: ${item.concluidas} concluídas`}
                                     </title>
-
                                 </circle>
                             )}
 
@@ -519,6 +586,7 @@ function GraficoEvolucao({ dados, exibirConcluidas }: {
                             </text>
 
                         </g>
+
                     ))}
 
                 </svg>
@@ -540,37 +608,61 @@ function GraficoEvolucao({ dados, exibirConcluidas }: {
 }
 
 // ==================================================
-// ESTIMATIVA ORÇAMENTÁRIA
+// ORÇAMENTOS DAS OCORRÊNCIAS
 // ==================================================
 
-function EstimativaOrcamentaria() {
+function OrcamentosOcorrencias({ ocorrencias }: {
+    ocorrencias: OcorrenciaTransparencia[];
+}) {
 
-    const [intervencaoId, setIntervencaoId] = useState('calcada');
-    const [quantidade, setQuantidade] = useState(10);
+    const [orcamentoSelecionado, setOrcamentoSelecionado] = useState('16');
 
-    const intervencao =
-        intervencoes.find(item => item.id === intervencaoId) ??
-        intervencoes[0];
+    const orcamento =
+        orcamentos.find(item =>
+            String(item.idOcorrencia) === orcamentoSelecionado
+        ) ?? orcamentos[0];
 
-    const quantidadeValida =
-        Number.isFinite(quantidade) && quantidade > 0 ? quantidade : 0;
+    const ocorrencia = ocorrencias.find(item =>
+        item.idOcorrencia === orcamento.idOcorrencia
+    );
+
+    const status = normalizarStatus(ocorrencia?.status);
+
+    const classesStatus: Record<StatusOcorrencia, string> = {
+        'Pendente': 'bg-[#f2e5dc] text-[#87523d]',
+        'Em análise': 'bg-[#ffe0a6] text-[#80551b]',
+        'Em andamento': 'bg-[#d5e8f4] text-[#245b7b]',
+        'Concluído': 'bg-[#dce9d3] text-[#426737]',
+        'Não informado': 'bg-[#eee7df] text-[#665d55]',
+    };
 
     const custos = useMemo(() => {
 
-        const materiais = intervencao.materiais * quantidadeValida;
-        const maoDeObra = intervencao.maoDeObra * quantidadeValida;
-        const equipamentos = intervencao.equipamentos * quantidadeValida;
-        const adicionais = intervencao.adicionais * quantidadeValida;
+        const materiais = orcamento.itens
+            .filter(item => item.categoria === 'Material')
+            .reduce((soma, item) => soma + item.quantidade * item.valorUnitario, 0);
+
+        const maoDeObra = orcamento.itens
+            .filter(item => item.categoria === 'Mão de obra')
+            .reduce((soma, item) => soma + item.quantidade * item.valorUnitario, 0);
+
+        const servicos = orcamento.itens
+            .filter(item => item.categoria === 'Serviço')
+            .reduce((soma, item) => soma + item.quantidade * item.valorUnitario, 0);
+
+        const adicionais = orcamento.itens
+            .filter(item => item.categoria === 'Outros')
+            .reduce((soma, item) => soma + item.quantidade * item.valorUnitario, 0);
 
         return {
             materiais,
             maoDeObra,
-            equipamentos,
+            servicos,
             adicionais,
-            total: materiais + maoDeObra + equipamentos + adicionais,
+            total: materiais + maoDeObra + servicos + adicionais,
         };
 
-    }, [intervencao, quantidadeValida]);
+    }, [orcamento]);
 
     const componentes = [
         {
@@ -583,110 +675,149 @@ function EstimativaOrcamentaria() {
             nome: 'Mão de obra',
             valor: custos.maoDeObra,
             icone: 'engineering',
-            descricao: 'Estimativa dos serviços profissionais.',
+            descricao: 'Custos estimados com profissionais.',
         },
         {
-            nome: 'Equipamentos',
-            valor: custos.equipamentos,
+            nome: 'Serviços',
+            valor: custos.servicos,
             icone: 'construction',
-            descricao: 'Máquinas e ferramentas utilizadas.',
+            descricao: 'Serviços necessários para a intervenção.',
         },
         {
             nome: 'Custos adicionais',
             valor: custos.adicionais,
             icone: 'receipt_long',
-            descricao: 'Outras despesas previstas na simulação.',
+            descricao: 'Outras despesas operacionais previstas.',
         },
     ];
 
     return (
-        <section className="relative w-full min-w-0 space-y-6" aria-label="Estimativa orçamentária">
+        <section className="relative w-full min-w-0 space-y-6" aria-label="Orçamentos demonstrativos das ocorrências">
+
+            {/* SELEÇÃO DA OCORRÊNCIA */}
 
             <div className="min-w-0 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-4 shadow-sm sm:p-8">
 
                 <div className="mb-6 flex items-start gap-3 sm:gap-4">
 
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f3e5d9] text-primaria sm:h-14 sm:w-14">
-
                         <span className="material-icons text-3xl" aria-hidden="true">
-                            calculate
+                            account_balance
                         </span>
-
                     </div>
 
                     <div className="min-w-0">
 
                         <h3 className="font-titulo text-xl font-bold text-[#78221b] sm:text-2xl">
-                            Simulador de Custos
+                            Orçamentos das Ocorrências
                         </h3>
 
                         <p className="mt-2 text-sm leading-relaxed text-[#51453e]">
-                            Selecione uma intervenção urbana e informe a quantidade desejada para visualizar uma estimativa de seus custos.
+                            Selecione uma ocorrência para consultar sua estimativa orçamentária e conhecer os custos previstos para a intervenção urbana.
                         </p>
 
                     </div>
 
                 </div>
 
-                <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2">
+                <div className="min-w-0">
 
-                    <div className="min-w-0">
+                    <label htmlFor="orcamentoOcorrencia" className="mb-2 block text-sm font-semibold text-texto">
+                        Selecione uma ocorrência
+                    </label>
 
-                        <label htmlFor="tipoIntervencao" className="mb-2 block text-sm font-semibold text-texto">
-                            Tipo de intervenção
-                        </label>
+                    <select id="orcamentoOcorrencia" value={orcamentoSelecionado} onChange={event => setOrcamentoSelecionado(event.target.value)} className="w-full min-w-0 max-w-full rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-3 text-sm text-texto outline-none transition-colors focus:border-primaria focus:ring-2 focus:ring-primaria/20">
 
-                        <select id="tipoIntervencao" value={intervencaoId} onChange={event => setIntervencaoId(event.target.value)} className="w-full min-w-0 max-w-full rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-3 text-sm text-texto outline-none transition-colors focus:border-primaria">
+                        {orcamentos.map(item => (
+                            <option key={item.idOcorrencia} value={String(item.idOcorrencia)}>
+                                {item.protocolo} — {item.categoria}
+                            </option>
+                        ))}
 
-                            {intervencoes.map(item => (
-                                <option key={item.id} value={item.id}>
-                                    {item.nome}
-                                </option>
-                            ))}
-
-                        </select>
-
-                    </div>
-
-                    <div className="min-w-0">
-
-                        <label htmlFor="quantidadeIntervencao" className="mb-2 block text-sm font-semibold text-texto">
-                            Quantidade ({intervencao.unidade})
-                        </label>
-
-                        <input id="quantidadeIntervencao" type="number" min="1" max="100000" step="1" value={quantidade || ''} onChange={event => {
-
-                            const valor = Number(event.target.value);
-
-                            setQuantidade(
-                                Number.isFinite(valor)
-                                    ? Math.min(100000, Math.max(0, Math.trunc(valor)))
-                                    : 0
-                            );
-
-                        }} className="w-full min-w-0 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] px-4 py-3 text-sm text-texto outline-none transition-colors focus:border-primaria" />
-
-                    </div>
+                    </select>
 
                 </div>
 
-                <div className="mt-5 flex items-start gap-3 rounded-xl bg-fundo p-4">
+                <div className="mt-6 min-w-0 rounded-xl border border-[#dfc2ae] bg-fundo p-4 sm:p-5" aria-live="polite">
+
+                    <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
+
+                        <h4 className="font-titulo text-lg font-bold text-[#78221b] sm:text-xl">
+                            {orcamento.titulo}
+                        </h4>
+
+                        <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${classesStatus[status]}`}>
+                            {status}
+                        </span>
+
+                    </div>
+
+                    <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+                        <div className="min-w-0">
+
+                            <p className="text-xs font-semibold uppercase tracking-wider text-[#a34c3a]">
+                                Protocolo
+                            </p>
+
+                            <p className="mt-1 wrap-break-word text-sm font-semibold text-texto">
+                                {orcamento.protocolo}
+                            </p>
+
+                        </div>
+
+                        <div className="min-w-0">
+
+                            <p className="text-xs font-semibold uppercase tracking-wider text-[#a34c3a]">
+                                Categoria
+                            </p>
+
+                            <p className="mt-1 wrap-break-word text-sm text-texto">
+                                {orcamento.categoria}
+                            </p>
+
+                        </div>
+
+                        <div className="min-w-0">
+
+                            <p className="text-xs font-semibold uppercase tracking-wider text-[#a34c3a]">
+                                Localização
+                            </p>
+
+                            <p className="mt-1 wrap-break-word text-sm text-texto">
+                                {orcamento.localizacao}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <p className="mt-4 text-sm leading-relaxed text-[#51453e]">
+                        {orcamento.descricao}
+                    </p>
+
+                </div>
+
+                <div className="mt-5 flex items-start gap-3 rounded-xl bg-[#f3e5d9] p-4">
 
                     <span className="material-icons shrink-0 text-xl text-primaria" aria-hidden="true">
                         info
                     </span>
 
                     <p className="min-w-0 text-sm leading-relaxed text-[#51453e]">
-                        {intervencao.descricao} Os valores utilizados nesta simulação são fictícios e servem apenas para demonstrar o funcionamento do cálculo.
+                        Este orçamento possui caráter demonstrativo e apresenta uma estimativa fictícia vinculada à ocorrência selecionada.
                     </p>
 
                 </div>
 
             </div>
 
+            {/* CARDS DOS CUSTOS */}
+
             <div className="grid min-w-0 grid-cols-1 gap-5 sm:grid-cols-2">
 
                 {componentes.map(componente => (
+
                     <article key={componente.nome} className="min-w-0 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
 
                         <div className="mb-4 flex items-center gap-3">
@@ -705,7 +836,7 @@ function EstimativaOrcamentaria() {
 
                         </div>
 
-                        <p className="wrap-break-word font-titulo text-xl font-bold text-texto sm:text-2xl">
+                        <p className="wrap-break-word font-titulo text-xl font-bold text-[#78221b] sm:text-2xl">
                             {formatarMoeda(componente.valor)}
                         </p>
 
@@ -714,9 +845,118 @@ function EstimativaOrcamentaria() {
                         </p>
 
                     </article>
+
                 ))}
 
             </div>
+
+            {/* COMPOSIÇÃO DOS CUSTOS */}
+
+            <div className="min-w-0 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-4 shadow-sm sm:p-7">
+
+                <div className="mb-5 flex min-w-0 items-center gap-3">
+
+                    <span className="material-icons shrink-0 text-2xl text-primaria" aria-hidden="true">
+                        receipt_long
+                    </span>
+
+                    <h3 className="font-titulo text-xl font-bold text-[#78221b]">
+                        Composição dos Custos
+                    </h3>
+
+                </div>
+
+                <p className="mb-5 text-sm leading-relaxed text-[#51453e]">
+                    Consulte os materiais, profissionais, serviços e demais despesas que compõem a estimativa orçamentária.
+                </p>
+
+                <div tabIndex={0} role="region" aria-label="Tabela detalhada dos custos" className="w-full min-w-0 max-w-full overflow-x-auto rounded-xl border border-[#dfc2ae] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primaria">
+
+                    <table className="w-full min-w-160 border-collapse text-left text-sm">
+
+                        <thead className="bg-[#f3e5d9] text-[#78221b]">
+
+                            <tr>
+
+                                <th scope="col" className="px-4 py-4 font-semibold">
+                                    Descrição
+                                </th>
+
+                                <th scope="col" className="px-4 py-4 font-semibold">
+                                    Categoria
+                                </th>
+
+                                <th scope="col" className="px-4 py-4 text-center font-semibold">
+                                    Qtd.
+                                </th>
+
+                                <th scope="col" className="px-4 py-4 text-right font-semibold">
+                                    Valor unitário
+                                </th>
+
+                                <th scope="col" className="px-4 py-4 text-right font-semibold">
+                                    Subtotal
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody className="divide-y divide-[#ead8ca]">
+
+                            {orcamento.itens.map(item => (
+
+                                <tr key={item.nome} className="transition-colors hover:bg-[#f3e5d9]/40">
+
+                                    <td className="px-4 py-4 text-texto">
+                                        {item.nome}
+                                    </td>
+
+                                    <td className="px-4 py-4 text-[#51453e]">
+                                        {item.categoria}
+                                    </td>
+
+                                    <td className="px-4 py-4 text-center text-texto">
+                                        {item.quantidade}
+                                    </td>
+
+                                    <td className="whitespace-nowrap px-4 py-4 text-right text-texto">
+                                        {formatarMoeda(item.valorUnitario)}
+                                    </td>
+
+                                    <td className="whitespace-nowrap px-4 py-4 text-right font-semibold text-[#78221b]">
+                                        {formatarMoeda(item.quantidade * item.valorUnitario)}
+                                    </td>
+
+                                </tr>
+
+                            ))}
+
+                        </tbody>
+
+                        <tfoot className="border-t border-[#dfc2ae] bg-[#f3e5d9]">
+
+                            <tr>
+
+                                <th scope="row" colSpan={4} className="px-4 py-4 text-right font-semibold text-[#78221b]">
+                                    Total estimado
+                                </th>
+
+                                <td className="whitespace-nowrap px-4 py-4 text-right font-bold text-[#78221b]">
+                                    {formatarMoeda(custos.total)}
+                                </td>
+
+                            </tr>
+
+                        </tfoot>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+            {/* CUSTO TOTAL ESTIMADO */}
 
             <div className="min-w-0 rounded-2xl border border-[#b77965] bg-[#f3e5d9] p-5 shadow-sm sm:p-8">
 
@@ -737,7 +977,11 @@ function EstimativaOrcamentaria() {
                         </div>
 
                         <p className="text-sm text-[#51453e]">
-                            {intervencao.nome} — {quantidadeValida} {intervencao.unidade}
+                            {orcamento.titulo}
+                        </p>
+
+                        <p className="mt-1 text-xs text-[#51453e]">
+                            {orcamento.protocolo}
                         </p>
 
                     </div>
@@ -761,6 +1005,7 @@ function EstimativaOrcamentaria() {
                     <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
 
                         {componentes.map(componente => (
+
                             <div key={componente.nome} className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
 
                                 <span className="text-[#51453e]">
@@ -772,6 +1017,7 @@ function EstimativaOrcamentaria() {
                                 </span>
 
                             </div>
+
                         ))}
 
                     </div>
@@ -779,6 +1025,38 @@ function EstimativaOrcamentaria() {
                 </div>
 
             </div>
+
+            {/* OBSERVAÇÕES DEMONSTRATIVAS */}
+
+            <div className="min-w-0 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-5 shadow-sm sm:p-8">
+
+                <div className="flex items-start gap-3 sm:gap-4">
+
+                    <span className="material-icons shrink-0 text-3xl text-primaria" aria-hidden="true">
+                        assignment
+                    </span>
+
+                    <div className="min-w-0">
+
+                        <h3 className="font-titulo text-lg font-bold text-[#78221b]">
+                            Observações da Instituição
+                        </h3>
+
+                        <p className="mt-2 text-xs font-semibold text-[#a34c3a]">
+                            Exemplo demonstrativo
+                        </p>
+
+                        <p className="mt-3 wrap-break-word text-sm leading-relaxed text-[#51453e]">
+                            {orcamento.observacoes}
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            {/* TRANSPARÊNCIA E RESPONSABILIDADE */}
 
             <div className="min-w-0 rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] p-5 sm:p-8">
 
@@ -799,7 +1077,11 @@ function EstimativaOrcamentaria() {
                         </p>
 
                         <p className="mt-3 text-sm leading-relaxed text-[#51453e]">
-                            Este simulador não representa um orçamento oficial, cotação de fornecedores, disponibilidade de recursos públicos ou compromisso de execução. Os valores reais dependerão das características da intervenção e das informações fornecidas pelos órgãos responsáveis.
+                            Os orçamentos disponibilizados nesta seção possuem caráter exclusivamente demonstrativo. Embora estejam associados a ocorrências registradas na plataforma, seus valores, itens e observações são ilustrativos e não representam despesas públicas oficiais, contratos, cotações ou compromissos de execução.
+                        </p>
+
+                        <p className="mt-3 text-sm leading-relaxed text-[#51453e]">
+                            Os valores reais dependerão da avaliação técnica e das informações disponibilizadas pelas instituições responsáveis.
                         </p>
 
                     </div>
@@ -896,6 +1178,7 @@ export default function Transparencia() {
 
                     setOcorrencias([]);
                     setErro('Não foi possível consultar os indicadores da plataforma.');
+
                 }
 
             } finally {
@@ -903,6 +1186,7 @@ export default function Transparencia() {
                 if (ativo) {
                     setCarregando(false);
                 }
+
             }
         }
 
@@ -1069,6 +1353,7 @@ export default function Transparencia() {
                         mesmoMes(item.dataConclusao)
                     ).length
                     : 0,
+
             };
 
         });
@@ -1123,7 +1408,7 @@ export default function Transparencia() {
                     </h2>
 
                     <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#51453e] sm:text-base">
-                        Acompanhe os indicadores gerais do Polieus e explore estimativas orçamentárias de intervenções urbanas.
+                        Acompanhe os indicadores gerais do Polieus e consulte os orçamentos demonstrativos das intervenções urbanas registradas na plataforma.
                     </p>
 
                     <DivisorGrego />
@@ -1161,7 +1446,7 @@ export default function Transparencia() {
                         </span>
 
                         <span className={abaAtiva === 'orcamento' ? 'text-white' : 'text-primaria'}>
-                            Estimativa Orçamentária
+                            Orçamentos das Ocorrências
                         </span>
 
                     </button>
@@ -1454,11 +1739,11 @@ export default function Transparencia() {
 
                 )}
 
-                {/* ESTIMATIVA ORÇAMENTÁRIA */}
+                {/* ORÇAMENTOS DAS OCORRÊNCIAS */}
 
                 {abaAtiva === 'orcamento' && (
 
-                    <section className="w-full min-w-0" aria-label="Estimativa orçamentária">
+                    <section className="w-full min-w-0" aria-label="Orçamentos das ocorrências">
 
                         <div className="mb-7">
 
@@ -1467,16 +1752,16 @@ export default function Transparencia() {
                             </p>
 
                             <h3 className="font-titulo text-2xl font-bold text-[#78221b] sm:text-3xl">
-                                Estimativa de Custos das Intervenções
+                                Transparência Orçamentária
                             </h3>
 
                             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-[#51453e] sm:text-base">
-                                Entenda como diferentes componentes podem influenciar o custo de uma intervenção urbana. Faça uma simulação e acompanhe o resultado detalhado.
+                                Acompanhe as estimativas orçamentárias demonstrativas das intervenções urbanas, consultando a composição dos custos e os valores previstos para cada ocorrência disponibilizada nesta seção.
                             </p>
 
                         </div>
 
-                        <EstimativaOrcamentaria />
+                        <OrcamentosOcorrencias ocorrencias={ocorrencias} />
 
                     </section>
 
