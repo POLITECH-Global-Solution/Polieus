@@ -58,7 +58,7 @@ const router = createBrowserRouter([
                         element: <RegistrarOcorrencia />,
                     },
                     {
-                        path: 'minhas-ocorrencias',
+                        path: 'minhas-ocorrencias/:id?',
                         element: <MinhasOcorrencias />,
                     },
                     {
@@ -95,6 +95,7 @@ const router = createBrowserRouter([
             // ROTAS DO ADMINISTRADOR
             {
                 path: 'admin',
+                element: <RotaProtegida />,
                 children: [
                     {
                         index: true,

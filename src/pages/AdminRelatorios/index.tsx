@@ -765,7 +765,7 @@ export default function RelatoriosAdmin() {
     }
 
     // SALVAR ORÇAMENTO
-    function salvarOrcamento() {
+    function salvarOrcamento(agora: string) {
         if (!validarOrcamento() || !ocorrenciaSelecionada) return;
 
         if (erroArmazenamento) {
@@ -784,7 +784,6 @@ export default function RelatoriosAdmin() {
             orcamento => orcamento.ocorrenciaId === ocorrenciaId
         );
 
-        const agora = new Date().toISOString();
         const novoOrcamento: OrcamentoSalvo = {
             id: existente?.id ?? crypto.randomUUID(),
             ocorrenciaId,
@@ -1499,7 +1498,7 @@ export default function RelatoriosAdmin() {
                                         {mensagem}
                                     </p>
                                 )}
-                                <button type="button" onClick={salvarOrcamento} disabled={!ocorrenciaSelecionada || !dadosDisponiveis || !!erroArmazenamento} className={`${botaoPrimario} mt-5 w-full print:hidden`}>
+                                <button type="button" onClick={() => salvarOrcamento(new Date().toISOString())} disabled={!ocorrenciaSelecionada || !dadosDisponiveis || !!erroArmazenamento} className={`${botaoPrimario} mt-5 w-full print:hidden`}>
                                     <Icone nome="save" classe="text-xl text-white" />
                                     <span className="text-white">
                                         {orcamentoEditandoId

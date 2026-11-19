@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { listarMinhasOcorrencias, obterUsuarioId } from '../../services/ocorrenciaService';
 
 import {
@@ -165,6 +165,7 @@ function formatarData(data?: string): string {
 // PÁGINA MINHAS OCORRÊNCIAS
 export default function MinhasOcorrencias() {
     const navigate = useNavigate();
+    const { id } = useParams<{ id: string }>();
 
     const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
     const [carregando, setCarregando] = useState(true);
@@ -180,8 +181,13 @@ export default function MinhasOcorrencias() {
 
     const [paginaAtual, setPaginaAtual] = useState(1);
 
-    const [ocorrenciaSelecionada, setOcorrenciaSelecionada] = useState<Ocorrencia | null>(null);
+    const idOcorrencia = id && /^\d+$/.test(id) ? Number(id) : null;
+    const ocorrenciaSelecionada = ocorrencias.find(item => item.id === idOcorrencia) ?? null;
+    const ocorrenciaIndisponivel = id !== undefined && !carregando && !erro && !ocorrenciaSelecionada;
 
+    function fecharDetalhes() {
+        navigate('/minhas-ocorrencias', { replace: true });
+    }
 
     useEffect(() => {
         const idUsuario = obterUsuarioId();
@@ -196,7 +202,6 @@ export default function MinhasOcorrencias() {
             setCarregando(true);
             setErro('');
             setOcorrencias([]);
-            setOcorrenciaSelecionada(null);
 
             try {
                 // CONSULTAR SOMENTE AS OCORRÊNCIAS DO USUÁRIO
@@ -407,7 +412,7 @@ export default function MinhasOcorrencias() {
 
         const fecharComEscape = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
-                setOcorrenciaSelecionada(null);
+                navigate('/minhas-ocorrencias', { replace: true });
             }
         };
 
@@ -416,7 +421,7 @@ export default function MinhasOcorrencias() {
         return () => {
             document.removeEventListener('keydown', fecharComEscape);
         };
-    }, [ocorrenciaSelecionada]);
+    }, [ocorrenciaSelecionada, navigate]);
 
     // ATUALIZAR BUSCA
     function atualizarBusca(valor: string) {
@@ -531,7 +536,7 @@ export default function MinhasOcorrencias() {
                     <div id="painel-filtros-ocorrencias" hidden={!mostrarFiltros}>
                         {mostrarFiltros && (
                             <div className="mt-3 grid min-w-0 grid-cols-1 gap-4 rounded-xl border border-[#dfc2ae] bg-[#fffaf4] p-4 shadow-sm sm:grid-cols-2 sm:p-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-                                
+
                                 {/* FILTRO STATUS */}
                                 <div className="min-w-0">
                                     <label htmlFor="filtro-status" className="mb-2 block text-sm font-semibold text-[#78221b]">
@@ -546,7 +551,7 @@ export default function MinhasOcorrencias() {
                                         <option value="Não informado">Não informado</option>
                                     </select>
                                 </div>
-                                
+
                                 {/* FILTRO CATEGORIA */}
                                 <div className="min-w-0">
                                     <label htmlFor="filtro-categoria" className="mb-2 block text-sm font-semibold text-[#78221b]">
@@ -602,6 +607,15 @@ export default function MinhasOcorrencias() {
                     </div>
                 )}
 
+                {ocorrenciaIndisponivel && (
+                    <div role="alert" className="mb-5 rounded-xl border border-[#dfc2ae] bg-[#fff7ee] p-4 text-sm text-[#51453e]">
+                        <p>Ocorrência não encontrada ou indisponível para este usuário.</p>
+                        <button type="button" onClick={fecharDetalhes} className={`mt-3 cursor-pointer font-semibold text-primaria hover:underline ${focoClasse}`}>
+                            Voltar para minhas ocorrências
+                        </button>
+                    </div>
+                )}
+
                 {/* HISTÓRICO DE OCORRÊNCIAS */}
                 <section className="w-full min-w-0" aria-label="Histórico das minhas ocorrências" aria-busy={carregando}>
                     <div className="w-full min-w-0 overflow-hidden rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] shadow-sm">
@@ -621,7 +635,7 @@ export default function MinhasOcorrencias() {
                                 <tbody>
                                     {!carregando && !erro && ocorrenciasPagina.map(ocorrencia => (
                                         <tr key={ocorrencia.id} className="border-t border-[#ead7c9] transition-colors hover:bg-[#f9eee5]">
-                                            
+
                                             {/* PROTOCOLO */}
                                             <td className="whitespace-nowrap px-4 py-5 text-sm font-semibold text-[#78221b]">
                                                 {ocorrencia.protocolo}
@@ -663,7 +677,7 @@ export default function MinhasOcorrencias() {
 
                                             {/* AÇÕES */}
                                             <td className="px-4 py-5 text-center">
-                                                <button type="button" onClick={() => setOcorrenciaSelecionada(ocorrencia)} aria-label={`Visualizar ocorrência ${ocorrencia.protocolo}`} title="Ver detalhes" className={`inline-flex h-11 w-12 cursor-pointer items-center justify-center rounded-full border border-[#dfc2ae] text-[#78221b] transition-all hover:border-primaria hover:bg-[#f0dfd4] ${focoClasse}`}>
+                                                <button type="button" onClick={() => navigate(`/minhas-ocorrencias/${ocorrencia.id}`)} aria-label={`Visualizar ocorrência ${ocorrencia.protocolo}`} title="Ver detalhes" className={`inline-flex h-11 w-12 cursor-pointer items-center justify-center rounded-full border border-[#dfc2ae] text-[#78221b] transition-all hover:border-primaria hover:bg-[#f0dfd4] ${focoClasse}`}>
                                                     <Icone nome="visibility" classe="text-xl" />
                                                 </button>
                                             </td>
@@ -769,7 +783,7 @@ export default function MinhasOcorrencias() {
             {ocorrenciaSelecionada && (
                 <div className="fixed inset-0 z-1000 flex items-center justify-center bg-black/60 p-3 sm:p-4" onMouseDown={event => {
                     if (event.target === event.currentTarget) {
-                        setOcorrenciaSelecionada(null);
+                        fecharDetalhes();
                     }
                 }}>
                     <section role="dialog" aria-modal="true" aria-labelledby="titulo-detalhes-ocorrencia" className="flex max-h-[calc(100dvh-24px)] w-full min-w-0 max-w-xl flex-col overflow-hidden rounded-2xl border border-[#dfc2ae] bg-[#fffaf4] shadow-2xl sm:max-h-[calc(100dvh-32px)]">
@@ -784,7 +798,7 @@ export default function MinhasOcorrencias() {
                                     </span>
                                 </h2>
                             </div>
-                            <button type="button" onClick={() => setOcorrenciaSelecionada(null)} aria-label="Fechar detalhes" autoFocus className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                            <button type="button" onClick={fecharDetalhes} aria-label="Fechar detalhes" autoFocus className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-colors hover:bg-white/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
                                 <Icone nome="close" classe="text-white" />
                             </button>
                         </div>
@@ -962,7 +976,7 @@ export default function MinhasOcorrencias() {
 
                         {/* RODAPÉ DO MODAL */}
                         <div className="flex shrink-0 justify-end border-t border-[#ead7c9] bg-[#fffaf4] px-4 py-4 sm:px-6">
-                            <button type="button" onClick={() => setOcorrenciaSelecionada(null)} className={`w-full cursor-pointer rounded-full bg-primaria px-6 py-3 text-sm font-semibold transition-colors hover:bg-primaria-hover sm:w-auto ${focoClasse}`}>
+                            <button type="button" onClick={fecharDetalhes} className={`w-full cursor-pointer rounded-full bg-primaria px-6 py-3 text-sm font-semibold transition-colors hover:bg-primaria-hover sm:w-auto ${focoClasse}`}>
                                 <span className="text-white">
                                     Fechar
                                 </span>
