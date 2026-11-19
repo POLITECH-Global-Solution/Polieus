@@ -1,28 +1,46 @@
-<p align="center">
-  <img src="./public/favicons/logo_polieus.png" width="180" alt="Logo do Polieus">
-</p>
+<div align="center">
+  <img src="./public/favicons/banner-polieus.svg" width="100%" alt="Polieus — Gestão urbana e participação cidadã" />
+  <br />
+  <img src="./public/favicons/logo_polieus.png" width="180" alt="Logo do Polieus" />
+  <h1>POLIEUS — Plataforma de Gestão Urbana e Participação Cidadã</h1>
+  <p><strong>Tecnologia a serviço da cidadania, da acessibilidade e da transparência pública.</strong></p>
+  <p>
+    <strong>Global Solution 2026/2 — CitizenTech</strong><br />
+    FIAP | Análise e Desenvolvimento de Sistemas | Equipe Politech | Turma 1TDSPH
+  </p>
+  <a href="https://polieus.vercel.app"><img src="https://img.shields.io/badge/ACESSAR_PLATAFORMA-78221B?style=for-the-badge&logo=vercel&logoColor=white" alt="Acessar plataforma" /></a>
+  <a href="https://youtu.be/-4d9iyXf3pM"><img src="https://img.shields.io/badge/ASSISTIR_APRESENTAÇÃO-78221B?style=for-the-badge&logo=youtube&logoColor=white" alt="Assistir apresentação" /></a>
+  <br /><br />
+  <img src="https://img.shields.io/badge/React-EAD8C6?style=flat-square&logo=react&logoColor=78221B" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-EAD8C6?style=flat-square&logo=typescript&logoColor=78221B" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Vite-EAD8C6?style=flat-square&logo=vite&logoColor=78221B" alt="Vite" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-EAD8C6?style=flat-square&logo=tailwindcss&logoColor=78221B" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Java_REST_API-EAD8C6?style=flat-square&logo=openjdk&logoColor=78221B" alt="Java REST API" />
+  <img src="https://img.shields.io/badge/Leaflet-EAD8C6?style=flat-square&logo=leaflet&logoColor=78221B" alt="Leaflet" />
+  <img src="https://img.shields.io/badge/Oxlint-EAD8C6?style=flat-square&logo=oxc&logoColor=78221B" alt="Oxlint" />
+</div>
 
-<h1 align="center">POLIEUS — Plataforma de Gestão Urbana e Participação Cidadã</h1>
+---
 
-<p align="center">
-  <strong>Tecnologia a serviço da cidadania, da acessibilidade e da transparência pública.</strong>
-</p>
+## Índice
 
-<p align="center">
-  <img src="https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React">
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite">
-  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
-</p>
-
-<p align="center">
-  <strong>Global Solution 2026/2 — CitizenTech</strong><br>
-  FIAP | Análise e Desenvolvimento de Sistemas | Equipe Politech | Turma 1TDSPH
-</p>
-
-<p align="center">
-  <a href="https://polieus.vercel.app"><strong>Acessar o Polieus na Vercel</strong></a>
-</p>
+- [Descrição do Projeto](#descrição-do-projeto)
+- [Objetivo](#objetivo)
+- [Principais Funcionalidades](#principais-funcionalidades)
+- [Tecnologias Utilizadas](#tecnologias-utilizadas)
+- [Rotas da Aplicação](#rotas-da-aplicação)
+- [Estrutura de Pastas](#estrutura-de-pastas)
+- [Imagens e Identidade Visual](#imagens-e-identidade-visual)
+- [Integração com a API Java](#integração-com-a-api-java)
+- [Links do Projeto](#links-do-projeto)
+- [Vídeo de Apresentação](#vídeo-de-apresentação)
+- [Acesso para Avaliação Acadêmica](#acesso-para-avaliação-acadêmica)
+- [Como Executar Localmente](#como-executar-localmente)
+- [Scripts Disponíveis](#scripts-disponíveis)
+- [Deploy na Vercel](#deploy-na-vercel)
+- [Impacto Social](#impacto-social)
+- [Contato](#-contato)
+- [Integrantes & Autores](#-integrantes--autores)
 
 ---
 
@@ -56,162 +74,33 @@ A solução busca:
 
 ---
 
-## Tecnologias Utilizadas
-
-O front-end do Polieus utiliza **React, TypeScript, Vite e Tailwind CSS**, além de bibliotecas para navegação, formulários e mapas.
-
-### React e TypeScript
-
-O React organiza a interface em páginas e componentes reutilizáveis. O TypeScript acrescenta tipagem estática e auxilia na manutenção do código.
-
-### Vite
-
-Ferramenta utilizada para executar o ambiente de desenvolvimento e gerar a versão de produção da aplicação.
-
-### Tailwind CSS
-
-Utilizado para a estilização da interface e adaptação a diferentes tamanhos de tela.
-
-### React Router DOM
-
-Responsável pela navegação entre as páginas, com as rotas centralizadas em `src/main.tsx`.
-
-**Rotas públicas e do cidadão:**
-
-- `/` — escolha da área de acesso;
-- `/login-usuario` — acesso e cadastro do cidadão;
-- `/login-admin` — acesso e cadastro administrativo;
-- `/inicio` — página inicial da plataforma;
-- `/registrar-ocorrencia` — formulário de registro;
-- `/minhas-ocorrencias` — acompanhamento de solicitações;
-- `/mapa-ocorrencias` — mapa de ocorrências;
-- `/transparencia` — indicadores e informações de transparência;
-- `/perfil` — perfil do cidadão;
-- `/sobre`, `/integrantes`, `/faq`, `/contato` — páginas institucionais.
-
-**Rotas administrativas:**
-
-- `/admin` e `/admin/dashboard` — painel administrativo;
-- `/admin/gerenciar-ocorrencias` — gerenciamento de ocorrências;
-- `/admin/mapa-ocorrencias` — mapa administrativo;
-- `/admin/relatorios` — relatórios e indicadores;
-- `/admin/perfil` — perfil administrativo;
-- `/admin/sobre`, `/admin/integrantes`, `/admin/faq`, `/admin/contato` — páginas institucionais na navegação administrativa.
-
-Outros endereços são direcionados à página de erro da aplicação.
-
-### React Hook Form
-
-Biblioteca presente no projeto para auxiliar no gerenciamento e validação de formulários, incluindo a página de contato.
-
-### Leaflet e React Leaflet
-
-Bibliotecas utilizadas na construção e apresentação dos mapas interativos da plataforma.
-
-### Fetch API e variáveis de ambiente
-
-A aplicação está preparada para consumir uma API REST Java por meio do endereço base definido em `VITE_API_URL`. **As chamadas de negócio aos endpoints ainda serão implementadas após a disponibilização dos contratos da API.**
-
-### Oxlint
-
-Ferramenta usada para a análise estática do código por meio de `npm run lint`.
-
----
-
-## 📁 Estrutura de Pastas
-
-A estrutura está organizada por componentes, páginas, imagens e serviços. As páginas abaixo já existem no repositório do front-end; isso **não significa que todas as operações estejam integradas à API**.
-
-```text
-Polieus/
-├── public/
-│   └── favicons/
-│       ├── logo_polieus.png
-│       ├── logo_polieus2.png
-│       └── logo_polieus3.png
-│
-├── src/
-│   ├── components/
-│   │   ├── Botao/                  # Botão reutilizável
-│   │   ├── Cabecalho/              # Menu lateral e navegação
-│   │   ├── Card/                   # Cards reutilizáveis
-│   │   ├── Mapa/                   # Componente de mapa
-│   │   └── Rodape/                 # Rodapé da aplicação
-│   │
-│   ├── img/                        # Fotos dos integrantes e imagens da interface
-│   │
-│   ├── pages/
-│   │   ├── Acesso/                 # Escolha entre cidadão e administrador
-│   │   ├── AdminDashboard/        # Painel administrativo
-│   │   ├── AdminMapaOcorrencias/  # Mapa da área administrativa
-│   │   ├── AdminPerfil/           # Perfil administrativo
-│   │   ├── AdminRelatorios/       # Relatórios administrativos
-│   │   ├── Contato/               # Formulário de contato
-│   │   ├── Error/                 # Página de erro
-│   │   ├── FAQ/                   # Perguntas frequentes
-│   │   ├── GerenciarOcorrencia/   # Gestão de ocorrências
-│   │   ├── Inicio/                # Página inicial interna
-│   │   ├── Integrantes/           # Apresentação da equipe
-│   │   ├── LoginAdministrador/    # Login/cadastro administrativo
-│   │   ├── LoginUsuario/          # Login/cadastro do cidadão
-│   │   ├── MapaOcorrencias/       # Mapa do cidadão
-│   │   ├── MinhasOcorrencias/     # Histórico e acompanhamento
-│   │   ├── Perfil/                # Perfil do cidadão
-│   │   ├── RegistrarOcorrencia/   # Registro de ocorrência
-│   │   ├── Sobre/                 # Informações sobre o projeto
-│   │   └── Transparencia/         # Indicadores e transparência
-│   │
-│   ├── services/
-│   │   └── api.ts                 # URL base da API e fallback para o Render
-│   │
-│   ├── App.tsx                    # Layout compartilhado
-│   ├── globals.css               # Estilos globais
-│   └── main.tsx                   # Inicialização e rotas
-│
-├── .env.example                   # Exemplo das variáveis de ambiente
-├── .gitignore                     # Regras de arquivos ignorados
-├── .oxlintrc.json                 # Configuração do Oxlint
-├── index.html                     # HTML de entrada
-├── package.json                   # Dependências e scripts
-├── package-lock.json              # Versões das dependências
-├── README.md                      # Documentação
-├── tsconfig.app.json              # Configuração TypeScript da aplicação
-├── tsconfig.json                  # Configuração geral do TypeScript
-├── tsconfig.node.json             # Configuração TypeScript para o Node
-├── vercel.json                    # Rewrite para as rotas SPA na Vercel
-└── vite.config.ts                 # Configuração do Vite
-```
-
-Os arquivos de cada página estão organizados em `src/pages/<NomeDaPagina>/index.tsx`.
-
----
-
-## Imagens e Identidade Visual
-
-A identidade visual do Polieus combina referências à arquitetura grega com tons de vermelho, vinho e bege. Os arquivos de logo encontram-se em [`public/favicons/`](./public/favicons/), e os fundos e as fotografias da equipe estão em [`src/img/`](./src/img/).
-
----
-
 ## Principais Funcionalidades
 
 ### Área do Cidadão
 
-- **Escolha de acesso:** entrada para os fluxos de cidadão e administrador.
-- **Login e cadastro:** formulários com validações de interface; autenticação efetiva depende da integração posterior.
-- **Início:** apresentação dos recursos da plataforma e atalhos de navegação.
-- **Registrar Ocorrência:** formulário em etapas com descrição, endereço e opção de fotografia. O envio à API Java ainda está pendente.
-- **Minhas Ocorrências:** tela preparada para consulta, filtros e acompanhamento; a lista aguarda os dados do back-end.
-- **Mapa de Ocorrências:** visualização interativa preparada para receber ocorrências e localizações reais.
-- **Transparência:** indicadores e estimativas apresentados atualmente com dados demonstrativos.
-- **Perfil:** visualização das informações do cidadão, com integração futura à autenticação e aos dados persistidos.
+| Funcionalidade | Descrição |
+| --- | --- |
+| Escolha de acesso | Entrada para os fluxos de cidadão e administrador. |
+| Login e cadastro | Autenticação e registro de cidadãos, com validação dos formulários e integração com o back-end. |
+| Início | Apresentação dos recursos da plataforma, indicadores e atalhos de navegação. |
+| Registrar Ocorrência | Registro de problemas urbanos com informações de categoria, descrição e localização. |
+| Minhas Ocorrências | Consulta, filtragem, histórico e acompanhamento das ocorrências registradas pelo cidadão. |
+| Detalhes da Ocorrência | Visualização individual de uma ocorrência por meio de uma rota dinâmica. |
+| Mapa de Ocorrências | Visualização geográfica interativa das ocorrências urbanas. |
+| Transparência | Indicadores públicos e estimativas orçamentárias demonstrativas. |
+| Perfil | Visualização e gerenciamento das informações pessoais do cidadão. |
 
 ### Área Administrativa
 
-- **Dashboard:** visão geral e indicadores das ocorrências.
-- **Gerenciar Ocorrências:** interface para consulta, filtragem, prioridade e atualização de status; há recursos locais de demonstração que precisarão ser conectados à API.
-- **Mapa Administrativo:** visualização territorial voltada ao acompanhamento das demandas.
-- **Relatórios:** gráficos, análises e informações orçamentárias; parte dos dados e registros ainda utiliza armazenamento local ou conteúdo demonstrativo.
-- **Perfil Administrativo:** exibição de dados administrativos atualmente baseada em informações locais da aplicação.
+| Funcionalidade | Descrição |
+| --- | --- |
+| Login e cadastro administrativo | Acesso à área administrativa mediante autenticação e código de convite para cadastro. |
+| Dashboard | Visão geral e indicadores para acompanhamento das ocorrências. |
+| Gerenciar Ocorrências | Consulta, filtragem, análise, classificação de prioridades e atualização de status. |
+| Mapa Administrativo | Visualização territorial voltada ao acompanhamento das demandas urbanas. |
+| Relatórios | Gráficos, filtros, análises e indicadores administrativos. |
+| Orçamentos Institucionais | Elaboração, edição, exclusão e impressão de estimativas orçamentárias armazenadas localmente. |
+| Perfil Administrativo | Visualização e gerenciamento das informações administrativas. |
 
 ### Páginas Institucionais
 
@@ -219,105 +108,462 @@ As páginas **Sobre**, **Integrantes**, **FAQ** e **Contato** apresentam informa
 
 ---
 
-## Integração com a API Java
+## Tecnologias Utilizadas
 
-A integração foi estruturada tomando como referência o padrão de serviços utilizado no projeto MoveUP, mas **os endpoints, tipos de dados e regras de negócio serão próprios do Polieus**.
+O front-end do Polieus utiliza **React, TypeScript, Vite e Tailwind CSS**, além de bibliotecas para navegação, formulários e mapas.
 
-### Situação atual
+| Tecnologia | Finalidade |
+| --- | --- |
+| React | Desenvolvimento de uma Single Page Application (SPA), com páginas e componentes reutilizáveis. |
+| TypeScript | Tipagem estática, organização e segurança dos dados. |
+| Vite | Ambiente de desenvolvimento e geração da build de produção. |
+| Tailwind CSS | Estilização, padronização visual e responsividade. |
+| React Router DOM | Gerenciamento da navegação, rotas estáticas, dinâmicas e protegidas. |
+| React Hook Form | Gerenciamento e validação de formulários. |
+| Leaflet | Construção de mapas interativos. |
+| React Leaflet | Integração dos mapas com o React. |
+| Fetch API | Comunicação HTTP com a API REST desenvolvida em Java. |
+| Session Storage | Armazenamento de informações da sessão. |
+| Local Storage | Persistência local de informações complementares. |
+| Oxlint | Análise estática e qualidade do código. |
+| Git e GitHub | Controle de versão e desenvolvimento colaborativo. |
+| Vercel | Hospedagem e publicação do front-end. |
+| Render | Hospedagem da API REST Java. |
 
-- O front-end está publicado na Vercel.
-- O arquivo `src/services/api.ts` define a URL base e um fallback para o Render.
-- O arquivo `.env.example` documenta a variável `VITE_API_URL`.
-- **Ainda não foram implementados os serviços de negócio nem conectadas as telas aos endpoints definitivos do Java.**
+### Arquitetura da Aplicação
 
-**URL base informada para o back-end:** [`https://polieus.onrender.com`](https://polieus.onrender.com)
+O Polieus foi desenvolvido seguindo uma arquitetura modular de **Single Page Application (SPA)**, promovendo a separação de responsabilidades, a reutilização de componentes e a manutenção do código.
 
-O endereço acima é a configuração prevista para a API; a disponibilidade e o funcionamento dos endpoints devem ser verificados na etapa de integração.
+A aplicação utiliza exclusivamente a **Fetch API** para realizar as requisições HTTP ao back-end, sem a utilização de Axios ou outras bibliotecas de requisições.
 
-### Etapas pendentes
-
-- [ ] Receber a documentação final dos endpoints Java (métodos, caminhos, payloads e respostas);
-- [ ] Completar a função de requisições HTTP e o tratamento de erros em `src/services/api.ts`;
-- [ ] Criar os serviços específicos do Polieus, conforme os recursos disponibilizados;
-- [ ] Conectar os formulários de cadastro e consulta de ocorrências;
-- [ ] Conectar as telas administrativas e os relatórios aos dados reais, conforme a API permitir;
-- [ ] Validar CORS, estados de carregamento, mensagens de erro e respostas vazias;
-- [ ] Executar os testes de integração e atualizar esta documentação com os fluxos realmente concluídos.
-
-**Observação:** a publicação do front-end não comprova integração funcional com o back-end ou autenticação real.
+A estilização dos componentes e das páginas é realizada diretamente por meio do Tailwind CSS, mantendo o arquivo `globals.css` para configurações e estilos globais.
 
 ---
 
-## Como Usar
+## Rotas da Aplicação
 
-### Links do Projeto
+O gerenciamento das rotas é centralizado no arquivo `src/main.tsx`, utilizando o React Router DOM.
 
-| Recurso | Endereço / Situação |
+O arquivo `App.tsx` é responsável pelo layout compartilhado da aplicação.
+
+### Rotas Públicas
+
+| Rota | Finalidade |
+| --- | --- |
+| `/` | Escolha da área de acesso. |
+| `/login-usuario` | Login e cadastro do cidadão. |
+| `/login-admin` | Login e cadastro administrativo. |
+| `/sobre` | Informações sobre o projeto. |
+| `/integrantes` | Apresentação da equipe. |
+| `/faq` | Perguntas frequentes. |
+| `/contato` | Formulário e informações de contato. |
+
+### Rotas Protegidas do Cidadão
+
+| Rota | Finalidade |
+| --- | --- |
+| `/inicio` | Página inicial do cidadão. |
+| `/registrar-ocorrencia` | Formulário de registro de ocorrências. |
+| `/minhas-ocorrencias` | Listagem e acompanhamento de solicitações. |
+| `/minhas-ocorrencias/:id` | Visualização dos detalhes de uma ocorrência. |
+| `/mapa-ocorrencias` | Mapa interativo de ocorrências. |
+| `/transparencia` | Indicadores e informações de transparência. |
+| `/perfil` | Perfil do cidadão. |
+
+### Rotas Protegidas da Administração
+
+| Rota | Finalidade |
+| --- | --- |
+| `/admin` | Painel administrativo. |
+| `/admin/dashboard` | Dashboard administrativo. |
+| `/admin/gerenciar-ocorrencias` | Gerenciamento de ocorrências. |
+| `/admin/mapa-ocorrencias` | Mapa administrativo. |
+| `/admin/relatorios` | Relatórios, indicadores e orçamentos. |
+| `/admin/perfil` | Perfil administrativo. |
+| `/admin/sobre` | Informações sobre o projeto. |
+| `/admin/integrantes` | Apresentação da equipe. |
+| `/admin/faq` | Perguntas frequentes. |
+| `/admin/contato` | Formulário e informações de contato. |
+
+### Rota Dinâmica
+
+A aplicação possui uma rota dinâmica com parâmetro opcional:
+
+```tsx
+{
+    path: 'minhas-ocorrencias/:id?',
+    element: <MinhasOcorrencias />,
+}
+```
+
+O parâmetro `id` permite identificar uma ocorrência específica por meio da URL, utilizando o hook `useParams` do React Router DOM.
+
+Exemplo:
+
+```text
+/minhas-ocorrencias/25
+```
+
+Dessa forma, é possível apresentar os detalhes de uma ocorrência utilizando a estrutura existente da página Minhas Ocorrências.
+
+### Proteção de Rotas
+
+O componente `RotaProtegida.tsx` é responsável por verificar a existência de uma sessão correspondente ao perfil de acesso.
+
+Caso não exista uma sessão válida, o usuário é redirecionado para a página de login correspondente.
+
+A proteção de rotas no front-end não substitui a autenticação e a autorização dos endpoints no back-end.
+
+Outros endereços são direcionados à página de **Erro 404** da aplicação.
+
+---
+
+## 📁 Estrutura de Pastas
+
+A estrutura está organizada por componentes, páginas, imagens e serviços, facilitando a manutenção, a reutilização e a escalabilidade da aplicação.
+
+```text
+Polieus/
+├── public/
+│   └── favicons/
+│       ├── banner-polieus.svg
+│       ├── logo_polieus.png
+│       ├── logo_polieus2.png
+│       └── logo_polieus3.png
+│
+├── src/
+│   ├── components/
+│   │   ├── Botao/
+│   │   │   └── Botao.tsx
+│   │   ├── Cabecalho/
+│   │   │   └── Cabecalho.tsx
+│   │   ├── Card/
+│   │   │   └── Card.tsx
+│   │   ├── Mapa/
+│   │   │   └── Mapa.tsx
+│   │   ├── Rodape/
+│   │   │   └── Rodape.tsx
+│   │   └── RotaProtegida/
+│   │       └── RotaProtegida.tsx
+│   │
+│   ├── img/
+│   │   ├── cadastro_login.png
+│   │   ├── fotoHenrique.jpeg
+│   │   ├── fotoIsa.png
+│   │   ├── fotoMarina.jpg
+│   │   ├── fotoMilena.png
+│   │   ├── fotoMurilo.jpeg
+│   │   ├── fundo_contato.png
+│   │   ├── fundo_escolha.png
+│   │   ├── fundo_gerenciarocorrencia.png
+│   │   ├── fundo_inicio.png
+│   │   ├── fundo_sobre.png
+│   │   ├── github.png
+│   │   └── lkd.png
+│   │
+│   ├── pages/
+│   │   ├── Acesso/index.tsx
+│   │   ├── AdminDashboard/index.tsx
+│   │   ├── AdminMapaOcorrencias/index.tsx
+│   │   ├── AdminPerfil/index.tsx
+│   │   ├── AdminRelatorios/index.tsx
+│   │   ├── Contato/index.tsx
+│   │   ├── Error/index.tsx
+│   │   ├── FAQ/index.tsx
+│   │   ├── GerenciarOcorrencia/index.tsx
+│   │   ├── Inicio/index.tsx
+│   │   ├── Integrantes/index.tsx
+│   │   ├── LoginAdministrador/index.tsx
+│   │   ├── LoginUsuario/index.tsx
+│   │   ├── MapaOcorrencias/index.tsx
+│   │   ├── MinhasOcorrencias/index.tsx
+│   │   ├── Perfil/index.tsx
+│   │   ├── RegistrarOcorrencia/index.tsx
+│   │   ├── Sobre/index.tsx
+│   │   └── Transparencia/index.tsx
+│   │
+│   ├── services/
+│   │   ├── administrativoService.ts
+│   │   ├── analiseService.ts
+│   │   ├── api.ts
+│   │   ├── autenticacaoService.ts
+│   │   ├── historicoService.ts
+│   │   ├── ocorrenciaService.ts
+│   │   ├── relatorioService.ts
+│   │   └── usuarioService.ts
+│   │
+│   ├── App.tsx
+│   ├── globals.css
+│   └── main.tsx
+│
+├── .env
+├── .env.example
+├── .gitignore
+├── .oxlintrc.json
+├── index.html
+├── package-lock.json
+├── package.json
+├── README.md
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.node.json
+├── vercel.json
+└── vite.config.ts
+```
+
+Os arquivos de cada página estão organizados em `src/pages/<NomeDaPagina>/index.tsx`.
+
+O arquivo `.env` é mantido localmente e não deve ser versionado no repositório.
+
+---
+
+## Imagens e Identidade Visual
+
+A identidade visual do Polieus combina referências à arquitetura grega com tons de vermelho, vinho e bege. Os arquivos de logo encontram-se em [`public/favicons/`](./public/favicons/), e os fundos e as fotografias da equipe estão em [`src/img/`](./src/img/).
+
+<div align="center">
+  <img src="./public/favicons/logo_polieus.png" width="150" alt="Logo principal do Polieus" />
+  <br />
+  <em>Identidade visual do projeto Polieus</em>
+  <br /><br />
+  <img src="https://img.shields.io/badge/Vinho_Escuro-411516?style=for-the-badge" alt="Vinho escuro" />
+  <img src="https://img.shields.io/badge/Vermelho-78221B?style=for-the-badge" alt="Vermelho" />
+  <img src="https://img.shields.io/badge/Dourado-CDA775?style=for-the-badge" alt="Dourado" />
+  <img src="https://img.shields.io/badge/Bege-EAD8C6?style=for-the-badge" alt="Bege" />
+  <img src="https://img.shields.io/badge/Creme-FFF1DD?style=for-the-badge" alt="Creme" />
+</div>
+
+A identidade busca representar a relação entre cidadania, sociedade, democracia e gestão pública, unindo referências históricas a uma proposta tecnológica contemporânea.
+
+---
+
+## Integração com a API Java
+
+O front-end do Polieus está integrado à API REST desenvolvida na disciplina de **Domain Driven Design Using Java**, utilizando a Fetch API para realizar as requisições HTTP.
+
+A integração foi estruturada tomando como referência o padrão de serviços utilizado no projeto MoveUP, mas os endpoints, tipos de dados e regras de negócio são próprios do Polieus.
+
+As requisições são centralizadas na pasta `src/services/`, permitindo a separação entre a interface e a comunicação com o servidor.
+
+### Serviços da Aplicação
+
+| Arquivo | Responsabilidade |
+| --- | --- |
+| `api.ts` | Configuração da URL base, requisições HTTP e tratamento de respostas. |
+| `administrativoService.ts` | Operações relacionadas à administração. |
+| `analiseService.ts` | Operações relacionadas às análises e prioridades das ocorrências. |
+| `autenticacaoService.ts` | Operações relacionadas à autenticação. |
+| `historicoService.ts` | Consulta e registro do histórico das ocorrências. |
+| `ocorrenciaService.ts` | Cadastro, consulta, atualização e exclusão de ocorrências. |
+| `relatorioService.ts` | Comunicação com os recursos de relatórios da API. |
+| `usuarioService.ts` | Operações relacionadas aos usuários da plataforma. |
+
+### Comunicação entre Front-end e Back-end
+
+```text
+┌─────────────────────────────┐
+│       Cidadão / Gestor       │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│        Front-end React       │
+│      TypeScript + Vite       │
+│           Vercel             │
+└──────────────┬──────────────┘
+               │
+           Fetch API
+          HTTP / JSON
+               │
+               ▼
+┌─────────────────────────────┐
+│        API REST Java         │
+│           Render             │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│        Banco de Dados        │
+└─────────────────────────────┘
+```
+
+### Métodos HTTP
+
+<div align="center">
+  <img src="https://img.shields.io/badge/GET-78221B?style=for-the-badge" alt="GET" />
+  <img src="https://img.shields.io/badge/POST-78221B?style=for-the-badge" alt="POST" />
+  <img src="https://img.shields.io/badge/PUT-78221B?style=for-the-badge" alt="PUT" />
+  <img src="https://img.shields.io/badge/DELETE-78221B?style=for-the-badge" alt="DELETE" />
+</div>
+
+| Método | Finalidade |
+| --- | --- |
+| GET | Consultar informações cadastradas. |
+| POST | Enviar e cadastrar novos registros. |
+| PUT | Atualizar informações existentes. |
+| DELETE | Excluir registros. |
+
+### Endpoints de Ocorrências
+
+| Método | Endpoint | Finalidade |
+| --- | --- | --- |
+| GET | `/polieus/ocorrencia` | Listar todas as ocorrências. |
+| GET | `/polieus/ocorrencia/{id}` | Buscar uma ocorrência pelo ID. |
+| GET | `/polieus/ocorrencia/usuario/{idUsuario}` | Listar ocorrências de um usuário. |
+| POST | `/polieus/ocorrencia` | Cadastrar uma nova ocorrência. |
+| PUT | `/polieus/ocorrencia/{id}` | Atualizar uma ocorrência existente. |
+| DELETE | `/polieus/ocorrencia/{id}` | Excluir uma ocorrência. |
+
+**URL base do back-end:** [https://polieus.onrender.com](https://polieus.onrender.com)
+
+O endereço da API é configurado por meio da variável de ambiente `VITE_API_URL`.
+
+As funcionalidades integradas dependem da disponibilidade do servidor Java. Os orçamentos institucionais são estimativas demonstrativas armazenadas no navegador, não representando registros orçamentários oficiais da administração pública.
+
+---
+
+## Links do Projeto
+
+| Recurso | Endereço |
 | --- | --- |
 | **Aplicação Web na Vercel** | [https://polieus.vercel.app](https://polieus.vercel.app) |
-| **API Java no Render** | [https://polieus.onrender.com](https://polieus.onrender.com) — integração pendente |
+| **API Java no Render** | [https://polieus.onrender.com](https://polieus.onrender.com) |
 | **Repositório do Front-end** | [POLITECH-Global-Solution/Polieus](https://github.com/POLITECH-Global-Solution/Polieus) |
-| **Vídeo de Apresentação no YouTube** | **PENDENTE — adicionar o link quando o vídeo for publicado** |
+| **Vídeo de Apresentação no YouTube** | [Assistir à apresentação](https://youtu.be/-4d9iyXf3pM?is=Ex4gb3D1TvZkv2it) |
 
-### 🎥 Vídeo de Apresentação
+---
 
-> **LEMBRETE PARA A ENTREGA:** inserir aqui o link oficial do vídeo de apresentação do Polieus no YouTube após a publicação.
+## Vídeo de Apresentação
 
-<!-- TODO: Substituir este lembrete pelo link do vídeo do Polieus no YouTube. -->
+O vídeo apresenta a proposta do Polieus, suas principais funcionalidades, a área do cidadão, a área administrativa, as tecnologias utilizadas e a integração entre o front-end e o back-end Java.
 
-### Como Executar Localmente
+<div align="center">
+  <a href="https://youtu.be/-4d9iyXf3pM?is=Ex4gb3D1TvZkv2it">
+    <img src="https://img.youtube.com/vi/-4d9iyXf3pM/hqdefault.jpg" width="500" alt="Vídeo de apresentação do Polieus" />
+  </a>
+  <br />
+  <em>Clique na imagem para assistir à apresentação do projeto.</em>
+  <br /><br />
+  <a href="https://youtu.be/-4d9iyXf3pM?is=Ex4gb3D1TvZkv2it">
+    <img src="https://img.shields.io/badge/ASSISTIR_NO_YOUTUBE-78221B?style=for-the-badge&logo=youtube&logoColor=white" alt="Assistir no YouTube" />
+  </a>
+</div>
 
-**Pré-requisitos:** Git, Node.js e npm instalados.
+---
 
-1. **Clone o repositório:**
+## Acesso para Avaliação Acadêmica
 
-   ```bash
-   git clone https://github.com/POLITECH-Global-Solution/Polieus.git
-   cd Polieus
-   ```
+Para facilitar a avaliação do projeto, a plataforma disponibiliza dois perfis de acesso: **Cidadão** e **Administrador**.
 
-2. **Instale as dependências:**
+### Acesso do Cidadão
 
-   ```bash
-   npm ci
-   ```
+1. Acesse a [plataforma Polieus](https://polieus.vercel.app).
+2. Selecione a opção **Cidadão**.
+3. Realize o cadastro de uma nova conta.
+4. Efetue o login para acessar as funcionalidades.
 
-3. **Configure o ambiente local:** copie `.env.example` para `.env`, na raiz do projeto. No Windows (CMD):
+### Acesso Administrativo
 
-   ```cmd
-   copy .env.example .env
-   ```
+1. Acesse a [plataforma Polieus](https://polieus.vercel.app).
+2. Selecione a opção **Administrador**.
+3. Escolha a opção de cadastro.
+4. Preencha as informações solicitadas.
+5. Informe o código de convite administrativo.
+6. Finalize o cadastro e realize o login.
 
-   Em macOS/Linux:
+<div align="center">
+  <h3>Código de Convite Administrativo</h3>
+  <img src="https://img.shields.io/badge/CONVITE-260921-78221B?style=for-the-badge&logo=key&logoColor=white" alt="Código de convite administrativo: 260921" />
+</div>
 
-   ```bash
-   cp .env.example .env
-   ```
+> **Observação:** o código de convite é disponibilizado exclusivamente para fins demonstrativos e de avaliação acadêmica. Em um ambiente de produção, sua validação deve ocorrer no back-end.
 
-   Conteúdo esperado:
+---
 
-   ```dotenv
-   VITE_API_URL=https://polieus.onrender.com
-   ```
+## Como Executar Localmente
 
-   O `.env` é ignorado pelo Git. Não armazene senhas ou tokens privados em variáveis `VITE_`, pois seus valores podem ficar visíveis no navegador.
+### Pré-requisitos
 
-   **Vercel:** o endereço da API deve ser configurado como `VITE_API_URL` nas variáveis de ambiente do projeto. Alterações nessas variáveis exigem um novo deploy para aparecerem no build do front-end.
+Antes de executar o projeto, é necessário possuir as seguintes ferramentas instaladas:
 
-4. **Inicie a aplicação:**
+- Git;
+- Node.js;
+- npm;
+- Visual Studio Code (recomendado).
 
-   ```bash
-   npm run dev
-   ```
+### 1. Clone o repositório
 
-   Abra o endereço local mostrado no terminal pelo Vite (geralmente `http://localhost:5173/`).
+```bash
+git clone https://github.com/POLITECH-Global-Solution/Polieus.git
+```
 
-5. **Execute as verificações:**
+Acesse a pasta do projeto:
 
-   ```bash
-   npm run lint
-   npm run build
-   ```
+```bash
+cd Polieus
+```
+
+### 2. Instale as dependências
+
+```bash
+npm ci
+```
+
+### 3. Configure as variáveis de ambiente
+
+Copie o arquivo `.env.example` para `.env`, na raiz do projeto.
+
+No Windows (CMD):
+
+```cmd
+copy .env.example .env
+```
+
+No macOS ou Linux:
+
+```bash
+cp .env.example .env
+```
+
+O arquivo `.env` deverá conter:
+
+```dotenv
+VITE_API_URL=https://polieus.onrender.com
+```
+
+O arquivo `.env` é ignorado pelo Git. Não armazene senhas ou tokens privados em variáveis `VITE_`, pois seus valores podem ficar visíveis no navegador.
+
+### 4. Inicie a aplicação
+
+```bash
+npm run dev
+```
+
+Abra o endereço local apresentado no terminal pelo Vite:
+
+```text
+http://localhost:5173/
+```
+
+### 5. Execute as verificações
+
+Para realizar a análise estática do código:
+
+```bash
+npm run lint
+```
+
+Para validar e gerar a versão de produção:
+
+```bash
+npm run build
+```
+
+Para visualizar localmente a versão de produção:
+
+```bash
+npm run preview
+```
 
 ---
 
@@ -325,12 +571,14 @@ O endereço acima é a configuração prevista para a API; a disponibilidade e o
 
 | Comando | Descrição |
 | --- | --- |
-| `npm run dev` | Inicia o servidor local de desenvolvimento |
-| `npm run build` | Valida com TypeScript e gera os arquivos de produção |
-| `npm run lint` | Executa a análise estática com Oxlint |
-| `npm run preview` | Exibe localmente uma prévia da build de produção |
+| `npm install` | Instala as dependências do projeto. |
+| `npm ci` | Instala as dependências conforme o package-lock.json. |
+| `npm run dev` | Inicia o servidor local de desenvolvimento. |
+| `npm run build` | Valida com TypeScript e gera os arquivos de produção. |
+| `npm run lint` | Executa a análise estática com Oxlint. |
+| `npm run preview` | Exibe localmente uma prévia da build de produção. |
 
-Os scripts estão definidos em `package.json`.
+Os scripts estão definidos no arquivo `package.json`.
 
 ---
 
@@ -338,14 +586,28 @@ Os scripts estão definidos em `package.json`.
 
 O front-end é publicado na Vercel a partir da branch `main` do repositório GitHub.
 
-- **Framework:** Vite;
-- **Root Directory:** `./`;
-- **Build Command:** `npm run build`;
-- **Output Directory:** `dist`;
-- **Variável de ambiente:** `VITE_API_URL`;
-- **Roteamento:** o arquivo `vercel.json` redireciona as rotas da aplicação para `index.html`, permitindo que o React Router controle a navegação em acessos diretos e atualizações de página.
+| Configuração | Valor |
+| --- | --- |
+| Branch | `main` |
+| Framework | Vite |
+| Root Directory | `./` |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+| Variável de ambiente | `VITE_API_URL` |
+| Hospedagem do front-end | Vercel |
+| Hospedagem do back-end | Render |
 
-**Endereço público:** [polieus.vercel.app](https://polieus.vercel.app)
+O arquivo `vercel.json` redireciona as rotas da aplicação para `index.html`, permitindo que o React Router controle a navegação em acessos diretos e atualizações de página.
+
+O endereço da API deve ser configurado como `VITE_API_URL` nas variáveis de ambiente do projeto na Vercel.
+
+Alterações nessas variáveis exigem um novo deploy para aparecerem no build do front-end.
+
+<div align="center">
+  <a href="https://polieus.vercel.app">
+    <img src="https://img.shields.io/badge/ACESSAR_POLIEUS-78221B?style=for-the-badge&logo=vercel&logoColor=white" alt="Acessar Polieus" />
+  </a>
+</div>
 
 ---
 
@@ -354,8 +616,18 @@ O front-end é publicado na Vercel a partir da branch `main` do repositório Git
 O Polieus busca contribuir para os seguintes Objetivos de Desenvolvimento Sustentável (ODS):
 
 - **ODS 10 — Redução das Desigualdades:** ampliar a visibilidade de problemas que afetam a acessibilidade e a mobilidade urbana;
+
 - **ODS 11 — Cidades e Comunidades Sustentáveis:** apoiar a identificação e o acompanhamento de demandas de infraestrutura;
+
 - **ODS 16 — Paz, Justiça e Instituições Eficazes:** incentivar transparência, participação cidadã e acesso a informações da gestão pública.
+
+<div align="center">
+  <img src="https://img.shields.io/badge/ODS_10-Redução_das_Desigualdades-DD1367?style=for-the-badge" alt="ODS 10" />
+  <br />
+  <img src="https://img.shields.io/badge/ODS_11-Cidades_e_Comunidades_Sustentáveis-F99D26?style=for-the-badge" alt="ODS 11" />
+  <br />
+  <img src="https://img.shields.io/badge/ODS_16-Paz,_Justiça_e_Instituições_Eficazes-00689D?style=for-the-badge" alt="ODS 16" />
+</div>
 
 ---
 
@@ -372,30 +644,99 @@ Para dúvidas, sugestões, problemas ou contribuições, utilize a seção de **
 
 Projeto desenvolvido pela **Equipe Politech**, da turma **1TDSPH**, para a Global Solution 2026/2 da FIAP.
 
-- <img src="src/img/fotoHenrique.jpeg" width="120px" alt="Foto de Henrique Bonachela"><br>
-  **Henrique Bonachela de Carvalho Carabante** — RM **573620** (Especialista em Inteligência Artificial) — Turma: **1TDSPH**  
-  [LinkedIn](https://www.linkedin.com/in/henrique-bonachela-de-carvalho-carabante-260b86338/) | [GitHub](https://github.com/henriquebonachela)
-
-- <img src="src/img/fotoIsa.png" width="120px" alt="Foto de Isabelle Ferreira"><br>
-  **Isabelle Ferreira Neri Feitoza** — RM **573507** (Engenheira de Dados) — Turma: **1TDSPH**  
-  [LinkedIn](https://www.linkedin.com/in/isabelle-ferreira-8844593ab) | [GitHub](https://github.com/isabelleferreiraa)
-
-- <img src="src/img/fotoMilena.png" width="120px" alt="Foto de Milena Conegin"><br>
-  **Milena Silva Conegin** — RM **568923** (Desenvolvedora Back-end — Java) — Turma: **1TDSPH**  
-  [LinkedIn](https://www.linkedin.com/in/milena-conegin-996b22269) | [GitHub](https://github.com/MilenaConegin)
-
-- <img src="src/img/fotoMarina.jpg" width="120px" alt="Foto de Marina Fernandes"><br>
-  **Marina Fernandes Gomes Mesquita** — RM **571265** (Desenvolvedora Front-end) — Turma: **1TDSPH**  
-  [LinkedIn](https://www.linkedin.com/in/marifernandesgm-58460a40a) | [GitHub](https://github.com/marifernandesgm)
-
-- <img src="src/img/fotoMurilo.jpeg" width="120px" alt="Foto de Murilo Almeida"><br>
-  **Murilo Almeida Rodrigues de Souza** — RM **573977** (Desenvolvedor Back-end — Python) — Turma: **1TDSPH**  
-  [LinkedIn](https://www.linkedin.com/in/murilo-a-souza/) | [GitHub](https://github.com/murilo-a-souza)
+<table>
+  <tr>
+    <td align="center">
+      <img src="./src/img/fotoHenrique.jpeg" width="120" alt="Foto de Henrique Bonachela" />
+    </td>
+    <td>
+      <strong>Henrique Bonachela de Carvalho Carabante</strong><br />
+      RM <strong>573620</strong> | Turma: <strong>1TDSPH</strong><br />
+      Especialista em Inteligência Artificial<br /><br />
+      <a href="https://www.linkedin.com/in/henrique-bonachela-de-carvalho-carabante-260b86338/">
+        <img src="https://img.shields.io/badge/LinkedIn-78221B?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn" />
+      </a>
+      <a href="https://github.com/henriquebonachela">
+        <img src="https://img.shields.io/badge/GitHub-411516?style=flat-square&logo=github&logoColor=white" alt="GitHub" />
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./src/img/fotoIsa.png" width="120" alt="Foto de Isabelle Ferreira" />
+    </td>
+    <td>
+      <strong>Isabelle Ferreira Neri Feitoza</strong><br />
+      RM <strong>573507</strong> | Turma: <strong>1TDSPH</strong><br />
+      Engenheira de Dados<br /><br />
+      <a href="https://www.linkedin.com/in/isabelle-ferreira-8844593ab">
+        <img src="https://img.shields.io/badge/LinkedIn-78221B?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn" />
+      </a>
+      <a href="https://github.com/isabelleferreiraa">
+        <img src="https://img.shields.io/badge/GitHub-411516?style=flat-square&logo=github&logoColor=white" alt="GitHub" />
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./src/img/fotoMilena.png" width="120" alt="Foto de Milena Conegin" />
+    </td>
+    <td>
+      <strong>Milena Silva Conegin</strong><br />
+      RM <strong>568923</strong> | Turma: <strong>1TDSPH</strong><br />
+      Desenvolvedora Back-end — Java<br /><br />
+      <a href="https://www.linkedin.com/in/milena-conegin-996b22269">
+        <img src="https://img.shields.io/badge/LinkedIn-78221B?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn" />
+      </a>
+      <a href="https://github.com/MilenaConegin">
+        <img src="https://img.shields.io/badge/GitHub-411516?style=flat-square&logo=github&logoColor=white" alt="GitHub" />
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./src/img/fotoMarina.jpg" width="120" alt="Foto de Marina Fernandes" />
+    </td>
+    <td>
+      <strong>Marina Fernandes Gomes Mesquita</strong><br />
+      RM <strong>571265</strong> | Turma: <strong>1TDSPH</strong><br />
+      Desenvolvedora Front-end<br /><br />
+      <a href="https://www.linkedin.com/in/marifernandesgm-58460a40a">
+        <img src="https://img.shields.io/badge/LinkedIn-78221B?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn" />
+      </a>
+      <a href="https://github.com/marifernandesgm">
+        <img src="https://img.shields.io/badge/GitHub-411516?style=flat-square&logo=github&logoColor=white" alt="GitHub" />
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="./src/img/fotoMurilo.jpeg" width="120" alt="Foto de Murilo Almeida" />
+    </td>
+    <td>
+      <strong>Murilo Almeida Rodrigues de Souza</strong><br />
+      RM <strong>573977</strong> | Turma: <strong>1TDSPH</strong><br />
+      Desenvolvedor Back-end — Python<br /><br />
+      <a href="https://www.linkedin.com/in/murilo-a-souza/">
+        <img src="https://img.shields.io/badge/LinkedIn-78221B?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn" />
+      </a>
+      <a href="https://github.com/murilo-a-souza">
+        <img src="https://img.shields.io/badge/GitHub-411516?style=flat-square&logo=github&logoColor=white" alt="GitHub" />
+      </a>
+    </td>
+  </tr>
+</table>
 
 ---
 
-<p align="center">
-  <strong>POLIEUS — Equipe Politech</strong><br>
-  FIAP | Global Solution 2026/2 | CitizenTech | Turma 1TDSPH<br>
+<div align="center">
+  <img src="./public/favicons/logo_polieus.png" width="100" alt="Logo do Polieus" />
+  <br />
+  <strong>POLIEUS — Equipe Politech</strong>
+  <br />
+  FIAP | Global Solution 2026/2 | CitizenTech | Turma 1TDSPH
+  <br />
   <em>Tecnologia que conecta pessoas, cidades e decisões.</em>
-</p>
+  <br /><br />
+  <img src="./public/favicons/banner-polieus.svg" width="100%" alt="Polieus" />
+</div>
