@@ -121,12 +121,9 @@ const objetivos = [
 
 const tituloSecao =
   'mt-3 font-titulo text-3xl font-bold text-[#78221b] sm:text-4xl';
-
 const subtituloSecao =
   'text-sm font-bold tracking-widest text-[#a34c3a] uppercase';
-
 const textoSecao = 'leading-8 text-[#51453e]';
-
 const cardBase =
   'rounded-2xl border border-[#dfc4b0] bg-[#fffaf4] p-5 sm:p-7 shadow-sm';
 
@@ -134,7 +131,6 @@ export default function Sobre() {
   return (
     <main className="min-h-screen w-full bg-fundo font-corpo text-texto">
       <header className="border-b border-[#d8b9a5] bg-[#fffaf4] py-5 pr-5 pl-20 sm:pr-8 sm:pl-20 lg:px-10">
-
         <h1 className="font-titulo text-3xl font-bold text-[#78221b] sm:text-4xl">
           Sobre
         </h1>
@@ -149,14 +145,12 @@ export default function Sobre() {
           >
             Início
           </Link>
-
           <span
             className="material-icons text-base"
             aria-hidden="true"
           >
             chevron_right
           </span>
-
           <span
             aria-current="page"
             className="font-semibold text-[#78221b]"
@@ -169,9 +163,8 @@ export default function Sobre() {
       <section
         className="relative overflow-hidden bg-[#f6e9dc] bg-cover bg-no-repeat"
         style={{ backgroundImage: `url(${fundoSobre})`,
-        backgroundPosition: 'right top',}} 
-    >
-
+        backgroundPosition: 'right top',}}
+      >
         <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-[#fff7ee]/95 via-[#fff7ee]/80 to-transparent" />
 
         <div className="relative mx-auto max-w-7xl px-5 pt-12 pb-10 sm:px-8 lg:px-10 lg:pt-16 lg:pb-14">
@@ -179,11 +172,9 @@ export default function Sobre() {
             <p className="mb-3 font-corpo text-sm font-bold tracking-widest text-[#9a4937] uppercase">
               Conheça nossa plataforma
             </p>
-
             <h2 className="font-titulo text-5xl font-bold text-[#78221b] sm:text-6xl">
               Polieus
             </h2>
-
             <p className="mt-3 font-titulo text-xl font-semibold italic text-[#78221b] sm:text-2xl">
               Tecnologia a serviço da cidadania
             </p>
@@ -234,7 +225,6 @@ export default function Sobre() {
                 <h3 className="font-titulo text-xl font-bold text-[#78221b]">
                   Nossa Missão
                 </h3>
-
                 <p className="mt-2 text-sm leading-relaxed">
                   Promover uma cidade mais justa e participativa por
                   meio da tecnologia, da colaboração e do diálogo
@@ -255,7 +245,6 @@ export default function Sobre() {
                 <h3 className="font-titulo text-xl font-bold text-[#78221b]">
                   Nossa Visão
                 </h3>
-
                 <p className="mt-2 text-sm leading-relaxed">
                   Ser referência em inovação para uma gestão pública
                   mais próxima, eficiente, inclusiva e conectada
@@ -276,7 +265,6 @@ export default function Sobre() {
                 <h3 className="font-titulo text-xl font-bold text-[#78221b]">
                   Nossos Valores
                 </h3>
-
                 <p className="mt-2 text-sm leading-relaxed">
                   Transparência, compromisso, respeito, inclusão,
                   responsabilidade e participação social.
@@ -293,7 +281,6 @@ export default function Sobre() {
             <p className={subtituloSecao}>
               Nosso propósito
             </p>
-
             <h2 className={tituloSecao}>
               Uma cidade melhor começa com a participação de todos
             </h2>
@@ -344,17 +331,14 @@ export default function Sobre() {
       </section>
 
       <section className="bg-fundo px-5 py-10 sm:px-8 sm:py-16 lg:px-10">
-
         <div className="mx-auto max-w-6xl">
           <div className="text-center">
             <p className={subtituloSecao}>
               O que nos orienta
             </p>
-
             <h2 className={tituloSecao}>
               Nossos Princípios
             </h2>
-
             <p className="mx-auto mt-4 max-w-2xl leading-relaxed text-texto-suave">
               Acreditamos que a inovação deve caminhar junto
               com a responsabilidade social e o respeito às pessoas.
@@ -377,7 +361,6 @@ export default function Sobre() {
                 <h3 className="mt-4 font-titulo text-xl font-bold text-[#78221b]">
                   {valor.titulo}
                 </h3>
-
                 <p className="mt-3 leading-relaxed text-[#51453e]">
                   {valor.descricao}
                 </p>
@@ -393,11 +376,9 @@ export default function Sobre() {
             <p className={subtituloSecao}>
               Da participação à transformação
             </p>
-
             <h2 className={tituloSecao}>
               Como o Polieus Funciona?
             </h2>
-
             <p className="mt-5 leading-relaxed text-texto-suave">
               Nossa proposta conecta o registro de problemas urbanos
               à organização das informações e ao acompanhamento
@@ -417,7 +398,6 @@ export default function Sobre() {
                 >
                   {etapa.numero}
                 </span>
-
                 <span
                   className="material-icons relative text-4xl text-[#8c251e]"
                   aria-hidden="true"
@@ -428,7 +408,6 @@ export default function Sobre() {
                 <h3 className="relative mt-4 font-titulo text-xl font-bold text-[#78221b]">
                   {etapa.titulo}
                 </h3>
-
                 <p className="relative mt-3 leading-relaxed text-[#51453e]">
                   {etapa.descricao}
                 </p>
@@ -444,11 +423,9 @@ export default function Sobre() {
             <p className={subtituloSecao}>
               Inovação com propósito
             </p>
-
             <h2 className={tituloSecao}>
               Nossos Diferenciais
             </h2>
-
             <p className="mx-auto mt-4 max-w-3xl leading-relaxed text-texto-suave">
               Mais do que disponibilizar um canal de comunicação,
               o Polieus busca utilizar a tecnologia para facilitar
@@ -475,7 +452,6 @@ export default function Sobre() {
                 <h3 className="mt-5 font-titulo text-lg font-bold text-[#78221b]">
                   {diferencial.titulo}
                 </h3>
-
                 <p className="mt-3 text-sm leading-7 text-[#51453e]">
                   {diferencial.descricao}
                 </p>
@@ -492,7 +468,6 @@ export default function Sobre() {
               <p className={subtituloSecao}>
                 Pessoas no centro da tecnologia
               </p>
-
               <h2 className={tituloSecao}>
                 Acessibilidade e Inclusão
               </h2>
@@ -529,7 +504,6 @@ export default function Sobre() {
               <h3 className="mt-4 font-titulo text-2xl font-bold text-[#78221b]">
                 Uma plataforma para todos
               </h3>
-
               <p className="mt-4 leading-8 text-[#51453e]">
                 Nosso compromisso é trabalhar para que a tecnologia
                 não seja uma barreira, mas uma ferramenta que amplie
@@ -543,7 +517,6 @@ export default function Sobre() {
                 >
                   check_circle
                 </span>
-
                 <p className="text-sm leading-relaxed">
                   Informações organizadas e linguagem compreensível.
                 </p>
@@ -556,7 +529,6 @@ export default function Sobre() {
                 >
                   check_circle
                 </span>
-
                 <p className="text-sm leading-relaxed">
                   Atenção à navegação e à experiência dos usuários.
                 </p>
@@ -569,7 +541,6 @@ export default function Sobre() {
                 >
                   check_circle
                 </span>
-
                 <p className="text-sm leading-relaxed">
                   Valorização das necessidades de diferentes comunidades.
                 </p>
@@ -585,7 +556,6 @@ export default function Sobre() {
             <p className={subtituloSecao}>
               Uma solução colaborativa
             </p>
-
             <h2 className={tituloSecao}>
               Para Quem é o Polieus?
             </h2>
@@ -599,11 +569,9 @@ export default function Sobre() {
               >
                 person
               </span>
-
               <h3 className="mt-4 font-titulo text-xl font-bold text-[#78221b]">
                 Cidadãos
               </h3>
-
               <p className="mt-4 text-sm leading-7 text-[#51453e]">
                 Pessoas que desejam comunicar problemas urbanos,
                 acompanhar suas solicitações e contribuir
@@ -618,11 +586,9 @@ export default function Sobre() {
               >
                 groups
               </span>
-
               <h3 className="mt-4 font-titulo text-xl font-bold text-[#78221b]">
                 Comunidades
               </h3>
-
               <p className="mt-4 text-sm leading-7 text-[#51453e]">
                 Bairros e grupos que buscam maior visibilidade
                 para necessidades coletivas e desejam participar
@@ -637,11 +603,9 @@ export default function Sobre() {
               >
                 account_balance
               </span>
-
               <h3 className="mt-4 font-titulo text-xl font-bold text-[#78221b]">
                 Gestores Públicos
               </h3>
-
               <p className="mt-4 text-sm leading-7 text-[#51453e]">
                 Profissionais responsáveis pela análise, organização
                 e acompanhamento de demandas, que poderão utilizar
@@ -658,7 +622,6 @@ export default function Sobre() {
             <p className={subtituloSecao}>
               Compromisso com o futuro
             </p>
-
             <h2 className={tituloSecao}>
               Desenvolvimento Sustentável
             </h2>
@@ -686,7 +649,6 @@ export default function Sobre() {
                 <span className="font-titulo text-5xl font-bold text-[#8c251e]">
                   {objetivo.numero}
                 </span>
-
                 <p className="mt-1 text-xs font-bold tracking-widest text-[#a34c3a] uppercase">
                   ODS {objetivo.numero}
                 </p>
@@ -694,7 +656,6 @@ export default function Sobre() {
                 <h3 className="mt-4 font-titulo text-lg font-bold text-[#78221b]">
                   {objetivo.titulo}
                 </h3>
-
                 <p className="mt-3 text-sm leading-7 text-[#51453e]">
                   {objetivo.descricao}
                 </p>
@@ -716,7 +677,6 @@ export default function Sobre() {
           <h2 className="mt-5 font-titulo text-3xl font-bold sm:text-4xl">
             O Futuro da Cidade é Construído em Conjunto
           </h2>
-
           <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-[#f7e8dd]">
             Acreditamos que cada cidadão tem um papel importante
             na transformação da sociedade. Quando tecnologia,

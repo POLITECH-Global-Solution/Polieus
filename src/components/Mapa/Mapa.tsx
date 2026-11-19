@@ -4,7 +4,6 @@ import L, { type LatLngBoundsExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 export type PrioridadeOcorrencia = 'alta' | 'media' | 'baixa' | 'nao-informada';
-
 export interface OcorrenciaMapa {
     id: number;
     categoria: string;
@@ -17,7 +16,6 @@ export interface OcorrenciaMapa {
     latitude: number;
     longitude: number;
 }
-
 interface MapaProps {
     ocorrencias?: OcorrenciaMapa[];
     ocorrenciaSelecionadaId?: number | null;
@@ -25,7 +23,6 @@ interface MapaProps {
     altura?: string;
     carregando?: boolean;
 }
-
 interface GrupoOcorrencias {
     chave: string;
     latitude: number;
@@ -59,8 +56,7 @@ const NOMES_PRIORIDADE: Record<PrioridadeOcorrencia, string> = {
     'nao-informada': 'Não informada',
 };
 
-// CRIAR MARCADOR INDIVIDUAL
-
+//CRIAÇÃO DO MARCADOR DE OCORRÊNCIAS
 function criarIconePrioridade(prioridade: PrioridadeOcorrencia, selecionado: boolean) {
     const cor = CORES_PRIORIDADE[prioridade];
     const tamanho = selecionado ? 42 : 36;
@@ -88,8 +84,6 @@ function criarIconePrioridade(prioridade: PrioridadeOcorrencia, selecionado: boo
         popupAnchor: [0, -tamanho + 6],
     });
 }
-
-// CRIAR MARCADOR DE OCORRÊNCIAS AGRUPADAS
 
 function criarIconeGrupo(quantidade: number, selecionado: boolean) {
     const tamanho = selecionado ? 52 : 46;
@@ -121,7 +115,6 @@ function criarIconeGrupo(quantidade: number, selecionado: boolean) {
 }
 
 // AGRUPAR OCORRÊNCIAS COM AS MESMAS COORDENADAS
-
 function agruparOcorrencias(ocorrencias: OcorrenciaMapa[]): GrupoOcorrencias[] {
     const grupos = new Map<string, GrupoOcorrencias>();
 
@@ -143,8 +136,6 @@ function agruparOcorrencias(ocorrencias: OcorrenciaMapa[]): GrupoOcorrencias[] {
 
     return Array.from(grupos.values());
 }
-
-// AJUSTAR VISUALIZAÇÃO DO MAPA
 
 function AjustarVisualizacao({ grupos, ocorrenciaSelecionada }: {
     grupos: GrupoOcorrencias[];
@@ -194,8 +185,6 @@ function AjustarVisualizacao({ grupos, ocorrenciaSelecionada }: {
     return null;
 }
 
-// COMPONENTE PRINCIPAL
-
 export default function Mapa({
     ocorrencias = [],
     ocorrenciaSelecionadaId = null,
@@ -206,7 +195,6 @@ export default function Mapa({
     const [mapaPronto, setMapaPronto] = useState(false);
 
     // VALIDAR COORDENADAS
-
     const ocorrenciasValidas = useMemo(
         () => ocorrencias.filter(ocorrencia =>
             Number.isFinite(ocorrencia.latitude) &&
@@ -220,7 +208,6 @@ export default function Mapa({
     );
 
     // AGRUPAR MARCADORES
-
     const grupos = useMemo(
         () => agruparOcorrencias(ocorrenciasValidas),
         [ocorrenciasValidas]
@@ -232,17 +219,12 @@ export default function Mapa({
 
     return (
         <div className="relative isolate w-full overflow-hidden rounded-xl border border-secundaria bg-fundo shadow-sm" style={{ height: altura }}>
-
             <MapContainer center={CENTRO_SAO_PAULO} zoom={7} minZoom={6} maxZoom={19} maxBounds={LIMITES_NAVEGACAO} maxBoundsViscosity={1} zoomControl={false} scrollWheelZoom={true} className="h-full w-full" whenReady={() => setMapaPronto(true)}>
-
                 <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
-
                 <ZoomControl position="bottomleft" />
-
                 <AjustarVisualizacao grupos={grupos} ocorrenciaSelecionada={ocorrenciaSelecionada} />
 
                 {/* MARCADORES */}
-
                 {grupos.map(grupo => {
                     const agrupado = grupo.ocorrencias.length > 1;
 
@@ -266,40 +248,28 @@ export default function Mapa({
                         }}>
 
                             <Popup maxWidth={320}>
-
                                 {agrupado ? (
 
-                                    /* POPUP DE OCORRÊNCIAS AGRUPADAS */
-
                                     <div className="min-w-52 font-corpo">
-
                                         <h3 className="mb-1 font-titulo text-lg font-bold text-primaria">
                                             {primeiraOcorrencia.cidade}
                                         </h3>
-
                                         <p className="text-sm text-texto-suave">
                                             {grupo.ocorrencias.length} ocorrências registradas
                                         </p>
-
                                         <p className="text-xs text-texto-suave">
                                             Localização aproximada por município.
                                         </p>
-
                                         <div className="my-3 h-px bg-secundaria" />
 
                                         <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-
                                             {grupo.ocorrencias.map(ocorrencia => (
                                                 <button key={ocorrencia.id} type="button" onClick={() => aoSelecionarOcorrencia?.(ocorrencia)} aria-pressed={ocorrencia.id === ocorrenciaSelecionadaId} className={`w-full cursor-pointer rounded-lg border p-3 text-left transition-colors ${ocorrencia.id === ocorrenciaSelecionadaId ? 'border-primaria bg-[#f0dfd4]' : 'border-[#dfc2ae] bg-[#fffaf5] hover:bg-[#f3e5d9]'}`}>
-
                                                     <div className="flex items-center gap-2">
-
                                                         <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: CORES_PRIORIDADE[ocorrencia.prioridade] }} />
-
                                                         <span className="text-sm font-bold text-primaria">
                                                             {ocorrencia.categoria}
                                                         </span>
-
                                                     </div>
 
                                                     <div className="mt-2 text-xs leading-relaxed text-texto">
@@ -315,42 +285,30 @@ export default function Mapa({
                                                         <span className="text-xs font-semibold text-primaria">
                                                             Ver detalhes
                                                         </span>
-
                                                     </div>
-
                                                 </button>
                                             ))}
-
                                         </div>
-
                                     </div>
-
                                 ) : (
 
-                                    /* POPUP DE OCORRÊNCIA INDIVIDUAL */
 
                                     <div className="min-w-48 font-corpo">
-
                                         <h3 className="mb-1 text-base font-bold text-primaria">
                                             {primeiraOcorrencia.categoria}
                                         </h3>
-
                                         <p className="mb-2 text-sm text-texto">
                                             {primeiraOcorrencia.descricao}
                                         </p>
-
                                         <div className="space-y-1 text-xs text-texto-suave">
-
                                             <p>
                                                 <strong>Endereço:</strong> {primeiraOcorrencia.endereco}
                                             </p>
-
                                             {primeiraOcorrencia.cep && (
                                                 <p>
                                                     <strong>CEP:</strong> {primeiraOcorrencia.cep}
                                                 </p>
                                             )}
-
                                             <p>
                                                 <strong>Cidade:</strong> {primeiraOcorrencia.cidade}
                                             </p>
@@ -364,42 +322,29 @@ export default function Mapa({
                                             </p>
 
                                         </div>
-
                                         <div className="mt-3 border-t border-secundaria pt-3 text-xs text-texto-suave">
                                             Localização aproximada por município.
                                         </div>
-
                                         <button type="button" onClick={() => aoSelecionarOcorrencia?.(primeiraOcorrencia)} className="mt-3 w-full cursor-pointer rounded-lg bg-primaria px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90">
                                             Ver detalhes
                                         </button>
-
                                     </div>
-
                                 )}
-
                             </Popup>
-
                         </Marker>
                     );
                 })}
-
             </MapContainer>
 
             {/* CARREGAMENTO */}
-
             {carregando && (
                 <div role="status" className="pointer-events-none absolute bottom-5 left-1/2 z-1000 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 rounded-xl border border-secundaria bg-fundo px-4 py-4 text-center shadow-md">
-
                     <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-4 border-secundaria border-t-primaria" />
-
                     <p className="font-corpo text-sm font-semibold text-texto">
                         Carregando ocorrências...
                     </p>
-
                 </div>
             )}
-
-            {/* NENHUMA OCORRÊNCIA */}
 
             {mapaPronto && !carregando && ocorrenciasValidas.length === 0 && (
                 <div role="status" className="pointer-events-none absolute bottom-5 left-1/2 z-1000 w-[calc(100%-32px)] max-w-sm -translate-x-1/2 rounded-xl border border-secundaria bg-fundo px-4 py-3 text-center shadow-md">
@@ -415,36 +360,27 @@ export default function Mapa({
                     <p className="mt-1 font-corpo text-xs text-texto-suave">
                         Os marcadores aparecerão conforme as localizações forem disponibilizadas.
                     </p>
-
                 </div>
             )}
 
             {/* IDENTIFICAÇÃO DO ESTADO */}
-
             <div className="pointer-events-none absolute right-4 top-4 z-1000 rounded-lg border border-secundaria bg-fundo px-3 py-2 shadow-sm">
-
                 <p className="font-corpo text-xs font-semibold text-primaria">
                     Estado de São Paulo
                 </p>
-
             </div>
 
-            {/* LEGENDA DOS AGRUPAMENTOS */}
-
+            {/* LEGENDA DOS MARCADORES */}
             {!carregando && grupos.some(grupo => grupo.ocorrencias.length > 1) && (
-                <div className="pointer-events-none absolute bottom-8 right-3 z-1000 flex max-w-[65%] items-center gap-2 rounded-lg border border-secundaria bg-fundo px-3 py-2 shadow-sm">
-
+                <div className="pinter-events-none absolute bottom-8 right-3 z-1000 flex max-w-[65%] items-center gap-2 rounded-lg border border-secundaria bg-fundo px-3 py-2 shadow-sm">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#78221b] text-xs font-bold text-white">
                         #
                     </span>
-
                     <p className="font-corpo text-xs text-texto-suave">
                         Ocorrências agrupadas
                     </p>
-
                 </div>
             )}
-
         </div>
     );
 }

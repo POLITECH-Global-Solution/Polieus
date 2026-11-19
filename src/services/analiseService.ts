@@ -1,7 +1,6 @@
 import { apiRequest } from './api';
 
 export type Prioridade = 'Alta' | 'Média' | 'Baixa';
-
 export interface Analise {
     idAnalise: number | null;
     protocolo: string;
@@ -15,8 +14,6 @@ export interface Analise {
 export type DadosAnalise = Omit<Analise, 'idAnalise'>;
 
 const ENDPOINT = '/polieus/analise';
-
-// NORMALIZAÇÃO
 
 export function normalizarProtocolo(protocolo: string): string {
     return String(protocolo ?? '').trim().toUpperCase();
@@ -46,7 +43,6 @@ export function normalizarPrioridade(valor?: string | null): Prioridade | null {
 }
 
 // GET - LISTAR ANÁLISES
-
 export async function listarAnalises(): Promise<Analise[]> {
 
     const analises = await apiRequest<Analise[]>(ENDPOINT, {
@@ -61,7 +57,6 @@ export async function listarAnalises(): Promise<Analise[]> {
 }
 
 // GET - BUSCAR PELO ID
-
 export function buscarAnalisePorId(id: number): Promise<Analise> {
 
     return apiRequest<Analise>(`${ENDPOINT}/${id}`, {
@@ -70,7 +65,6 @@ export function buscarAnalisePorId(id: number): Promise<Analise> {
 }
 
 // POST - CADASTRAR ANÁLISE
-
 export function cadastrarAnalise(dados: DadosAnalise): Promise<Analise> {
 
     return apiRequest<Analise>(ENDPOINT, {
@@ -80,7 +74,6 @@ export function cadastrarAnalise(dados: DadosAnalise): Promise<Analise> {
 }
 
 // PUT - ATUALIZAR ANÁLISE
-
 export function atualizarAnalise(id: number, dados: DadosAnalise): Promise<Analise> {
 
     return apiRequest<Analise>(`${ENDPOINT}/${id}`, {
@@ -90,7 +83,6 @@ export function atualizarAnalise(id: number, dados: DadosAnalise): Promise<Anali
 }
 
 // DELETE - EXCLUIR ANÁLISE
-
 export function excluirAnalise(id: number): Promise<void> {
 
     return apiRequest<void>(`${ENDPOINT}/${id}`, {
@@ -123,8 +115,6 @@ export function obterAnalisePorProtocolo(
     return encontradas[0] ?? null;
 }
 
-// CONSULTAR ANÁLISE DIRETAMENTE NA API
-
 export async function buscarAnalisePorProtocolo(
     protocolo: string
 ): Promise<Analise | null> {
@@ -133,8 +123,6 @@ export async function buscarAnalisePorProtocolo(
 
     return obterAnalisePorProtocolo(analises, protocolo);
 }
-
-// CONSULTAR PRIORIDADE
 
 export function obterPrioridadePorProtocolo(
     analises: Analise[],
@@ -147,7 +135,6 @@ export function obterPrioridadePorProtocolo(
 }
 
 // SALVAR PRIORIDADE NO BANCO DE DADOS
-
 export async function salvarPrioridadeOcorrencia(
     dados: DadosAnalise
 ): Promise<Analise> {
@@ -193,8 +180,6 @@ export async function salvarPrioridadeOcorrencia(
 
         await cadastrarAnalise(dadosAtualizados);
     }
-
-    // CONSULTAR NOVAMENTE O BANCO DE DADOS
 
     const confirmada = await buscarAnalisePorProtocolo(protocolo);
 

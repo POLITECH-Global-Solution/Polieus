@@ -1,5 +1,4 @@
 import { apiRequest } from './api';
-
 export interface Historico {
     idHistorico: number | null;
     idOcorrencia: number;
@@ -13,17 +12,12 @@ export type DadosHistorico = Omit<Historico, 'idHistorico'>;
 
 const ENDPOINT = '/polieus/historico';
 
-// ==================================================
-// FUNÇÕES AUXILIARES
-// ==================================================
-
 function idValido(id: unknown): id is number {
     return typeof id === 'number' &&
         Number.isInteger(id) &&
         id > 0;
 }
 
-// Formatar data no padrão utilizado pelo Java
 export function formatarDataHistorico(data: Date = new Date()): string {
     const dia = String(data.getDate()).padStart(2, '0');
     const mes = String(data.getMonth() + 1).padStart(2, '0');
@@ -42,7 +36,6 @@ export function gerarProtocolo(idOcorrencia: number): string {
     return `POL-${String(idOcorrencia).padStart(6, '0')}`;
 }
 
-// Preparar os dados no formato utilizado pelo Java
 function prepararDadosHistorico(dados: DadosHistorico) {
 
     if (!idValido(dados.idOcorrencia)) {
@@ -54,10 +47,6 @@ function prepararDadosHistorico(dados: DadosHistorico) {
         idOcorrencia: String(dados.idOcorrencia),
     };
 }
-
-// ==================================================
-// INTEGRAÇÃO COM A API JAVA
-// ==================================================
 
 // GET - Listar todos os históricos
 export async function listarHistoricos(): Promise<Historico[]> {
@@ -134,8 +123,6 @@ export async function cadastrarHistorico(dados: DadosHistorico): Promise<Histori
     } catch (erro) {
         console.error('Não foi possível consultar o histórico cadastrado:', erro);
     }
-
-    // Não inventar um ID para o histórico
     return {
         ...dados,
         idHistorico: null,
@@ -179,11 +166,7 @@ export function excluirHistorico(id: number): Promise<void> {
     });
 }
 
-// ==================================================
-// GERENCIAMENTO DO HISTÓRICO
-// ==================================================
-
-// Converter data brasileira para ordenação cronológica
+// Converter para a data brasileira
 function converterData(data: string): number {
 
     const partes = data?.match(/^(\d{2})-(\d{2})-(\d{4})$/);
@@ -207,7 +190,6 @@ function converterData(data: string): number {
     return resultado.getTime();
 }
 
-// Ordenar históricos cronologicamente
 export function ordenarHistoricos(historicos: Historico[]): Historico[] {
 
     return [...historicos].sort((a, b) =>
@@ -216,7 +198,6 @@ export function ordenarHistoricos(historicos: Historico[]): Historico[] {
     );
 }
 
-// Recuperar o primeiro histórico da ocorrência
 export function obterHistoricoInicial(historicos: Historico[]): Historico | null {
 
     const ordenados = ordenarHistoricos(historicos);
@@ -224,17 +205,12 @@ export function obterHistoricoInicial(historicos: Historico[]): Historico | null
     return ordenados[0] ?? null;
 }
 
-// Recuperar o histórico mais recente
 export function obterHistoricoAtual(historicos: Historico[]): Historico | null {
 
     const ordenados = ordenarHistoricos(historicos);
 
     return ordenados[ordenados.length - 1] ?? null;
 }
-
-// ==================================================
-// HISTÓRICO INICIAL DA OCORRÊNCIA
-// ==================================================
 
 export async function cadastrarHistoricoInicial(
     idOcorrencia: number,

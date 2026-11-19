@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { logoutAdministrador } from '../../services/administrativoService';
-
 interface CabecalhoProps {
     aoSair?: () => void;
 }
@@ -21,7 +20,6 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
         location.pathname.startsWith('/admin/');
 
     // CONTROLE DO BOTÃO MOBILE
-
     useEffect(() => {
         let ultimaPosicao = Math.max(0, window.scrollY);
 
@@ -58,7 +56,6 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
     }, [menuAberto]);
 
     // FECHAR MENU COM ESC
-
     useEffect(() => {
         if (!menuAberto) return;
 
@@ -82,7 +79,6 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
     };
 
     // ENCERRAR SESSÃO
-
     const fazerLogout = () => {
         fecharMenu();
 
@@ -99,8 +95,6 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
         }
     };
 
-    // ESTILIZAÇÃO DOS ITENS
-
     const estiloItem = 'flex w-full items-center gap-3 rounded-md px-3 py-2 text-[12px] leading-tight transition-colors duration-200 [@media(max-height:700px)]:py-1 [@media(max-height:500px)]:py-0.5';
 
     const estiloIcone = 'material-icons shrink-0 text-[18px]';
@@ -115,7 +109,6 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
     return (
         <>
             {/* BOTÃO DO MENU MOBILE */}
-
             <button type="button" onClick={() => setMenuAberto(!menuAberto)} ref={botaoMenuRef} aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'} aria-expanded={menuAberto} aria-controls="menu-polieus" tabIndex={!botaoVisivel && !menuAberto ? -1 : undefined} className={`fixed top-4 left-4 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-primaria text-white transition-all duration-300 ease-in-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-[#f1d5c0] lg:hidden ${
                 botaoVisivel || menuAberto
                     ? 'translate-y-0 opacity-100'
@@ -129,13 +122,11 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
             </button>
 
             {/* FUNDO DO MENU MOBILE */}
-
             {menuAberto && (
                 <button type="button" onClick={fecharMenu} aria-label="Fechar menu" className="fixed inset-0 z-30 bg-black/50 lg:hidden" />
             )}
 
             {/* CABEÇALHO LATERAL */}
-
             <header id="menu-polieus" className={`fixed top-0 left-0 z-40 flex h-dvh w-52 shrink-0 flex-col overflow-hidden bg-linear-to-b from-[#86291f] to-[#651b16] text-white transition-[transform,visibility] duration-300 lg:sticky lg:top-0 lg:translate-x-0 lg:visible ${
                 menuAberto
                     ? 'translate-x-0 visible'
@@ -143,7 +134,6 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
             }`}>
 
                 {/* LOGO */}
-
                 <div className="flex shrink-0 flex-col items-center border-b border-white/25 px-2 pt-3 pb-3 [@media(max-height:700px)]:py-2 [@media(max-height:500px)]:py-1">
 
                     <img src="/favicons/logo_polieus2.png" alt="Logo do Polieus" className="h-[18dvh] max-h-44 w-44 object-contain" />
@@ -155,7 +145,6 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
                 </div>
 
                 {/* NAVEGAÇÃO */}
-
                 <nav aria-label={administrador ? 'Menu administrativo' : 'Menu principal'} className="flex min-h-0 flex-1 flex-col px-3 py-2">
 
                     <ul className="flex flex-col gap-1 [@media(max-height:700px)]:gap-0.5 [@media(max-height:500px)]:gap-0">
@@ -163,7 +152,6 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
                         {administrador ? (
                             <>
                                 {/* MENU DO ADMINISTRADOR */}
-
                                 <li>
                                     <NavLink to="/admin/dashboard" onClick={fecharMenu} className={linkClasses}>
                                         <span className={estiloIcone}>dashboard</span>
@@ -196,7 +184,6 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
                         ) : (
                             <>
                                 {/* MENU DO CIDADÃO */}
-
                                 <li>
                                     <NavLink to="/inicio" onClick={fecharMenu} className={linkClasses}>
                                         <span className={estiloIcone}>home</span>
@@ -237,14 +224,9 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
 
                     </ul>
 
-                    {/* DIVISÓRIA */}
-
                     <div className="my-2 shrink-0 border-t border-white/25 [@media(max-height:700px)]:my-1" />
 
-                    {/* PÁGINAS COMPARTILHADAS */}
-
                     <ul className="flex flex-col gap-1 [@media(max-height:700px)]:gap-0.5 [@media(max-height:500px)]:gap-0">
-
                         <li>
                             <NavLink to={administrador ? '/admin/sobre' : '/sobre'} onClick={fecharMenu} className={linkClasses}>
                                 <span className={estiloIcone}>info</span>
@@ -275,14 +257,9 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
 
                     </ul>
 
-                    {/* DIVISÓRIA */}
-
                     <div className="my-2 shrink-0 border-t border-white/25 [@media(max-height:700px)]:my-1" />
 
-                    {/* PERFIL E LOGOUT */}
-
                     <ul className="flex flex-col gap-1 [@media(max-height:700px)]:gap-0.5 [@media(max-height:500px)]:gap-0">
-
                         <li>
                             <NavLink to={administrador ? '/admin/perfil' : '/perfil'} onClick={fecharMenu} className={linkClasses}>
                                 <span className={estiloIcone}>person</span>
@@ -296,11 +273,8 @@ export default function Cabecalho({ aoSair }: CabecalhoProps) {
                                 Sair
                             </button>
                         </li>
-
                     </ul>
-
                 </nav>
-
             </header>
         </>
     );

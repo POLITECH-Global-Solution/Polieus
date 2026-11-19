@@ -67,7 +67,7 @@ function validarTelefone(valor: string) {
 }
 
 function validarEmail(valor: string) {
-  return /^[\w.-]+@[\w.-]+\.[a-zA-Z]{2,}$/.test(valor.trim());
+  return /^[\w\.-]+@[\w\.-]+\.[a-zA-Z]{2,}$/.test(valor.trim());
 }
 
 function requisitosSenha(senha: string) {
@@ -334,13 +334,11 @@ export default function LoginUsuario() {
       setAba('entrar');
 
       avisar('Conta criada com sucesso! Agora você pode entrar.', 'sucesso');
-
     } catch (erro) {
       const resultado = interpretarErro(erro);
 
       setErros(resultado.campos);
       avisar(resultado.mensagem);
-
     } finally {
       setProcessando(false);
     }
@@ -388,7 +386,6 @@ export default function LoginUsuario() {
 
       // Redireciona para a área do cidadão.
       navigate('/inicio', { replace: true });
-
     } catch (erro) {
       const status = (erro as { status?: number } | null)?.status;
       const texto = erro instanceof Error ? erro.message : '';
@@ -399,21 +396,17 @@ export default function LoginUsuario() {
         /\b401\b|\b403\b|credenciais|senha incorreta|unauthorized/i.test(texto)
       ) {
         avisar('E-mail ou senha incorretos.');
-
       } else if (/failed to fetch|networkerror|cors/i.test(texto)) {
         avisar('Não foi possível conectar ao servidor. Tente novamente.');
-
       } else {
         avisar('Não foi possível acessar sua conta. Tente novamente.');
       }
-
     } finally {
       setProcessando(false);
     }
   };
 
   const campoBase = 'w-full min-w-0 rounded-lg border border-[#d9bda7] bg-white/40 px-3 py-2 font-corpo text-sm text-texto outline-none transition-colors placeholder:text-[#9c9188] focus:border-primaria focus:ring-1 focus:ring-primaria';
-
   const labelBase = 'mb-0.5 block font-corpo text-sm text-texto';
 
   const classeCampo = (campo: Campo, adicional = '') =>
@@ -439,8 +432,6 @@ export default function LoginUsuario() {
   return (
     <main className="min-h-dvh w-full overflow-x-hidden bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${fundoLogin})` }}>
       <div className="grid min-h-dvh w-full grid-cols-1 lg:grid-cols-[43%_57%]">
-
-        {/* IDENTIDADE VISUAL */}
         <aside className="flex flex-col items-center justify-center px-6 py-8 text-center lg:min-h-dvh lg:pr-16">
           <img src="/favicons/logo_polieus3.png" alt="Logo do Polieus" className="w-64 max-w-full object-contain sm:w-72 lg:w-96" />
 
@@ -453,7 +444,6 @@ export default function LoginUsuario() {
         </aside>
 
         <div className="flex min-h-dvh min-w-0 flex-col px-4 py-3 sm:px-8 lg:px-10">
-
           {/* VOLTAR PARA HOME */}
           <div className="mt-6 flex shrink-0 justify-end lg:mt-8">
             <Link to="/" className="flex items-center gap-2 font-corpo text-sm font-medium text-primaria hover:underline">
@@ -464,8 +454,6 @@ export default function LoginUsuario() {
 
           <div className="flex flex-1 items-center justify-center py-3">
             <section className="w-full max-w-2xl rounded-3xl border border-[#dfb99b] bg-[#fffaf5]/90 p-4 shadow-sm backdrop-blur-sm sm:p-5">
-
-              {/* ABAS */}
               <div className="grid grid-cols-2 border-b-2 border-primaria" role="group" aria-label="Acesso à plataforma">
                 <button type="button" onClick={() => trocarAba('entrar')} disabled={processando} aria-pressed={aba === 'entrar'} className={`flex items-center justify-center gap-2 rounded-t-full px-3 py-2 font-corpo text-sm font-semibold transition-colors sm:text-base ${aba === 'entrar' ? 'bg-primaria text-white' : 'text-primaria hover:bg-primaria/10'}`}>
                   <span className="material-icons text-[22px]">person</span>
@@ -482,36 +470,29 @@ export default function LoginUsuario() {
 
                 /* FORMULÁRIO DE LOGIN */
                 <form onSubmit={entrar} className="mt-5 flex flex-col">
-
                   <h1 className="font-titulo text-3xl font-bold text-primaria sm:text-4xl">
                     Bem-vindo de volta!
                   </h1>
-
                   <p className="mt-1 font-corpo text-sm text-texto-suave">
                     Acesse sua conta para continuar.
                   </p>
 
                   <div className="mt-6 flex flex-col gap-4">
-
                     {/* E-MAIL */}
                     <div className="relative">
                       <label htmlFor="login-email" className="sr-only">E-mail</label>
-
                       <span className="material-icons pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-[22px] text-texto-suave">
                         mail_outline
                       </span>
-
                       <input id="login-email" type="email" autoComplete="username" placeholder="E-mail" required disabled={processando} value={identificacao} onChange={e => { setIdentificacao(e.target.value); setMensagem(''); }} className={`${campoBase} pl-12`} />
                     </div>
 
                     {/* SENHA */}
                     <div className="relative">
                       <label htmlFor="login-senha" className="sr-only">Senha</label>
-
                       <span className="material-icons pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-[22px] text-texto-suave">
                         lock_outline
                       </span>
-
                       <input id="login-senha" type={mostrarSenha ? 'text' : 'password'} autoComplete="current-password" placeholder="Senha" required disabled={processando} value={senhaLogin} onChange={e => { setSenhaLogin(e.target.value); setMensagem(''); }} className={`${campoBase} pr-12 pl-12`} />
 
                       <button type="button" onClick={() => setMostrarSenha(!mostrarSenha)} aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'} className="absolute top-1/2 right-4 -translate-y-1/2 text-texto-suave">
@@ -547,62 +528,49 @@ export default function LoginUsuario() {
                     </button>
                   </p>
                 </form>
-
               ) : (
 
                 /* FORMULÁRIO DE CADASTRO */
                 <form onSubmit={cadastrar} noValidate className="mt-3 flex flex-col">
-
                   <h1 className="font-titulo text-2xl font-bold text-primaria sm:text-3xl">
                     Crie sua conta!
                   </h1>
-
                   <p className="mt-1 font-corpo text-sm text-texto-suave">
                     Faça parte de uma cidade mais participativa.
                   </p>
 
                   <div className="mt-3 grid grid-cols-1 gap-2 text-left sm:grid-cols-2">
-
                     {/* NOME COMPLETO */}
                     <div className="sm:col-span-2">
                       <label htmlFor="cadastro-nome" className={labelBase}>Nome completo</label>
-
                       <input id="cadastro-nome" type="text" autoComplete="name" placeholder="Digite seu nome completo" value={nome} disabled={processando} onChange={e => { setNome(e.target.value); limparErro('nome'); }} aria-invalid={Boolean(erros.nome)} aria-describedby={erros.nome ? 'erro-nome' : undefined} className={classeCampo('nome')} />
-
                       {mostrarErro('nome')}
                     </div>
 
                     {/* CPF */}
                     <div>
                       <label htmlFor="cadastro-cpf" className={labelBase}>CPF</label>
-
                       <input id="cadastro-cpf" type="text" inputMode="numeric" autoComplete="off" maxLength={14} placeholder="000.000.000-00" value={cpf} disabled={processando} onChange={e => { setCpf(formatarCPF(e.target.value)); limparErro('cpf'); }} aria-invalid={Boolean(erros.cpf)} aria-describedby={erros.cpf ? 'erro-cpf' : undefined} className={classeCampo('cpf')} />
-
                       {mostrarErro('cpf')}
                     </div>
 
                     {/* TELEFONE */}
                     <div>
                       <label htmlFor="cadastro-telefone" className={labelBase}>Telefone</label>
-
                       <input id="cadastro-telefone" type="tel" autoComplete="tel" placeholder="(11) 99999-9999" value={telefone} disabled={processando} onChange={e => { setTelefone(formatarTelefone(e.target.value)); limparErro('telefone'); }} aria-invalid={Boolean(erros.telefone)} aria-describedby={erros.telefone ? 'erro-telefone' : undefined} className={classeCampo('telefone')} />
-
                       {mostrarErro('telefone')}
                     </div>
 
                     {/* E-MAIL */}
                     <div className="sm:col-span-2">
                       <label htmlFor="cadastro-email" className={labelBase}>E-mail</label>
-
                       <input id="cadastro-email" type="email" autoComplete="email" placeholder="Digite seu e-mail" value={email} disabled={processando} onChange={e => { setEmail(e.target.value); limparErro('email'); }} aria-invalid={Boolean(erros.email)} aria-describedby={erros.email ? 'erro-email' : undefined} className={classeCampo('email')} />
-
                       {mostrarErro('email')}
                     </div>
 
                     {/* SENHA */}
                     <div>
                       <label htmlFor="cadastro-senha" className={labelBase}>Senha</label>
-
                       <div className="relative">
                         <input id="cadastro-senha" type={mostrarSenha ? 'text' : 'password'} autoComplete="new-password" placeholder="Crie uma senha segura" value={senhaCadastro} disabled={processando} onChange={e => { setSenhaCadastro(e.target.value); limparErro('senha'); }} aria-invalid={Boolean(erros.senha)} aria-describedby={erros.senha ? 'requisitos-senha erro-senha' : 'requisitos-senha'} className={classeCampo('senha', 'pr-11')} />
 
@@ -612,14 +580,12 @@ export default function LoginUsuario() {
                           </span>
                         </button>
                       </div>
-
                       {mostrarErro('senha')}
                     </div>
 
                     {/* CONFIRMAR SENHA */}
                     <div>
                       <label htmlFor="cadastro-confirmacao" className={labelBase}>Confirmar senha</label>
-
                       <div className="relative">
                         <input id="cadastro-confirmacao" type={mostrarConfirmacao ? 'text' : 'password'} autoComplete="new-password" placeholder="Repita sua senha" value={confirmarSenha} disabled={processando} onChange={e => { setConfirmarSenha(e.target.value); limparErro('confirmacao'); }} aria-invalid={Boolean(erros.confirmacao)} aria-describedby={erros.confirmacao ? 'erro-confirmacao' : undefined} className={classeCampo('confirmacao', 'pr-11')} />
 
@@ -629,13 +595,11 @@ export default function LoginUsuario() {
                           </span>
                         </button>
                       </div>
-
                       {mostrarErro('confirmacao')}
                     </div>
 
                     {/* REQUISITOS DA SENHA */}
                     <div id="requisitos-senha" className="sm:col-span-2 rounded-lg border border-[#e5cdbb] bg-[#f9eee5]/80 px-3 py-2">
-
                       <p className="mb-2 font-corpo text-xs font-semibold text-primaria">
                         Sua senha deve conter:
                       </p>
@@ -646,7 +610,6 @@ export default function LoginUsuario() {
                             <span className="material-icons text-[15px]" aria-hidden="true">
                               {requisito.valido ? 'check_circle' : 'radio_button_unchecked'}
                             </span>
-
                             <span>{requisito.texto}</span>
                           </div>
                         ))}
@@ -665,10 +628,8 @@ export default function LoginUsuario() {
                   {/* TERMOS DE USO */}
                   <label className="mt-2 flex items-start gap-2 text-left font-corpo text-xs text-texto">
                     <input type="checkbox" checked={aceitouTermos} disabled={processando} onChange={e => { setAceitouTermos(e.target.checked); limparErro('termos'); }} className="mt-0.5 h-4 w-4 shrink-0 accent-primaria" />
-
                     Li e concordo com os Termos de Uso e a Política de Privacidade.
                   </label>
-
                   {mostrarErro('termos')}
 
                   {/* BOTÃO CADASTRAR */}
@@ -680,7 +641,6 @@ export default function LoginUsuario() {
 
                   <p className="mt-2 font-corpo text-sm text-texto">
                     Já possui uma conta?{' '}
-
                     <button type="button" onClick={() => trocarAba('entrar')} className="font-semibold text-primaria underline">
                       Entrar
                     </button>
@@ -694,7 +654,6 @@ export default function LoginUsuario() {
                   {mensagem}
                 </div>
               )}
-
             </section>
           </div>
         </div>

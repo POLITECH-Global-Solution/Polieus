@@ -1,5 +1,4 @@
 import { apiRequest } from './api';
-
 export interface Ocorrencia {
     idOcorrencia: number | null;
     idUsuario: number;
@@ -13,10 +12,6 @@ export interface Ocorrencia {
 export type DadosOcorrencia = Omit<Ocorrencia, 'idOcorrencia'>;
 
 const ENDPOINT = '/polieus/ocorrencia';
-
-// ==================================================
-// FUNÇÕES AUXILIARES
-// ==================================================
 
 function idValido(id: unknown): id is number {
     return typeof id === 'number' &&
@@ -48,10 +43,6 @@ function compararOcorrencia(ocorrencia: Ocorrencia, dados: DadosOcorrencia): boo
     );
 }
 
-// ==================================================
-// INTEGRAÇÃO COM A API JAVA
-// ==================================================
-
 // GET - Listar todas as ocorrências
 export async function listarOcorrencias(): Promise<Ocorrencia[]> {
 
@@ -76,7 +67,6 @@ export async function cadastrarOcorrencia(dados: DadosOcorrencia): Promise<Ocorr
         throw new Error('Identificação do usuário inválida.');
     }
 
-    // Consultar as ocorrências anteriores ao cadastro
     const ocorrenciasAnteriores = await listarMinhasOcorrencias(dados.idUsuario);
 
     const idsAnteriores = new Set(
@@ -85,7 +75,6 @@ export async function cadastrarOcorrencia(dados: DadosOcorrencia): Promise<Ocorr
             .filter(idValido)
     );
 
-    // Enviar a ocorrência ao Java
     const ocorrencia = await apiRequest<Ocorrencia | undefined>(ENDPOINT, {
         method: 'POST',
         body: JSON.stringify(dados),
@@ -114,7 +103,6 @@ export async function cadastrarOcorrencia(dados: DadosOcorrencia): Promise<Ocorr
         compararOcorrencia(item, dados)
     );
 
-    // Recuperar o ID real da ocorrência cadastrada
     if (novasOcorrencias.length === 1) {
         return {
             ...novasOcorrencias[0],
@@ -148,11 +136,6 @@ export function excluirOcorrencia(id: number): Promise<void> {
     });
 }
 
-// ==================================================
-// IDENTIFICAÇÃO DO CIDADÃO
-// ==================================================
-
-// Recuperar o ID do usuário conectado
 export function obterUsuarioId(): number | null {
 
     try {
@@ -173,10 +156,6 @@ export function obterUsuarioId(): number | null {
         return null;
     }
 }
-
-// ==================================================
-// CONSULTA DAS OCORRÊNCIAS DO CIDADÃO
-// ==================================================
 
 // GET - Listar ocorrências por usuário
 export async function listarMinhasOcorrencias(idUsuario: number): Promise<Ocorrencia[]> {
@@ -203,8 +182,6 @@ export async function listarMinhasOcorrencias(idUsuario: number): Promise<Ocorre
             idUsuario: Number(ocorrencia.idUsuario),
         }));
 }
-
-// Contabilizar ocorrências do cidadão
 export async function contarMinhasOcorrencias(idUsuario: number): Promise<number> {
 
     const ocorrencias = await listarMinhasOcorrencias(idUsuario);

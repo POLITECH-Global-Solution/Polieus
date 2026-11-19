@@ -4,7 +4,6 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import App from './App.tsx';
 import './globals.css';
-
 import RotaProtegida from './components/RotaProtegida/RotaProtegida.tsx';
 
 import Error from './pages/Error/index.tsx';
@@ -29,7 +28,6 @@ import AdminPerfil from './pages/AdminPerfil/index.tsx';
 
 const router = createBrowserRouter([
 
-    // ROTAS PÚBLICAS DE ACESSO
     {
         path: '/',
         element: <EscolhaAcesso />,
@@ -43,12 +41,11 @@ const router = createBrowserRouter([
         element: <LoginAdministrador />,
     },
 
-    // LAYOUT PRINCIPAL
     {
         element: <App />,
         children: [
 
-            // ROTAS PROTEGIDAS DO CIDADÃO
+            // ROTAS DO CIDADÃO
             {
                 element: <RotaProtegida />,
                 children: [
@@ -78,8 +75,6 @@ const router = createBrowserRouter([
                     },
                 ],
             },
-
-            // ROTAS INSTITUCIONAIS
             {
                 path: 'sobre',
                 element: <Sobre />,
@@ -125,8 +120,6 @@ const router = createBrowserRouter([
                         path: 'perfil',
                         element: <AdminPerfil />,
                     },
-
-                    // ROTAS INSTITUCIONAIS DO ADMINISTRADOR
                     {
                         path: 'sobre',
                         element: <Sobre />,
@@ -145,8 +138,6 @@ const router = createBrowserRouter([
                     },
                 ],
             },
-
-            // PÁGINA DE ERRO 404
             {
                 path: '*',
                 element: <Error />,

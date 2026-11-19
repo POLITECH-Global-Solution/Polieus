@@ -8,6 +8,7 @@ import fotoHenrique from '../../img/fotoHenrique.jpeg';
 import githubIcon from '../../img/github.png';
 import linkedinIcon from '../../img/lkd.png';
 
+// EQUIPE
 const equipe = [
   {
     nome: 'Henrique Bonachela de Carvalho Carabante',
@@ -139,14 +140,12 @@ export default function Integrantes() {
           >
             Início
           </Link>
-
           <span
             className="material-icons text-base"
             aria-hidden="true"
           >
             chevron_right
           </span>
-
           <span
             aria-current="page"
             className="font-semibold text-[#78221b]"
@@ -161,27 +160,24 @@ export default function Integrantes() {
           className="pointer-events-none absolute top-12 -left-20 size-72 rounded-full border border-[#dec6b3] opacity-35"
           aria-hidden="true"
         />
-
         <div
           className="pointer-events-none absolute top-24 -left-12 size-56 rounded-full border border-[#dec6b3] opacity-35"
           aria-hidden="true"
         />
-
         <div
           className="pointer-events-none absolute -right-25 bottom-12 size-80 rounded-full border border-[#dec6b3] opacity-35"
           aria-hidden="true"
         />
 
+        {/* DESCRIÇÃO */}
         <div className="relative mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
             <p className="mb-3 text-xs font-bold tracking-[0.25em] text-[#a34c3a] uppercase">
               As pessoas por trás do projeto
             </p>
-
             <h2 className="font-titulo text-4xl font-bold text-[#78221b] sm:text-5xl">
               Nossa Equipe
             </h2>
-
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-texto-suave">
               Conheça os integrantes responsáveis pelo desenvolvimento
               do Polieus, unindo tecnologia, inovação e participação
@@ -214,7 +210,6 @@ export default function Integrantes() {
                   <div className="absolute top-5 bottom-6 left-3">
                     <ColunaGrega />
                   </div>
-
                   <div className="absolute top-5 right-3 bottom-6">
                     <ColunaGrega />
                   </div>
@@ -232,21 +227,18 @@ export default function Integrantes() {
 
                     <div className="mt-5 flex items-center gap-2">
                       <span className="h-px w-7 bg-[#c99d83]" />
-
                       <span
                         className="material-icons text-base text-[#8c251e]"
                         aria-hidden="true"
                       >
                         account_balance
                       </span>
-
                       <span className="h-px w-7 bg-[#c99d83]" />
                     </div>
 
                     <p className="mt-2 text-xs font-bold tracking-[0.2em] text-[#9b4938]">
                       {integrante.turma}
                     </p>
-
                     <h3 className="mt-3 flex min-h-16 items-center justify-center font-titulo text-lg leading-7 font-bold text-[#78221b]">
                       {integrante.nome}
                     </h3>
@@ -260,7 +252,6 @@ export default function Integrantes() {
                     <p className="text-sm font-bold text-[#30241f]">
                       RM: {integrante.rm}
                     </p>
-
                     <p className="mt-3 min-h-12 text-sm leading-6 text-[#62534a]">
                       {integrante.cargo}
                     </p>
@@ -284,7 +275,6 @@ export default function Integrantes() {
                             alt=""
                             className="size-5 shrink-0 object-contain"
                           />
-
                           <span className="text-xs font-semibold">
                             GitHub
                           </span>
@@ -302,7 +292,6 @@ export default function Integrantes() {
                             alt=""
                             className="size-5 shrink-0 object-contain"
                           />
-
                           <span className="text-xs font-semibold">
                             LinkedIn
                           </span>

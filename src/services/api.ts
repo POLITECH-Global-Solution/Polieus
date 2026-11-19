@@ -3,7 +3,6 @@ export const API_URL = (
     'https://polieus.onrender.com'
 ).replace(/\/+$/, '');
 
-// CONFIGURAÇÕES DE CONEXÃO
 const MAX_TENTATIVAS = 5;
 const TEMPO_ESPERA = 3000;
 

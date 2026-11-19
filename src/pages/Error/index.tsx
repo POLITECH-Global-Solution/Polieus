@@ -35,7 +35,6 @@ export default function Error() {
             >
                 Voltar para a Página Inicial
             </Link>
-
         </main>
     );
 }
